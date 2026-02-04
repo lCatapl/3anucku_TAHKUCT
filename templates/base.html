@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Записки Танкиста{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2/dist/tailwind.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/tailwind.css') }}" rel="stylesheet">
+    <link rel="manifest" href="/manifest.json">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gray-800 p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-yellow-400">⚡ Записки Танкиста</a>
+            <div class="space-x-4">
+                <a href="/game" class="hover:text-yellow-400">Арена</a>
+                <a href="/chat" class="hover:text-yellow-400">Чат</a>
+                <a href="/blog" class="hover:text-yellow-400">Записки</a>
+                <a href="/profile" class="hover:text-yellow-400">Профиль</a>
+                {% if current_user.is_authenticated %}
+                    <span>👋 {{ current_user.username }}</span>
+                    <a href="/auth/logout" class="bg-red-600 px-4 py-2 rounded">Выход</a>
+                {% else %}
+                    <a href="/auth/login" class="bg-green-600 px-4 py-2 rounded">Войти</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+    scroll-behavior: smooth;
+}
+
+.tank-glow {
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+}

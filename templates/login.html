@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход - Записки Танкиста</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-900 to-black min-h-screen flex items-center justify-center">
+    <div class="bg-white/10 backdrop-blur-md p-12 rounded-3xl w-full max-w-md">
+        <h1 class="text-4xl font-black text-center mb-8 text-white">ВХОД</h1>
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <input type="text" name="username" placeholder="Имя" class="w-full p-4 bg-white/20 rounded-xl mb-4 text-white placeholder-white/70">
+            <input type="password" name="password" placeholder="Пароль" class="w-full p-4 bg-white/20 rounded-xl mb-6 text-white placeholder-white/70">
+            <button type="submit" class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 p-4 rounded-xl font-bold text-xl">ВОЙТИ</button>
+        </form>
+        <p class="text-center mt-6 text-white/70">
+            Нет аккаунта? <a href="/auth/register" class="text-yellow-400 hover:text-yellow-300">Регистрация</a>
+        </p>
+    </div>
+</body>
+</html>
