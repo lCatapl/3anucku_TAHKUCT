@@ -8,7 +8,7 @@ flask-talisman==1.1.0
 bcrypt==4.1.2
 pyotp==2.9.0
 eventlet==0.36.1
-pillow==10.2.0
+Pillow==10.4.0
 wtforms==3.1.2
 python-dotenv==1.0.0
 gunicorn==22.0.0
