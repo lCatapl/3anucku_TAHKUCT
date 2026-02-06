@@ -1,10 +1,22 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="max-w-2xl mx-auto">
-    <h1 class="text-4xl font-bold mb-8">👤 Профиль</h1>
-    <div class="bg-gray-800 p-8 rounded-2xl">
-        <p class="text-xl mb-4">Гостевой профиль</p>
-        <p class="text-gray-400">Зарегистрируйтесь для статистики и лидерборда</p>
+    <h1 class="text-4xl font-bold mb-8">👤 ПРОФИЛЬ</h1>
+    <div class="grid md:grid-cols-2 gap-8">
+        <div class="bg-gray-800 p-8 rounded-2xl">
+            <h3 class="text-2xl font-bold mb-6">СТАТИСТИКА</h3>
+            <div class="space-y-4">
+                <div>Боёв: <span class="text-yellow-400 font-bold">47</span></div>
+                <div>Побед: <span class="text-green-400 font-bold">32</span></div>
+                <div>Очки: <span class="text-blue-400 font-bold">1,247</span></div>
+                <div>Ранг: <span class="text-purple-400 font-bold">Лейтенант</span></div>
+            </div>
+        </div>
+        <div class="bg-gray-800 p-8 rounded-2xl">
+            <img src="/static/images/t34.png" class="w-32 h-32 mx-auto rounded-full mb-4">
+            <h3 class="text-xl font-bold text-center mb-4">Т-34-85</h3>
+            <p class="text-center text-gray-400">Любимый танк</p>
+        </div>
     </div>
 </div>
 {% endblock %}
