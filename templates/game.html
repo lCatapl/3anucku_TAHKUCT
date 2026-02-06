@@ -18,8 +18,29 @@
             <p>HP: 180 | Урон: 55 | Скорость: 30</p>
         </div>
     </div>
-    
+
+    <!-- Добавь ПОСЛЕ выбора танков -->
+<div class="flex gap-4 mt-12">
+    <button onclick="startBattle('1v1')" class="flex-1 bg-green-600 p-6 rounded-2xl font-bold text-xl hover:bg-green-500">⚔️ 1v1</button>
+    <button onclick="startBattle('bot')" class="flex-1 bg-orange-600 p-6 rounded-2xl font-bold text-xl hover:bg-orange-500">🤖 1vBot</button>
+</div>
+
+<div id="battle-status" class="mt-8 text-center hidden">
+    <div id="battle-log" class="bg-gray-900 p-6 rounded-2xl min-h-[200px]"></div>
+    <button onclick="endBattle()" class="mt-4 bg-red-600 px-8 py-3 rounded-xl font-bold">Завершить бой</button>
+</div>
+
+<script>
+let battleActive = false;
+function startBattle(type) {
+    battleActive = true;
+    document.getElementById('battle-status').classList.remove('hidden');
+    // Логика боя
+}
+</script>
+
     <!-- Поле боя (Canvas) -->
     <canvas id="battleCanvas" class="w-full h-96 bg-green-900 rounded-2xl mx-auto block border-4 border-yellow-500"></canvas>
 </div>
 {% endblock %}
+
