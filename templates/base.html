@@ -1,41 +1,33 @@
 <!DOCTYPE html>
-<html lang="ru" class="dark">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Записки Танкиста{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2/dist/tailwind.min.css" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/tailwind.css') }}" rel="stylesheet">
-    <link rel="manifest" href="/manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
-    <!-- Navigation -->
-    <nav class="bg-gray-800 p-4 shadow-lg">
-        <div class="container mx-auto flex justify-between items-center">
-            <a href="/" class="text-2xl font-bold text-yellow-400">⚡ Записки Танкиста</a>
-            <div class="space-x-4">
-                <a href="/game" class="hover:text-yellow-400">Арена</a>
-                <a href="/chat" class="hover:text-yellow-400">Чат</a>
-                <a href="/blog" class="hover:text-yellow-400">Записки</a>
-                <a href="/profile" class="hover:text-yellow-400">Профиль</a>
-                {% if current_user.is_authenticated %}
-                    <span>👋 {{ current_user.username }}</span>
-                    <a href="/auth/logout" class="bg-red-600 px-4 py-2 rounded">Выход</a>
-                {% else %}
-                    <a href="/auth/login" class="bg-green-600 px-4 py-2 rounded">Войти</a>
-                {% endif %}
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-black min-h-screen">
+    <nav class="bg-gray-900/95 backdrop-blur-md sticky top-0 z-50 border-b border-gray-700">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="text-2xl font-black text-yellow-400">⚔️ Записки Танкиста</a>
+                <div class="flex gap-4 items-center">
+                    <a href="/game" class="px-4 py-2 rounded-xl hover:bg-gray-800">⚔️ Арена</a>
+                    <a href="/chat" class="px-4 py-2 rounded-xl hover:bg-gray-800">💬 Чат</a>
+                    <a href="/blog" class="px-4 py-2 rounded-xl hover:bg-gray-800">📝 Записки</a>
+                    <a href="/profile" class="px-4 py-2 rounded-xl hover:bg-gray-800">👤 Профиль</a>
+                    {% if not session.get('user_id') %}
+                        <a href="/auth/login" class="bg-yellow-500 px-6 py-2 rounded-xl font-bold hover:bg-yellow-400">🔐 Войти</a>
+                    {% else %}
+                        <span class="text-green-400 font-bold">{{ session.username or 'Гость' }}</span>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </nav>
-
-    <main class="container mx-auto p-8">
+    
+    <main class="pt-20">
         {% block content %}{% endblock %}
     </main>
-
-    <!-- Scripts -->
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-    {% block scripts %}{% endblock %}
 </body>
 </html>
