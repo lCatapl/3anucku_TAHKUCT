@@ -42,13 +42,34 @@ def blog():
 @app.route('/api/stats')
 def stats():
     with app.app_context():
-        users = User.query.count()
-        posts = Post.query.count()
+        from models import User, Post, Battle, Tournament, UserActivity
+        import datetime
+        
+        now = datetime.datetime.utcnow()
+        total_users = User.query.count()
+        total_posts = Post.query.count()
+        today_battles = Battle.query.filter(
+            Battle.timestamp >= now.replace(hour=0, minute=0, second=0, microsecond=0)
+        ).count()
+        today_tournaments = Tournament.query.filter(
+            Tournament.timestamp >= now.replace(hour=0, minute=0, second=0, microsecond=0)
+        ).count()
+        
+        active_users = UserActivity.query.filter(
+            UserActivity.last_activity >= now - datetime.timedelta(minutes=1),
+            UserActivity.is_afk == False
+        ).count()
+        afk_users = UserActivity.query.filter(
+            UserActivity.last_activity < now - datetime.timedelta(minutes=1)
+        ).count()
+        
         return {
-            'online': users + 1247,
-            'battles': 5892,
-            'tournaments': 127,
-            'posts': posts + 42
+            'online': active_users + afk_users,
+            'afk': afk_users,
+            'battles': today_battles,
+            'tournaments': today_tournaments,
+            'posts': total_posts,
+            'users': total_users
         }
 
 from blueprints.auth import auth_bp
@@ -65,4 +86,5 @@ if __name__ == '__main__':
         db.create_all()
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
