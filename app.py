@@ -41,35 +41,46 @@ def blog():
 
 @app.route('/api/stats')
 def stats():
-    with app.app_context():
-        from models import User, Post, Battle, Tournament, UserActivity
-        import datetime
+    from models import User, Post, Battle, Tournament, UserActivity
+    from datetime import datetime, timedelta
+    import time
+    
+    # Правильный app_context для SQLAlchemy
+    try:
+        # Подсчёт реальных пользователей
+        users_count = User.query.count()
         
-        now = datetime.datetime.utcnow()
-        total_users = User.query.count()
-        total_posts = Post.query.count()
-        today_battles = Battle.query.filter(
-            Battle.timestamp >= now.replace(hour=0, minute=0, second=0, microsecond=0)
+        # Активные (последние 60 сек) vs АФК (более 60 сек)
+        now = datetime.utcnow()
+        recent_activity = UserActivity.query.filter(
+            UserActivity.last_activity >= now - timedelta(minutes=1)
         ).count()
-        today_tournaments = Tournament.query.filter(
-            Tournament.timestamp >= now.replace(hour=0, minute=0, second=0, microsecond=0)
+        afk_count = UserActivity.query.filter(
+            UserActivity.last_activity < now - timedelta(minutes=1)
         ).count()
         
-        active_users = UserActivity.query.filter(
-            UserActivity.last_activity >= now - datetime.timedelta(minutes=1),
-            UserActivity.is_afk == False
-        ).count()
-        afk_users = UserActivity.query.filter(
-            UserActivity.last_activity < now - datetime.timedelta(minutes=1)
-        ).count()
+        # Бои и турниры ЗА СЕГОДНЯ (сброс 00:00 UTC)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        battles_today = Battle.query.filter(Battle.timestamp >= today_start).count()
+        tournaments_today = Tournament.query.filter(Tournament.timestamp >= today_start).count()
+        
+        # Посты НАВСЕГДА (не сбрасываются)
+        posts_count = Post.query.count()
         
         return {
-            'online': active_users + afk_users,
-            'afk': afk_users,
-            'battles': today_battles,
-            'tournaments': today_tournaments,
-            'posts': total_posts,
-            'users': total_users
+            'online': recent_activity,
+            'afk': afk_count,
+            'battles': battles_today,
+            'tournaments': tournaments_today,
+            'posts': posts_count,
+            'users': users_count,
+            'timestamp': int(time.time())
+        }
+    except Exception as e:
+        # Fallback если БД недоступна
+        return {
+            'online': 0, 'afk': 0, 'battles': 0, 'tournaments': 0, 
+            'posts': 0, 'users': 0, 'error': str(e)
         }
 
 from blueprints.auth import auth_bp
@@ -86,5 +97,6 @@ if __name__ == '__main__':
         db.create_all()
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
