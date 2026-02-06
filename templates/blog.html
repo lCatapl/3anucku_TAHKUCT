@@ -1,10 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 class="text-4xl font-bold mb-12">📝 ЗАПИСКИ</h1>
-{% for post in posts %}
-<div class="bg-gray-800 p-8 rounded-2xl mb-6">
-    <h2 class="text-2xl font-bold mb-4">{{ post.title }}</h2>
-    <p>{{ post.content[:200] }}...</p>
+<h1 class="text-4xl font-bold mb-12">📝 ЗАПИСКИ ТАНКИСТА</h1>
+<div class="space-y-6">
+    <div class="bg-gray-800 p-8 rounded-2xl">
+        <h2 class="text-2xl font-bold mb-2">Первая победа на Т-34</h2>
+        <p class="text-gray-300 mb-4">Сегодня удалось уничтожить Tiger в лобовой атаке. Броня держалась!</p>
+        <span class="text-yellow-400 text-sm">02.02.2026</span>
+    </div>
+    <div class="bg-gray-800 p-8 rounded-2xl">
+        <h2 class="text-2xl font-bold mb-2">Тактика окружения</h2>
+        <p class="text-gray-300 mb-4">Удаётся обходить тяжёлые танки с флангов. Мобильность IS-2 на высоте.</p>
+        <span class="text-yellow-400 text-sm">05.02.2026</span>
+    </div>
 </div>
-{% endfor %}
 {% endblock %}
