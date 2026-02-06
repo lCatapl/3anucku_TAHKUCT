@@ -2,11 +2,46 @@
 {% block content %}
 <div class="max-w-2xl mx-auto">
     <h1 class="text-4xl font-bold mb-8">💬 ЧАТ</h1>
-    <div id="messages" class="bg-gray-800 p-6 rounded-2xl h-96 overflow-y-auto mb-4"></div>
+    
+    <!-- Сообщения -->
+    <div id="messages" class="bg-gray-800 p-6 rounded-2xl h-96 overflow-y-auto mb-4 space-y-2"></div>
+    
+    <!-- Ввод -->
     <div class="flex gap-2">
-        <input id="messageInput" class="flex-1 p-4 bg-gray-700 rounded-xl" placeholder="Сообщение...">
+        <input id="username" placeholder="Ваше имя" class="flex-1 p-4 bg-gray-700 rounded-xl" value="Танкист">
+        <input id="messageInput" placeholder="Сообщение..." class="flex-2 p-4 bg-gray-700 rounded-xl">
         <button onclick="sendMessage()" class="px-8 py-4 bg-yellow-500 rounded-xl font-bold">Отправить</button>
     </div>
 </div>
-<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+
+<script>
+function sendMessage() {
+    const username = document.getElementById('username').value;
+    const message = document.getElementById('messageInput').value;
+    
+    fetch('/api/chat/send', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username, message})
+    });
+    
+    document.getElementById('messageInput').value = '';
+    loadMessages();
+}
+
+function loadMessages() {
+    fetch('/api/chat/messages')
+        .then(r => r.json())
+        .then(messages => {
+            const container = document.getElementById('messages');
+            container.innerHTML = messages.map(m => 
+                `<div><strong>${m.username}:</strong> ${m.content} <span class="text-gray-500 text-sm">${m.time}</span></div>`
+            ).join('');
+            container.scrollTop = container.scrollHeight;
+        });
+}
+
+setInterval(loadMessages, 2000);
+loadMessages();
+</script>
 {% endblock %}
