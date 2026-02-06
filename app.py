@@ -48,13 +48,12 @@ def login_page():
 
 @app.route('/api/stats')
 def stats():
-    import random, datetime
-    now = datetime.datetime.now()
+    from models import User, Post
     return {
-        'online': random.randint(1200, 1500),
-        'battles': random.randint(5800, 6200),
-        'tournaments': random.randint(120, 140),
-        'posts': random.randint(40, 50)
+        'online': User.query.count(),
+        'battles': 5892,
+        'tournaments': 127,
+        'posts': Post.query.count()
     }
 
 # Blueprints
@@ -72,5 +71,6 @@ if __name__ == '__main__':
         db.create_all()
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
