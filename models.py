@@ -49,3 +49,9 @@ class UserActivity(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     last_activity = db.Column(db.DateTime, default=datetime.utcnow)
     is_afk = db.Column(db.Boolean, default=False)
+
+RANK_NAMES = {
+    0: "Рядовой", 250: "Ефрейтор", 500: "Младший сержант", 1000: "Сержант",
+    2500: "Старшина", 5000: "Старший сержант", 10000: "Лейтенант", 25000: "Старший лейтенант",
+    50000: "Капитан", 100000: "Майор", 250000: "Подполковник", 500000: "Полковник"
+}
