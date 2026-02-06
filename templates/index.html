@@ -2,35 +2,44 @@
 {% block content %}
 <div class="text-center py-20">
     <h1 class="text-6xl font-bold text-yellow-400 mb-8 animate-pulse">⚔️ Записки Танкиста</h1>
-    <p class="text-xl mb-12 max-w-2xl mx-auto">Ультимативный гейм-хаб для танкистов! Бои, турниры, чат, блог и 3D-танки из World of Tanks.</p>
+    <p class="text-xl mb-12 max-w-2xl mx-auto">Ультимативный гейм-хаб для танкистов!</p>
     
-    <!-- Stats Cards -->
-    <div class="grid md:grid-cols-4 gap-8 mb-12">
-        <div class="bg-gray-800 p-8 rounded-xl">
-            <div class="text-3xl font-bold text-yellow-400">1,247</div>
+    <!-- Реальная статистика (обновляется каждую секунду) -->
+    <div class="grid md:grid-cols-4 gap-8 mb-12" id="stats">
+        <div class="bg-gray-800 p-8 rounded-xl" data-type="online">
+            <div class="text-3xl font-bold text-yellow-400" id="online-count">1,247</div>
             <div>Игроков онлайн</div>
         </div>
-        <div class="bg-gray-800 p-8 rounded-xl">
-            <div class="text-3xl font-bold text-green-400">5,892</div>
+        <div class="bg-gray-800 p-8 rounded-xl" data-type="battles">
+            <div class="text-3xl font-bold text-green-400" id="battles-count">5,892</div>
             <div>Битв сегодня</div>
         </div>
-        <div class="bg-gray-800 p-8 rounded-xl">
-            <div class="text-3xl font-bold text-blue-400">127</div>
+        <div class="bg-gray-800 p-8 rounded-xl" data-type="tournaments">
+            <div class="text-3xl font-bold text-blue-400" id="tournaments-count">127</div>
             <div>Турниров</div>
         </div>
-        <div class="bg-gray-800 p-8 rounded-xl">
-            <div class="text-3xl font-bold text-purple-400">42</div>
+        <div class="bg-gray-800 p-8 rounded-xl" data-type="posts">
+            <div class="text-3xl font-bold text-purple-400" id="posts-count">42</div>
             <div>Записок</div>
         </div>
     </div>
     
-    <a href="/game" class="bg-gradient-to-r from-yellow-500 to-orange-500 text-xl px-12 py-4 rounded-full font-bold hover:shadow-2xl transform hover:scale-105 transition-all">⚡ ИГРАТЬ СЕЙЧАС</a>
+    <a href="/game" class="bg-gradient-to-r from-yellow-500 to-orange-500 text-xl px-12 py-4 rounded-full font-bold hover:shadow-2xl">⚡ ИГРАТЬ СЕЙЧАС</a>
 </div>
 
-<!-- 3D Tank Preview -->
-<div id="tank-preview" class="mt-20 p-8 bg-gray-800 rounded-2xl"></div>
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/game.js') }}"></script>
+<script>
+// Реальная статистика каждую секунду
+function updateStats() {
+    fetch('/api/stats')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('online-count').textContent = data.online;
+            document.getElementById('battles-count').textContent = data.battles;
+            document.getElementById('tournaments-count').textContent = data.tournaments;
+            document.getElementById('posts-count').textContent = data.posts;
+        });
+}
+setInterval(updateStats, 1000);
+updateStats();
+</script>
 {% endblock %}
