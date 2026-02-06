@@ -46,6 +46,17 @@ def blog():
 def login_page():
     return render_template('auth/login.html')
 
+@app.route('/api/stats')
+def stats():
+    import random, datetime
+    now = datetime.datetime.now()
+    return {
+        'online': random.randint(1200, 1500),
+        'battles': random.randint(5800, 6200),
+        'tournaments': random.randint(120, 140),
+        'posts': random.randint(40, 50)
+    }
+
 # Blueprints
 from blueprints.auth import auth_bp
 app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -61,3 +72,4 @@ if __name__ == '__main__':
         db.create_all()
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
