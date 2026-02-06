@@ -48,12 +48,41 @@ def login_page():
 
 @app.route('/api/stats')
 def stats():
-    from models import User, Post
+    from models import User, Post, Battle, Tournament, UserActivity
+    import datetime
+    
+    now = datetime.datetime.utcnow()
+    
+    # Реальная статистика
+    total_users = User.query.count()
+    total_posts = Post.query.count()
+    
+    # Сегодняшние бои (сброс в 00:00)
+    today_battles = Battle.query.filter(
+        Battle.timestamp >= now.replace(hour=0, minute=0, second=0, microsecond=0)
+    ).count()
+    
+    today_tournaments = Tournament.query.filter(
+        Tournament.timestamp >= now.replace(hour=0, minute=0, second=0, microsecond=0)
+    ).count()
+    
+    # АФК система (1 минута бездействия)
+    active_users = UserActivity.query.filter(
+        UserActivity.last_activity >= now - datetime.timedelta(minutes=1),
+        UserActivity.is_afk == False
+    ).count()
+    
+    afk_users = UserActivity.query.filter(
+        UserActivity.last_activity < now - datetime.timedelta(minutes=1)
+    ).count()
+    
     return {
-        'online': User.query.count(),
-        'battles': 5892,
-        'tournaments': 127,
-        'posts': Post.query.count()
+        'online': active_users,
+        'afk': afk_users,
+        'battles': today_battles,
+        'tournaments': today_tournaments,
+        'posts': total_posts,
+        'users': total_users
     }
 
 # Blueprints
@@ -71,6 +100,3 @@ if __name__ == '__main__':
         db.create_all()
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
-
-
-
