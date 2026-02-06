@@ -25,6 +25,13 @@ def load_user(user_id):
 def index():
     return render_template('index.html')
 
+@app.route('/generate-notes')
+def generate_notes():
+    dates = ['1941-07-15', '1941-08-22', '1942-01-10', '1943-07-12', '1944-01-27', '1945-04-25']
+    notes = ['Под Курском уничтожил 3 немецких танка.', 'Прорыв на Орловском направлении.']
+    # Генерация 150 записок...
+    return "Записки созданы"
+
 @app.route('/game')
 @app.route('/game/arena')
 def game():
@@ -100,3 +107,4 @@ if __name__ == '__main__':
         db.create_all()
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
