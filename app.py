@@ -68,7 +68,7 @@ def stats():
         posts_count = Post.query.count()
         
         return {
-            'online': recent_activity,
+            'online': recent_activity + afk_count,
             'afk': afk_count,
             'battles': battles_today,
             'tournaments': tournaments_today,
@@ -97,6 +97,7 @@ if __name__ == '__main__':
         db.create_all()
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
 
