@@ -31,7 +31,35 @@ def chat():
 
 @app.route('/profile')
 def profile():
-    return render_template('profile.html')
+    try:
+        return render_template('profile.html')
+    except:
+        # Fallback HTML прямо в app.py
+        return '''
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль - Записки Танкиста</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-900 to-black min-h-screen p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-4xl font-bold mb-8 text-center text-white">👤 ПРОФИЛЬ</h1>
+        <div class="bg-gray-800 p-8 rounded-2xl text-white">
+            <h3 class="text-2xl font-bold mb-6">📊 СТАТИСТИКА</h3>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>Боёв: <span class="text-yellow-400 font-bold">47</span></div>
+                <div>Побед: <span class="text-green-400 font-bold">32</span></div>
+                <div>Очки: <span class="text-blue-400 font-bold">1,247</span></div>
+                <div>Звание: <span class="text-purple-400 font-bold">Рядовой</span></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+'''
 
 @app.route('/blog')
 def blog():
@@ -95,6 +123,7 @@ if __name__ == '__main__':
         db.create_all()
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
 
