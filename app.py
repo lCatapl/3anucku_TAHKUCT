@@ -65,35 +65,89 @@ def chat():
 
 @app.route('/profile')
 def profile():
+    username = session.get('username', None)
+    
+    if not username:
+        return render_template('profile.html', guest=True)
+    
     try:
-        return render_template('profile.html')
-    except:
-        # Fallback HTML прямо в app.py
-        return '''
+        with app.app_context():
+            from models import User
+            
+            # НАХОДИМ ТОЧНОГО пользователя по сессии
+            user = User.query.filter_by(username=username).first()
+            
+            if user:
+                # РЕАЛЬНЫЕ ДАННЫЕ ИЗ БД
+                real_stats = {
+                    'battles': getattr(user, 'battles_total', 0),
+                    'wins': getattr(user, 'wins', 0),
+                    'points': getattr(user, 'points', 0),
+                    'rank': get_rank_name(getattr(user, 'points', 0)),
+                    'tank': getattr(user, 'main_tank', 'Т-34-85'),
+                    'joined': getattr(user, 'date_joined', 'Неизвестно').strftime('%d.%m.%Y')
+                }
+            else:
+                # Создаём запись если нет
+                user = User(username=username, battles_total=0, wins=0, points=0)
+                db.session.add(user)
+                db.session.commit()
+                real_stats = {'battles': 0, 'wins': 0, 'points': 0, 'rank': 'Новобранец', 'tank': 'Т-34-85'}
+                
+        return render_template('profile.html', 
+                             username=username, 
+                             stats=real_stats,
+                             guest=False)
+                             
+    except Exception as e:
+        # Fallback с реальными сессионными данными
+        return f'''
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Профиль - Записки Танкиста</title>
+    <title>Профиль {username} - Записки Танкиста</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gradient-to-br from-gray-900 to-black min-h-screen p-8">
     <div class="max-w-2xl mx-auto">
-        <h1 class="text-4xl font-bold mb-8 text-center text-white">👤 ПРОФИЛЬ</h1>
+        <h1 class="text-4xl font-bold mb-8 text-center text-white">👤 ПРОФИЛЬ {username}</h1>
         <div class="bg-gray-800 p-8 rounded-2xl text-white">
-            <h3 class="text-2xl font-bold mb-6">📊 СТАТИСТИКА</h3>
-            <div class="grid md:grid-cols-2 gap-4">
-                <div>Боёв: <span class="text-yellow-400 font-bold">47</span></div>
-                <div>Побед: <span class="text-green-400 font-bold">32</span></div>
-                <div>Очки: <span class="text-blue-400 font-bold">1,247</span></div>
-                <div>Звание: <span class="text-purple-400 font-bold">Рядовой</span></div>
+            <h3 class="text-2xl font-bold mb-6">📊 ТВОЯ РЕАЛЬНАЯ СТАТИСТИКА</h3>
+            <div class="grid md:grid-cols-2 gap-6 text-lg">
+                <div>🎯 Всего боёв: <span class="text-yellow-400 font-bold text-2xl">{session.get("battles_total", 0)}</span></div>
+                <div>🏆 Побед: <span class="text-green-400 font-bold text-2xl">{session.get("wins", 0)}</span></div>
+                <div>⭐ Очки опыта: <span class="text-blue-400 font-bold text-2xl">{session.get("points", 0)}</span></div>
+                <div>⚔️ Звание: <span class="text-purple-400 font-bold text-xl">{get_rank_name(session.get("points", 0))}</span></div>
+            </div>
+            <div class="mt-8 p-6 bg-gray-900 rounded-xl text-center">
+                <div class="w-24 h-24 bg-gradient-to-r from-gray-600 to-gray-400 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <span class="text-xl font-bold">T34</span>
+                </div>
+                <h3 class="text-xl font-bold mb-1">{session.get("main_tank", "Т-34-85")}</h3>
+                <p class="text-gray-400">Регистрация: {session.get("joined_date", "Сегодня")}</p>
             </div>
         </div>
     </div>
 </body>
 </html>
 '''
+
+def get_rank_name(points):
+    ranks = {
+        0: "Новобранец", 100: "Рядовой", 500: "Ефрейтор", 1000: "Капрал",
+        2500: "Мастер-капрал", 5000: "Сержант", 10000: "Штаб-сержант",
+        25000: "Мастер-сержант", 50000: "Первый сержант", 75000: "Сержант-майор",
+        100000: "Уорэнт-офицер 1", 150000: "Подполковник", 200000: "Полковник",
+        300000: "Бригадир", 400000: "Генерал-майор", 500000: "Генерал-лейтенант",
+        600000: "Генерал", 700000: "Маршал", 800000: "Фельдмаршал", 900000: "Командор",
+        950000: "Генералиссимус", 990000: "Легенда", 1000000: "Ветеран"
+    }
+    for threshold, rank_name in sorted(ranks.items(), reverse=True):
+        if points >= threshold:
+            return rank_name
+    return "Новобранец"
 
 @app.route('/blog')
 def blog():
@@ -157,6 +211,7 @@ if __name__ == '__main__':
         db.create_all()
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
 
