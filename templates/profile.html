@@ -1,13 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="max-w-2xl mx-auto">
-    <h1 class="text-4xl font-bold mb-8">👤 {{ user.username }}</h1>
-    <div class="bg-gray-800 p-8 rounded-2xl grid md:grid-cols-2 gap-8">
-        <div>
-            <p><strong>Очки:</strong> {{ user.points }}</p>
-            <p><strong>Побед:</strong> {{ user.wins }}</p>
-        </div>
-        <img src="{{ url_for('static', filename='images/' + user.avatar) }}" class="w-32 h-32 rounded-full mx-auto">
+    <h1 class="text-4xl font-bold mb-8">👤 Профиль</h1>
+    <div class="bg-gray-800 p-8 rounded-2xl">
+        <p class="text-xl mb-4">Гостевой профиль</p>
+        <p class="text-gray-400">Зарегистрируйтесь для статистики и лидерборда</p>
     </div>
 </div>
 {% endblock %}
