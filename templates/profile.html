@@ -1,22 +1,62 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="max-w-2xl mx-auto">
-    <h1 class="text-4xl font-bold mb-8">👤 ПРОФИЛЬ</h1>
-    <div class="grid md:grid-cols-2 gap-8">
-        <div class="bg-gray-800 p-8 rounded-2xl">
-            <h3 class="text-2xl font-bold mb-6">СТАТИСТИКА</h3>
-            <div class="space-y-4">
-                <div>Боёв: <span class="text-yellow-400 font-bold">47</span></div>
-                <div>Побед: <span class="text-green-400 font-bold">32</span></div>
-                <div>Очки: <span class="text-blue-400 font-bold">1,247</span></div>
-                <div>Ранг: <span class="text-purple-400 font-bold">Лейтенант</span></div>
-            </div>
-        </div>
-        <div class="bg-gray-800 p-8 rounded-2xl">
-            <img src="/static/images/t34.png" class="w-32 h-32 mx-auto rounded-full mb-4">
-            <h3 class="text-xl font-bold text-center mb-4">Т-34-85</h3>
-            <p class="text-center text-gray-400">Любимый танк</p>
+<div class="max-w-4xl mx-auto p-8">
+    {% if guest %}
+    <div class="text-center py-20">
+        <h1 class="text-5xl font-black mb-8 text-white">👤 ПРОФИЛЬ</h1>
+        <div class="bg-gray-800/50 backdrop-blur-xl p-12 rounded-3xl max-w-2xl mx-auto border border-white/20">
+            <p class="text-2xl text-gray-300 mb-8">Войдите чтобы увидеть свою статистику</p>
+            <a href="/auth/login" class="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 px-12 py-4 rounded-2xl font-black text-xl inline-block shadow-2xl hover:shadow-yellow-500/25">
+                🔐 ВОЙТИ
+            </a>
         </div>
     </div>
+    {% else %}
+    <div class="text-center mb-12">
+        <h1 class="text-5xl font-black mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            👤 ПРОФИЛЬ {{ username|upper }}
+        </h1>
+        <div class="bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-xl p-6 rounded-2xl inline-block border border-purple-500/30">
+            <span class="text-2xl font-bold text-purple-300">{{ stats.rank }}</span>
+        </div>
+    </div>
+    
+    <div class="grid lg:grid-cols-2 gap-8">
+        <!-- СТАТИСТИКА -->
+        <div class="bg-gray-800/50 backdrop-blur-xl p-10 rounded-3xl border border-white/10">
+            <h3 class="text-3xl font-bold mb-10 text-center text-white">📊 ТВОЯ СТАТИСТИКА</h3>
+            <div class="grid md:grid-cols-2 gap-8 text-center">
+                <div class="p-8 bg-gray-900/50 rounded-2xl border border-yellow-500/30">
+                    <div class="text-4xl font-black text-yellow-400 mb-2">🎯 {{ stats.battles }}</div>
+                    <div class="text-lg text-gray-300">Всего боёв</div>
+                </div>
+                <div class="p-8 bg-gray-900/50 rounded-2xl border border-green-500/30">
+                    <div class="text-4xl font-black text-green-400 mb-2">🏆 {{ stats.wins }}</div>
+                    <div class="text-lg text-gray-300">Побед</div>
+                </div>
+                <div class="p-8 bg-gray-900/50 rounded-2xl border border-blue-500/30">
+                    <div class="text-4xl font-black text-blue-400 mb-2">⭐ {{ stats.points }}</div>
+                    <div class="text-lg text-gray-300">Очки опыта</div>
+                </div>
+                <div class="p-8 bg-gray-900/50 rounded-2xl border border-purple-500/30">
+                    <div class="text-2xl font-bold text-purple-400 mb-2">{{ stats.rank }}</div>
+                    <div class="text-lg text-gray-300">Звание</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ТАНК -->
+        <div class="bg-gray-900/50 backdrop-blur-xl p-10 rounded-3xl border border-white/10 text-center">
+            <div class="w-40 h-40 bg-gradient-to-br from-gray-700 to-gray-600 rounded-full mx-auto mb-8 flex items-center justify-center shadow-2xl">
+                <span class="text-3xl font-black text-white">⚔️</span>
+            </div>
+            <h3 class="text-3xl font-bold mb-4 text-white">{{ stats.tank }}</h3>
+            <p class="text-xl text-gray-400 mb-8">Основной танк</p>
+            <div class="text-lg text-gray-300">
+                <div>Зарегистрирован: {{ stats.joined }}</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
