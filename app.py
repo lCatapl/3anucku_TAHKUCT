@@ -17,9 +17,43 @@ db.init_app(app)
 def index():
     return render_template('index.html')
 
-@app.route('/auth/login')
-def login_page():
-    return redirect(url_for('auth.login'))
+@app.route('/auth/login', methods=['GET', 'POST'])
+def auth_login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        # Простая проверка (замени на свою БД логику)
+        if username == 'admin' and password == '123':  # ТЕСТОВЫЕ ДАННЫЕ
+            session['user_id'] = username
+            session['username'] = username
+            return redirect('/')
+        else:
+            return render_template('login.html', error='Неверный логин/пароль')
+    
+    return render_template('login.html')
+
+@app.route('/auth/logout')
+def auth_logout():
+    session.clear()
+    return redirect('/')
+
+@app.route('/auth/register', methods=['GET', 'POST'])
+def auth_register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        session['user_id'] = username
+        session['username'] = username
+        return redirect('/')
+    return '''
+    <h1>Регистрация</h1>
+    <form method="post">
+        Имя: <input name="username"><br>
+        Пароль: <input name="password" type="password"><br>
+        <input type="submit">
+    </form>
+    '''
 
 @app.route('/game')
 def game():
@@ -123,6 +157,7 @@ if __name__ == '__main__':
         db.create_all()
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
 
