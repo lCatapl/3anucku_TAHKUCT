@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from config import DevelopmentConfig
@@ -10,7 +10,7 @@ app.config.from_object(DevelopmentConfig)
 
 db = SQLAlchemy(app)
 
-# 🔥 ФИКС: LoginManager + user_loader
+# Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'auth.login'
@@ -19,22 +19,36 @@ login_manager.login_view = 'auth.login'
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Blueprints
-from blueprints.auth import auth_bp
-from blueprints.game import game_bp
-from blueprints.chat import chat_bp
-from blueprints.profile import profile_bp
-from blueprints.blog import blog_bp
-
-app.register_blueprint(auth_bp)
-app.register_blueprint(game_bp)
-app.register_blueprint(chat_bp)
-app.register_blueprint(profile_bp)
-app.register_blueprint(blog_bp)
-
+# 🔥 РОУТЫ ДЛЯ КНОПОК (ИСПРАВЛЕНО)
 @app.route('/')
+@app.route('/index')
 def index():
     return render_template('index.html')
+
+@app.route('/game')
+@app.route('/game/arena')
+def game():
+    return render_template('game.html')
+
+@app.route('/chat')
+def chat():
+    return render_template('chat.html')
+
+@app.route('/profile')
+def profile():
+    return render_template('profile.html')
+
+@app.route('/blog')
+def blog():
+    return render_template('blog.html')
+
+@app.route('/auth/login')
+def login_page():
+    return render_template('auth/login.html')
+
+# Blueprints
+from blueprints.auth import auth_bp
+app.register_blueprint(auth_bp, url_prefix='/auth')
 
 @app.route('/init-db')
 def init_db():
