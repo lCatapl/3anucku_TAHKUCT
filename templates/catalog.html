@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto p-8">
+    <h1 class="text-6xl font-black mb-16 text-center bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+        🛒 ТАНКОВЫЙ КАТАЛОГ
+    </h1>
+    
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        {% for tank_name, stats in tanks.items() %}
+        <div class="group bg-gradient-to-b from-gray-800/50 to-gray-900/50 backdrop-blur-xl p-8 rounded-3xl border-2 border-white/10 hover:border-yellow-400/50 hover:bg-yellow-500/10 transition-all duration-300 hover:scale-105 shadow-2xl">
+            <div class="text-center mb-6">
+                <div class="text-4xl mb-4">{{ tank_name }}</div>
+                <div class="inline-flex items-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 px-4 py-2 rounded-xl text-lg font-bold text-white mb-6">
+                    <span>УР.{{ stats.tier }}</span>
+                    <span class="text-xs">{{ stats.nation }}</span>
+                </div>
+            </div>
+            
+            <div class="space-y-4 mb-8">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">❤️ HP</span>
+                    <span class="font-bold text-red-400">{{ stats.hp }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">💥 Урон</span>
+                    <span class="font-bold text-yellow-400">{{ stats.damage }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-400">⚡ Скорость</span>
+                    <span class="font-bold text-blue-400">{{ stats.speed }} км/ч</span>
+                </div>
+            </div>
+            
+            <div class="p-4 bg-gradient-to-r from-emerald-500/20 to-green-500/20 rounded-2xl border border-emerald-400/50 mb-6">
+                <div class="flex items-center justify-between text-xl">
+                    <span class="font-black text-emerald-400">💰 {{ stats.price }}</span>
+                    <button onclick="buyTank('{{ tank_name }}')" 
+                            class="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 px-6 py-3 rounded-xl font-black text-lg shadow-lg hover:shadow-emerald-500/25 transition-all ml-auto">
+                        КУПИТЬ
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function buyTank(tankName) {
+    fetch('/api/buy-tank', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({tank: tankName})
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'ok') {
+            alert(`✅ Танк ${tankName} куплен! Осталось очков: ${data.points_left}`);
+            location.reload();
+        } else {
+            alert(`❌ ${data.error}`);
+        }
+    });
+}
+</script>
+{% endblock %}
