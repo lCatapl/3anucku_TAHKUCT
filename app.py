@@ -54,10 +54,11 @@ class Note(db.Model):
 
 # 🔥 ГАРАЖ И КАТАЛОГ - РЕАЛЬНЫЕ ТАНКИ WoT
 TANK_CATALOG = {
+    'МС-1': {'price': 0, 'hp': 10, 'damage': 5, 'speed': 50, 'tier': 1, 'nation': 'СССР'},
     'Т-34-85': {'price': 500, 'hp': 100, 'damage': 25, 'speed': 45, 'tier': 6, 'nation': 'СССР'},
     'ИС-2': {'price': 1500, 'hp': 150, 'damage': 40, 'speed': 35, 'tier': 7, 'nation': 'СССР'},
     'КВ-1': {'price': 2000, 'hp': 200, 'damage': 30, 'speed': 25, 'tier': 6, 'nation': 'СССР'},
-    'Т-34/76': {'price': 300, 'hp': 85, 'damage': 20, 'speed': 50, 'tier': 5, 'nation': 'СССР'},
+    'Т-34': {'price': 300, 'hp': 85, 'damage': 20, 'speed': 50, 'tier': 5, 'nation': 'СССР'},
     'СУ-152': {'price': 2500, 'hp': 120, 'damage': 60, 'speed': 30, 'tier': 7, 'nation': 'СССР'},
     'Т-54': {'price': 3500, 'hp': 110, 'damage': 35, 'speed': 42, 'tier': 8, 'nation': 'СССР'},
     'Т-10М': {'price': 8000, 'hp': 180, 'damage': 50, 'speed': 38, 'tier': 10, 'nation': 'СССР'},
@@ -441,3 +442,4 @@ def game_battle():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
