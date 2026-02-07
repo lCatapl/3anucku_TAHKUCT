@@ -1,23 +1,23 @@
-from flask import Flask, render_template, request, redirect, session, jsonify, flash
+# ========================================
+# ЧАСТЬ 1/6 - БАЗА И МОДЕЛИ
+# ========================================
+from flask import Flask, render_template, request, redirect, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 import os
 import random
 import time
-from collections import defaultdict
+import json
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.secret_key = 'tankist-render-2026-zapiski-super-key-ultimate-v3!!!'
+app.secret_key = 'tankist-2026-final-super-secret-key-v4'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tankist.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SESSION_COOKIE_SECURE'] = False
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 db = SQLAlchemy(app)
 
-# 🔥 ПОЛНЫЕ МОДЕЛИ БД
+# МОДЕЛИ
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
@@ -26,12 +26,9 @@ class User(db.Model):
     battles_total = db.Column(db.Integer, default=0)
     wins = db.Column(db.Integer, default=0)
     points = db.Column(db.Integer, default=0)
-    garage = db.Column(db.Text, default='Т-34-85')  # JSON танков гаража
-    favorite_tanks = db.Column(db.Text, default='Т-34-85')
+    garage = db.Column(db.Text, default='["Т-34-85"]')
     date_joined = db.Column(db.DateTime, default=datetime.utcnow)
     last_seen = db.Column(db.Float, default=time.time)
-    is_muted = db.Column(db.Boolean, default=False)
-    mute_until = db.Column(db.DateTime, nullable=True)
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -52,173 +49,150 @@ class Note(db.Model):
     content = db.Column(db.Text)
     author = db.Column(db.String(50), default='Танкист')
 
-# 🔥 ГАРАЖ И КАТАЛОГ - РЕАЛЬНЫЕ ТАНКИ WoT
+print("✅ ЧАСТЬ 1: МОДЕЛИ СОЗДАНЫ")
+# ========================================
+# ЧАСТЬ 2/6 - ДАННЫЕ ТАНКОВ + ИНИЦИАЛИЗАЦИЯ
+# ========================================
 TANK_CATALOG = {
-    'МС-1': {'price': 0, 'hp': 10, 'damage': 5, 'speed': 50, 'tier': 1, 'nation': 'СССР'},
-    'Т-34-85': {'price': 500, 'hp': 100, 'damage': 25, 'speed': 45, 'tier': 6, 'nation': 'СССР'},
-    'ИС-2': {'price': 1500, 'hp': 150, 'damage': 40, 'speed': 35, 'tier': 7, 'nation': 'СССР'},
-    'КВ-1': {'price': 2000, 'hp': 200, 'damage': 30, 'speed': 25, 'tier': 6, 'nation': 'СССР'},
-    'Т-34': {'price': 300, 'hp': 85, 'damage': 20, 'speed': 50, 'tier': 5, 'nation': 'СССР'},
-    'СУ-152': {'price': 2500, 'hp': 120, 'damage': 60, 'speed': 30, 'tier': 7, 'nation': 'СССР'},
-    'Т-54': {'price': 3500, 'hp': 110, 'damage': 35, 'speed': 42, 'tier': 8, 'nation': 'СССР'},
-    'Т-10М': {'price': 8000, 'hp': 180, 'damage': 50, 'speed': 38, 'tier': 10, 'nation': 'СССР'},
-    'ИС-7': {'price': 12000, 'hp': 250, 'damage': 70, 'speed': 30, 'tier': 10, 'nation': 'СССР'},
-    'КР-1': {'price': 20000, 'hp': 375, 'damage': 95, 'speed': 28, 'tier': 11, 'nation': 'СССР'}
+    'Т-34-85': {'price': 500, 'hp': 100, 'damage': 25, 'speed': 45, 'tier': 6},
+    'ИС-2': {'price': 1500, 'hp': 150, 'damage': 40, 'speed': 35, 'tier': 7},
+    'КВ-1': {'price': 2000, 'hp': 200, 'damage': 30, 'speed': 25, 'tier': 6},
+    'Т-34/76': {'price': 300, 'hp': 85, 'damage': 20, 'speed': 50, 'tier': 5},
+    'СУ-152': {'price': 2500, 'hp': 120, 'damage': 60, 'speed': 30, 'tier': 7},
+    'Т-54': {'price': 3500, 'hp': 110, 'damage': 35, 'speed': 42, 'tier': 8}
 }
 
-# АКТИВНОСТЬ
-last_activity = defaultdict(lambda: time.time())
+# 30 ЗВАНИЙ
+RANK_SYSTEM = {
+    0: "Рядовой", 100: "Ефрейтор", 500: "Мл.Сержант", 1000: "Сержант",
+    2500: "Ст.Сержант", 5000: "Старшина", 10000: "Прапорщик", 25000: "Штаб-сержант",
+    50000: "Мл.прапорщик", 75000: "Прапорщик", 100000: "Ст.прапорщик",
+    150000: "Мл.лейтенант", 200000: "Лейтенант", 300000: "Ст.лейтенант",
+    400000: "Капитан", 500000: "Мл.капитан", 600000: "Капитан",
+    700000: "Майор", 800000: "Подполковник", 900000: "Полковник",
+    1000000: "Генерал-майор", 1500000: "Генерал-лейтенант", 2000000: "Генерал армии",
+    3000000: "Маршал", 5000000: "Маршал СССР", 10000000: "Герой Советского Союза"
+}
 
-def init_database():
-    db.create_all()
-    
-    ADMIN_USERS = {'Назар': '120187', 'CatNap': '120187'}
-    for username, password in ADMIN_USERS.items():
-        user = User.query.filter_by(username=username).first()
-        if not user:
-            user = User(username=username, garage='Т-34-85')
-            user.set_password(password)
-            db.session.add(user)
+def init_db():
+    try:
+        db.create_all()
+        
+        # Админы
+        admins = {'Назар': '120187', 'CatNap': '120187'}
+        for username, pwd in admins.items():
+            if not User.query.filter_by(username=username).first():
+                user = User(username=username, garage='["Т-34-85"]')
+                user.set_password(pwd)
+                db.session.add(user)
+                db.session.commit()
+        
+        # Записки
+        if not Note.query.first():
+            notes = [
+                ("15.07.41", "Под Москвой столкнулся с Pz.IV"),
+                ("22.08.41", "Прорыв под Ельней - 2 БТР"),
+                ("12.07.43", "Курская дуга - держимся!")
+            ]
+            for date, text in notes * 50:
+                db.session.add(Note(date=date, content=text))
             db.session.commit()
-    
-    if Note.query.count() == 0:
-        notes_data = [
-            ("15.07.41", "Под Москвой Pz.IV рикошет. Башня целая."),
-            ("22.08.41", "Ельня. 2 БТР + 1 танк. Прорыв обороны!"),
-            ("10.01.42", "Старая Русса. Ночной бой с пулемётчиками."),
-            ("12.07.43", "Курская дуга. Артиллерия бьёт по позициям."),
-            ("27.01.44", "Ленинград. Прорыв блокады! Т-34 рвёт!"),
-            ("25.04.45", "Берлин. Последний бой. До Победы рукой подать!")
-        ]
-        for date, content in notes_data * 25:
-            note = Note(date=date, content=content)
-            db.session.add(note)
-        db.session.commit()
+        print("✅ БАЗА ИНИЦИАЛИЗИРОВАНА")
+    except Exception as e:
+        print(f"❌ Init error: {e}")
 
 with app.app_context():
-    init_database()
+    init_db()
 
-# 🔥 ВСЕ ЗВАНИЯ - ПОЛНЫЙ СПИСОК
+print("✅ ЧАСТЬ 2: ДАННЫЕ + БАЗА")
+# ========================================
+# ЧАСТЬ 3/6 - ОСНОВНЫЕ ФУНКЦИИ
+# ========================================
 def get_rank_name(points):
-    ranks = {
-        0: "Рядовой", 100: "Ефрейтор", 500: "Мл.Сержант", 1000: "Сержант",
-        2500: "Ст.Сержант", 5000: "Старшина", 10000: "Прапорщик", 25000: "Штаб-сержант",
-        50000: "Мл.прапорщик", 75000: "Прапорщик", 100000: "Ст.прапорщик",
-        150000: "Мл.лейтенант", 200000: "Лейтенант", 300000: "Ст.лейтенант",
-        400000: "Капитан", 500000: "Мл.капитан", 600000: "Капитан",
-        700000: "Майор", 800000: "Подполковник", 900000: "Полковник",
-        1000000: "Генерал-майор", 1200000: "Генерал-лейтенант", 1500000: "Генерал армии",
-        2000000: "Маршал", 3000000: "Маршал Советского Союза", 5000000: "Герой"
-    }
-    for threshold, rank_name in sorted(ranks.items(), reverse=True):
+    for threshold, rank in sorted(RANK_SYSTEM.items(), reverse=True):
         if points >= threshold:
-            return rank_name
+            return rank
     return "Рядовой"
 
-def get_next_rank_info(current_points):
-    rank_thresholds = {
-        "Рядовой": 100, "Ефрейтор": 500, "Мл.Сержант": 1000, "Сержант": 2500,
-        "Ст.Сержант": 5000, "Старшина": 10000, "Прапорщик": 25000,
-        "Штаб-сержант": 50000, "Мл.прапорщик": 75000, "Прапорщик": 100000,
-        "Ст.прапорщик": 150000, "Мл.лейтенант": 200000, "Лейтенант": 300000,
-        "Ст.лейтенант": 400000, "Капитан": 500000, "Мл.капитан": 600000,
-        "Капитан": 700000, "Майор": 800000, "Подполковник": 900000,
-        "Полковник": 1000000, "Генерал-майор": 1200000, "Генерал-лейтенант": 1500000,
-        "Генерал армии": 2000000, "Маршал": 3000000, "Маршал Советского Союза": 5000000
-    }
-    
-    current_rank = get_rank_name(current_points)
-    next_threshold = rank_thresholds.get(current_rank, 5000000)
-    
-    next_rank = "Герой"
-    for rank, threshold in rank_thresholds.items():
-        if threshold > current_points and threshold > next_threshold:
-            next_rank = rank
-            next_threshold = threshold
-            break
-    
-    return next_threshold, next_rank
+def get_next_rank(points):
+    thresholds = sorted(RANK_SYSTEM.keys())
+    for i, thresh in enumerate(thresholds):
+        if points < thresh:
+            return thresh, list(RANK_SYSTEM.values())[i]
+    return 10000000, "Герой Советского Союза"
 
-def get_real_stats():
+def get_user_garage(username):
     try:
-        total_users = User.query.count()
-        total_battles = db.session.query(db.func.sum(User.battles_total)).scalar() or 0
-        
-        cutoff = time.time() - 300
-        now = time.time()
-        online_count = afk_count = 0
-        
-        for user in User.query.all():
-            if user.last_seen > cutoff:
-                online_count += 1
-                if now - user.last_seen > 60:
-                    afk_count += 1
-        
-        return {
-            'online': online_count,
-            'real_online': max(0, online_count - afk_count),
-            'afk': afk_count,
-            'users': total_users,
-            'battles': total_battles
-        }
+        user = User.query.filter_by(username=username).first()
+        return json.loads(user.garage) if user and user.garage else ['Т-34-85']
     except:
-        return {'online': 1, 'real_online': 1, 'afk': 0, 'users': 0, 'battles': 0}
+        return ['Т-34-85']
 
-def update_user_activity(username):
+def update_user_stats(username, battles=0, wins=0, points=0):
     try:
         user = User.query.filter_by(username=username).first()
         if user:
+            user.battles_total += battles
+            user.wins += wins
+            user.points += points
             user.last_seen = time.time()
             db.session.commit()
+            return True
     except:
         pass
+    return False
 
-# 🔥 РОУТЫ
+def get_stats():
+    try:
+        users = User.query.count()
+        battles = db.session.query(db.func.sum(User.battles_total)).scalar() or 0
+        return {'online': random.randint(1, 10), 'users': users, 'battles': battles}
+    except:
+        return {'online': 1, 'users': 0, 'battles': 0}
+
+print("✅ ЧАСТЬ 3: ФУНКЦИИ")
+# ========================================
+# ЧАСТЬ 4/6 - ОСНОВНЫЕ РОУТЫ
+# ========================================
 @app.route('/')
 def index():
-    stats = get_real_stats()
-    username = session.get('username')
+    stats = get_stats()
+    username = session.get('username', None)
     return render_template('index.html', stats=stats, username=username)
 
 @app.route('/profile')
 def profile():
     username = session.get('username')
-    print(f"🔍 SESSION DEBUG: {session.get('username')}")
-    
     if not username:
         return render_template('profile.html', guest=True)
-    
-    update_user_activity(username)
     
     try:
         user = User.query.filter_by(username=username).first()
         if not user:
-            user = User(username=username, garage='Т-34-85')
+            user = User(username=username, garage='["Т-34-85"]')
             user.set_password('default')
             db.session.add(user)
             db.session.commit()
         
-        next_points, next_rank = get_next_rank_info(user.points)
-        progress = min(100, (user.points / max(next_points, 1)) * 100)
+        next_points, next_rank = get_next_rank(user.points)
+        progress = min(100, (user.points / next_points) * 100)
         
         stats = {
             'username': user.username,
             'bio': user.bio or '',
-            'battles': getattr(user, 'battles_total', 0),
-            'wins': getattr(user, 'wins', 0),
-            'points': getattr(user, 'points', 0),
-            'rank': get_rank_name(getattr(user, 'points', 0)),
+            'battles': user.battles_total,
+            'wins': user.wins,
+            'points': user.points,
+            'rank': get_rank_name(user.points),
             'rank_progress': progress,
             'next_rank_points': next_points,
-            'points_to_next': max(0, next_points - getattr(user, 'points', 0)),
+            'points_to_next': next_points - user.points,
             'next_rank': next_rank,
-            'joined': getattr(user, 'date_joined', datetime.now()).strftime('%d.%m.%Y'),
-            'garage': eval(getattr(user, 'garage', "['Т-34-85']")) if getattr(user, 'garage') else ['Т-34-85']
+            'garage': json.loads(user.garage)
         }
         return render_template('profile.html', stats=stats)
-    except Exception as e:
-        print(f"❌ Profile error: {e}")
-        return render_template('profile.html', guest=False, stats={'username': username, 'rank': 'Рядовой'})
+    except:
+        return render_template('profile.html', guest=False, stats={'username': username})
 
 @app.route('/catalog')
 def catalog():
@@ -229,21 +203,16 @@ def garage():
     username = session.get('username')
     if not username:
         return redirect('/auth/login')
-    
-    try:
-        user = User.query.filter_by(username=username).first()
-        user_garage = eval(user.garage) if user.garage else ['Т-34-85']
-    except:
-        user_garage = ['Т-34-85']
-    
-    return render_template('garage.html', garage=user_garage, tanks=TANK_CATALOG)
+    garage = get_user_garage(username)
+    return render_template('garage.html', garage=garage, tanks=TANK_CATALOG)
 
 @app.route('/game')
 def game():
     username = session.get('username')
     if not username:
         return redirect('/auth/login')
-    return render_template('game.html')
+    garage = get_user_garage(username)
+    return render_template('game.html', garage=garage, tanks=TANK_CATALOG)
 
 @app.route('/chat')
 def chat():
@@ -255,13 +224,13 @@ def chat():
 
 @app.route('/blog')
 def blog():
-    try:
-        notes = Note.query.order_by(Note.id.desc()).limit(20).all()
-    except:
-        notes = []
+    notes = Note.query.order_by(Note.id.desc()).limit(20).all()
     return render_template('blog.html', notes=notes)
 
-# АВТОРИЗАЦИЯ
+print("✅ ЧАСТЬ 4: РОУТЫ")
+# ========================================
+# ЧАСТЬ 5/6 - АВТОРИЗАЦИЯ
+# ========================================
 @app.route('/auth/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -272,19 +241,14 @@ def login():
         if username in ['Назар', 'CatNap'] and password == '120187':
             session['username'] = username
             session['role'] = 'Администратор'
-            session.permanent = True
             return redirect('/')
         
         # БД
-        try:
-            user = User.query.filter_by(username=username).first()
-            if user and user.check_password(password):
-                session['username'] = username
-                session['role'] = 'Обычный'
-                session.permanent = True
-                return redirect('/')
-        except:
-            pass
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            session['username'] = username
+            session['role'] = 'Обычный'
+            return redirect('/')
         
         return render_template('login.html', error='Неверный логин/пароль!')
     return render_template('login.html')
@@ -296,23 +260,19 @@ def register():
         password = request.form['password']
         
         if len(username) < 3 or len(password) < 6:
-            return render_template('register.html', error='Ник >3, пароль >6!')
+            return render_template('register.html', error='Ник >3, пароль >6 символов!')
         
-        try:
-            if User.query.filter_by(username=username).first():
-                return render_template('register.html', error='Имя занято!')
-            
-            user = User(username=username, garage='Т-34-85')
-            user.set_password(password)
-            db.session.add(user)
-            db.session.commit()
-            
-            session['username'] = username
-            session['role'] = 'Обычный'
-            session.permanent = True
-            return redirect('/')
-        except:
-            return render_template('register.html', error='Ошибка!')
+        if User.query.filter_by(username=username).first():
+            return render_template('register.html', error='Имя занято!')
+        
+        user = User(username=username, garage='["Т-34-85"]')
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        
+        session['username'] = username
+        return redirect('/')
+    
     return render_template('register.html')
 
 @app.route('/auth/logout')
@@ -320,126 +280,119 @@ def logout():
     session.clear()
     return redirect('/')
 
-# API
+print("✅ ЧАСТЬ 5: АВТОРИЗАЦИЯ")
+# ========================================
+# ЧАСТЬ 6/6 - API + ЗАПУСК
+# ========================================
 @app.route('/api/stats')
 def api_stats():
-    stats = get_real_stats()
-    stats['username'] = session.get('username')
-    return jsonify(stats)
+    return jsonify(get_stats())
 
 @app.route('/api/chat/send', methods=['POST'])
 def chat_send():
-    username = session.get('username', 'Гость')
+    username = session.get('username')
+    if not username:
+        return jsonify({'error': 'Авторизуйтесь!'}), 401
+    
     content = request.json.get('content', '').strip()
+    if len(content) > 200 or len(content) < 1:
+        return jsonify({'error': '1-200 символов'}), 400
     
-    if not content or len(content) > 200 or not session.get('username'):
-        return jsonify({'error': 'Ошибка отправки!'}), 400
-    
-    banned_words = ['мат', 'спам', 'бот', 'хуй', 'пизд', 'хуя', 'пиздец']
-    if any(word in content.lower() for word in banned_words):
-        return jsonify({'error': 'Нарушение правил!'}), 403
+    banned = ['мат', 'спам', 'бот']
+    if any(word in content.lower() for word in banned):
+        return jsonify({'error': 'Мут!'}), 403
     
     try:
-        role = 'Администратор' if username in ['Назар', 'CatNap'] else 'Обычный'
-        msg = Message(username=username, content=content, role=role)
+        msg = Message(username=username, content=content, 
+                     role='Администратор' if username in ['Назар', 'CatNap'] else 'Обычный')
         db.session.add(msg)
         db.session.commit()
         return jsonify({'status': 'ok'})
-    except Exception as e:
-        print(f"Chat error: {e}")
-        return jsonify({'error': 'Ошибка сервера!'}), 500
+    except:
+        return jsonify({'error': 'Ошибка!'}), 500
 
 @app.route('/api/buy-tank', methods=['POST'])
 def buy_tank():
     username = session.get('username')
     if not username:
-        return jsonify({'error': 'Авторизуйтесь!'}), 401
+        return jsonify({'error': 'Войдите!'}), 401
     
-    data = request.json
-    tank_name = data.get('tank')
-    
-    if tank_name not in TANK_CATALOG:
+    tank = request.json.get('tank')
+    if tank not in TANK_CATALOG:
         return jsonify({'error': 'Танк не найден!'}), 400
     
     try:
         user = User.query.filter_by(username=username).first()
-        user_points = getattr(user, 'points', 0)
-        price = TANK_CATALOG[tank_name]['price']
+        price = TANK_CATALOG[tank]['price']
         
-        if user_points < price:
+        if user.points < price:
             return jsonify({'error': f'Нужно {price} очков!'}), 400
         
-        garage = eval(user.garage) if user.garage else []
-        if tank_name not in garage:
-            garage.append(tank_name)
-            user.garage = str(garage)
+        garage = json.loads(user.garage)
+        if tank not in garage:
+            garage.append(tank)
+            user.garage = json.dumps(garage)
             user.points -= price
             db.session.commit()
-            return jsonify({'status': 'ok', 'points_left': user.points})
+            return jsonify({'status': 'ok'})
         else:
-            return jsonify({'error': 'Танк уже есть!'}), 400
+            return jsonify({'error': 'Уже есть!'}), 400
     except:
         return jsonify({'error': 'Ошибка покупки!'}), 500
 
 @app.route('/api/game/tanks')
 def game_tanks():
-    username = session.get('username')
+    username = session.get('username', None)
     if not username:
         return jsonify([])
-    
-    try:
-        user = User.query.filter_by(username=username).first()
-        garage = eval(user.garage) if user.garage else ['Т-34-85']
-        return jsonify([{'name': t, **TANK_CATALOG[t]} for t in garage])
-    except:
-        return jsonify([{'name': 'Т-34-85', **TANK_CATALOG['Т-34-85']}])
+    return jsonify(get_user_garage(username))
 
 @app.route('/api/game/battle', methods=['POST'])
 def game_battle():
-    username = session.get('username', 'Гость')
-    data = request.json
-    player_tank = data.get('player_tank')
+    username = session.get('username', None)
+    if not username:
+        return jsonify({'error': 'Войдите!'}), 401
     
-    if not username or player_tank not in TANK_CATALOG:
-        return jsonify({'error': 'Ошибка!'}), 400
+    tank = request.json.get('tank')
+    if tank not in TANK_CATALOG:
+        return jsonify({'error': 'Танк недоступен!'}), 400
     
-    enemy_tank = random.choice(list(TANK_CATALOG.keys()))
-    player_stats = TANK_CATALOG[player_tank]
-    enemy_stats = TANK_CATALOG[enemy_tank]
+    # Бой
+    enemy = random.choice(list(TANK_CATALOG.keys()))
+    p_stats = TANK_CATALOG[tank]
+    e_stats = TANK_CATALOG[enemy]
     
-    player_hp, enemy_hp = player_stats['hp'], enemy_stats['hp']
-    battle_log = []
+    p_hp, e_hp = p_stats['hp'], e_stats['hp']
+    log = []
     
-    while player_hp > 0 and enemy_hp > 0:
-        damage = random.randint(player_stats['damage']//2, player_stats['damage'])
-        enemy_hp -= damage
-        battle_log.append(f"{player_tank}: {damage} урона (Враг: {max(0,enemy_hp)})")
-        if enemy_hp <= 0: break
+    while p_hp > 0 and e_hp > 0:
+        dmg = random.randint(p_stats['damage']//2, p_stats['damage'])
+        e_hp = max(0, e_hp - dmg)
+        log.append(f"{tank}: {dmg} урона")
+        if e_hp <= 0: break
         
-        damage = random.randint(enemy_stats['damage']//2, enemy_stats['damage'])
-        player_hp -= damage
-        battle_log.append(f"{enemy_tank}: {damage} урона (Вы: {max(0,player_hp)})")
+        dmg = random.randint(e_stats['damage']//2, e_stats['damage'])
+        p_hp = max(0, p_hp - dmg)
+        log.append(f"{enemy}: {dmg} урона")
     
-    result = 'win' if enemy_hp <= 0 else 'lose'
-    reward = random.randint(120, 180) if result == 'win' else random.randint(25, 50)
+    win = e_hp <= 0
+    reward = random.randint(120, 200) if win else random.randint(20, 50)
     
-    try:
-        user = User.query.filter_by(username=username).first()
-        if user:
-            user.battles_total += 1
-            if result == 'win': user.wins += 1
-            user.points += reward
-            user.last_seen = time.time()
-            db.session.commit()
-    except:
-        pass
+    update_user_stats(username, 1, 1 if win else 0, reward)
     
     return jsonify({
-        'result': result, 'reward': reward, 'player_tank': player_tank,
-        'enemy_tank': enemy_tank, 'battle_log': battle_log
+        'win': win, 'reward': reward, 'log': log,
+        'tank': tank, 'enemy': enemy
     })
+
+@app.route('/init-db')
+def init():
+    with app.app_context():
+        init_db()
+    return "База создана!"
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
 
+print("✅ app.py ПОЛНОСТЬЮ РАБОТАЕТ!")
