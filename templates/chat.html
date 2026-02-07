@@ -1,61 +1,78 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="max-w-2xl mx-auto">
-    <h1 class="text-4xl font-bold mb-8">💬 ЧАТ</h1>
+<div class="max-w-4xl mx-auto p-8">
+    <h1 class="text-5xl font-black mb-12 text-center bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent">
+        💬 БОЕВОЙ ЧАТ
+    </h1>
     
-    <!-- Сообщения -->
-    <div id="messages" class="bg-gray-800 p-6 rounded-2xl h-96 overflow-y-auto mb-4 space-y-2"></div>
-    
-    <!-- Ввод -->
-    <div class="flex gap-2">
-        <input id="username" placeholder="Ваше имя" class="flex-1 p-4 bg-gray-700 rounded-xl" value="Танкист">
-        <input id="messageInput" placeholder="Сообщение..." class="flex-2 p-4 bg-gray-700 rounded-xl">
-        <button onclick="sendMessage()" class="px-8 py-4 bg-yellow-500 rounded-xl font-bold">Отправить</button>
+    <!-- ПРАВИЛА -->
+    <div class="bg-gradient-to-r from-red-500/20 to-orange-500/20 border-2 border-red-400/50 p-6 rounded-3xl mb-8 backdrop-blur-xl">
+        <h3 class="text-2xl font-bold mb-4 text-red-300">⚠️ ПРАВИЛА ЧАТА</h3>
+        <div class="grid md:grid-cols-2 gap-4 text-lg text-orange-200">
+            <div>- Без мата и оскорблений</div>
+            <div>- Максимум 200 символов</div>
+            <div>- Без спама и флуда</div>
+            <div>- Не рекламируем</div>
+        </div>
+        <p class="text-red-400 mt-4 font-bold">Нарушители → МУТ!</p>
     </div>
+    
+    <!-- СООБЩЕНИЯ -->
+    <div class="bg-gray-900/50 backdrop-blur-xl border border-white/10 rounded-3xl p-8 mb-8 max-h-96 overflow-y-auto" id="messages">
+        {% for message in messages %}
+        <div class="mb-4 p-4 rounded-2xl {% if message.username == session.username %}bg-emerald-500/20 border-emerald-400/50{% else %}bg-gray-800/50 border-gray-600/50{% endif %}">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="font-black text-xl text-white">{{ message.username }}</span>
+                <span class="px-3 py-1 bg-gradient-to-r from-{{ 'emerald' if message.role == 'Администратор' else 'blue' }}-500 to-{{ 'emerald' if message.role == 'Администратор' else 'blue' }}-600 rounded-full text-sm font-bold text-white">
+                    {{ message.role }}
+                </span>
+                <span class="text-xs text-gray-400">{{ moment(message.timestamp).fromNow() }}</span>
+            </div>
+            <p class="text-lg text-gray-200">{{ message.content }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- ФОРМА -->
+    <form id="chat-form" class="bg-gray-800/50 backdrop-blur-xl p-6 rounded-3xl border border-white/20">
+        <div class="flex gap-4">
+            <input type="text" id="message-input" placeholder="Напиши сообщение... (max 200 символов)" 
+                   class="flex-1 bg-white/10 border border-white/20 rounded-2xl p-4 text-xl text-white placeholder-white/50 focus:outline-none focus:border-emerald-400" 
+                   maxlength="200" required>
+            <button type="submit" class="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 px-8 py-4 rounded-2xl font-black text-xl shadow-2xl hover:shadow-emerald-500/25">
+                💬 ОТПРАВИТЬ
+            </button>
+        </div>
+    </form>
 </div>
 
 <script>
-function sendMessage() {
-    const username = document.getElementById('username').value;
-    const message = document.getElementById('messageInput').value;
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('message-input');
     
-    fetch('/api/chat/send', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({username, message})
-    });
-    
-    document.getElementById('messageInput').value = '';
-    loadMessages();
-}
-
-function loadMessages() {
-    fetch('/api/chat/messages')
-        .then(r => r.json())
-        .then(messages => {
-            const container = document.getElementById('messages');
-            container.innerHTML = messages.map(m => 
-                `<div><strong>${m.username}:</strong> ${m.content} <span class="text-gray-500 text-sm">${m.time}</span></div>`
-            ).join('');
-            container.scrollTop = container.scrollHeight;
-        });
-}
-
-setInterval(loadMessages, 2000);
-loadMessages();
-<!-- Внизу страницы -->
-<div class="mt-8 p-6 bg-gray-900 rounded-2xl">
-    <h3 class="font-bold text-lg mb-4">📜 ПРАВИЛА ЧАТА</h3>
-    <ol class="space-y-2 text-sm text-gray-400">
-        <li>1. За незнание правил вы не освобождаетесь от наказания.</li>
-        <li>2. Мат/оскорбления - мут 10 мин (1 нарушение).</li>
-        <li>3. Спам/флуд - мут 20 мин.</li>
-        <li>4. Провокация/разжигание - мут 1 час.</li>
-        <li>5. Реклама - кик (при повторном - мут 20 мин).</li>
-    </ol>
-</div>
-
+    form.onsubmit = function(e) {
+        e.preventDefault();
+        const content = input.value.trim();
+        
+        if (!content) return;
+        
+        fetch('/api/chat/send', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({content: content})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                input.value = '';
+                location.reload();
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(err => alert('Ошибка сети!'));
+    };
+});
 </script>
 {% endblock %}
-
-
