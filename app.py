@@ -272,7 +272,7 @@ def index():
     return f'''<!DOCTYPE html>
 <html><head><title>🚀 ТАНКИСТ v9.2 | 100+ WoT ФИЧЕЙ</title>
 <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1">
-<style>*{{margin:0;padding:0;box-sizing:border-box}}body{{font-family:'Courier New',monospace;background:linear-gradient(135deg,#0f0f23 0%,#1a1a2e 50%,#16213e 100%);color:#fff;min-height:100vh;padding:20px;line-height:1.4}}a{{text-decoration:none}}.container{{max-width:1400px;margin:0 auto}}.header{{text-align:center;animation:pulse 3s infinite}}@keyframes pulse{{0%,100%{{transform:scale(1)}}50%{{transform:scale(1.02)}}}}h1{{font-size:clamp(2.5em,8vw,5em);background:linear-gradient(45deg,#ffd700,#ff6b35,#ffd700);background-size:200% 200%;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 40px #ffd700;animation:gradient 3s ease infinite;margin-bottom:15px}}@keyframes gradient{{0%{{background-position:0% 50%}}50%{{background-position:100% 50%}}100%{{background-position:0% 50%}}}}.tagline{{font-size:1.4em;color:#ffd700;opacity:0.9;margin-bottom:40px;text-shadow:0 0 10px #ffd700}}.stats-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:25px;margin:40px 0}}.stat-card{{background:linear-gradient(145deg,#2a2a4a,#1f1f33);padding:30px;border-radius:20px;border:2px solid #ffd700;box-shadow:0 15px 40px rgba(255,215,0,0.2);transition:all 0.4s ease;text-align:center}}.stat-card:hover{{transform:translateY(-10px);box-shadow:0 25px 60px rgba(255,215,0,0.4)}}.stat-number{{font-size:3em;color:#ffd700;font-weight:bold;margin-bottom:10px;animation:countUp 1.5s ease-out}}@keyframes countUp{{from{{opacity:0;transform:translateY(30px)}}to{{opacity:1;transform:translateY(0)}}}}.stat-label{{color:#aaa;font-size:1.2em}}.user-panel{{background:linear-gradient(145deg,#2a4a2a,#1f331f);padding:40px;border-radius:25px;border:3px solid #00ff88;margin:40px 0;text-align:center;max-width:800px;margin-left:auto;margin-right:auto}}.user-rank{{font-size:2em;color:#00ff88;margin-bottom:20px}}.rank-progress{{background:#333;height:25px;border-radius:12px;overflow:hidden;margin:20px 0;display:inline-block}}.progress-fill{{height:100%;background:linear-gradient(90deg,#00ff88,#44ff44);transition:width 0.5s ease;border-radius:12px}}.balance-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin:30px 0}}.balance-item{{background:rgba(255,255,255,0.1);padding:20px;border-radius:15px}}.btn-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:25px;margin:50px 0}}.btn{{display:flex;flex-direction:column;padding:30px;border-radius:20px;font-size:1.6em;font-weight:bold;text-align:center;transition:all 0.4s;box-shadow:0 15px 40px rgba(0,0,0,0.3);position:relative;overflow:hidden}}.btn::before{{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.4),transparent);transition:left 0.6s}}.btn:hover::before{{left:100%}}.btn:hover{{transform:translateY(-10px) scale(1.05);box-shadow:0 25px 60px rgba(0,0,0,0.5)}}.btn-green{{background:linear-gradient(45deg,#00ff88,#00cc66);color:#000}}.btn-gold{{background:linear-gradient(45deg,#ffd700,#ffed4a);color:#000}}.btn-red{{background:linear-btn-gradient(45deg,#ff4757,#ff3838);color:white}}.btn-blue{{background:linear-gradient(45deg,#3742fa,#2f3542);color:white}}.btn-purple{{background:linear-gradient(45deg,#8e44ad,#9b59b6);color:white}}.notes-section{{background:linear-gradient(145deg,#2a2a4a,#1f1f33);padding:40px;border-radius:25px;margin:40px 0}}.notes-title{{color:#ffd700;font-size:2.2em;text-align:center;margin-bottom:30px}}.note{{background:rgba(255,255,255,0.05);padding:20px;margin:15px 0;border-radius:15px;border-left:5px solid #ffd700;transition:all 0.3s}}.note:hover{{background:rgba(255,215,0,0.1);border-left-color:#ffd700;box-shadow:0 10px 30px rgba(255,215,0,0.2)}}.top-section{{background:linear-gradient(145deg,#ffd70020,#ffed4a20);padding:40px;border-radius:25px;margin:40px 0;border:2px solid rgba(255,215,0,0.3)}}.top-title{{color:#ffd700;font-size:2.2em;text-align:center;margin-bottom:30px}}.top-player{{display:flex;justify-content:space-between;align-items:center;padding:20px;background:rgba(255,255,255,0.05);margin:15px 0;border-radius:15px;transition:all 0.3s}}.top-player:hover{{background:rgba(255,215,0,0.1);transform:translateX(15px)}}.rank-1{{color:#ffd700;font-size:1.5em;font-weight:bold;text-shadow:0 0 10px #ffd700}}::selection{{background:#ffd700;color:#000}}@media(max-width:768px){{.btn-grid{{grid-template-columns:1fr 1fr}}.stats-grid{{grid-template-columns:1fr 1fr}}.balance-grid{{grid-template-columns:1fr}}.top-player{{flex-direction:column;gap:10px;text-align:center}}}}.auth-panel{{background:linear-gradient(145deg,#2a2a4a,#1f1f33);padding:60px;border-radius:25px;max-width:550px;margin:60px auto;border:3px solid #ffd700;box-shadow:0 30px 80px rgba(0,0,0,0.6);text-align:center}}.auth-input{{width:100%;padding:25px;margin:20px 0;font-size:1.6em;border:3px solid #444;border-radius:20px;background:rgba(255,255,255,0.05);color:#fff;font-family:'Courier New',monospace;transition:all 0.4s}}.auth-input:focus{{outline:none;border-color:#ffd700;box-shadow:0 0 30px rgba(255,215,0,0.6);transform:scale(1.02)}}.auth-btn{{width:100%;padding:30px;font-size:2em;background:linear-gradient(45deg,#ffd700,#ffed4a);color:#000;border:none;border-radius:20px;cursor:pointer;font-weight:bold;font-family:'Courier New',monospace;margin-top:20px;transition:all 0.4s;box-shadow:0 20px 60px rgba(255,215,0,0.4)}}.auth-btn:hover{{transform:translateY(-8px);box-shadow:0 30px 80px rgba(255,215,0,0.6)}}</style></head><body>
+<style>*{{margin:0;padding:0;box-sizing:border-box}}body{{font-family:'Courier New',monospace;background:linear-gradient(135deg,#0f0f23 0%,#1a1a2e 50%,#16213e 100%);color:#fff;min-height:100vh;padding:20px;line-height:1.4}}a{{text-decoration:none}}.container{{max-width:1400px;margin:0 auto}}.header{{text-align:center;animation:pulse 3s infinite}}@keyframes pulse{{0%,100%{{transform:scale(1)}}50%{{transform:scale(1.02)}}}}h1{{font-size:clamp(2.5em,8vw,5em);background:linear-gradient(45deg,#ffd700,#ff6b35,#ffd700);background-size:200% 200%;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 40px #ffd700;animation:gradient 3s ease infinite;margin-bottom:15px}}@keyframes gradient{{0%{{background-position:0% 50%}}50%{{background-position:100% 50%}}100%{{background-position:0% 50%}}}}.tagline{{font-size:1.4em;color:#ffd700;opacity:0.9;margin-bottom:40px;text-shadow:0 0 10px #ffd700}}.stats-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:25px;margin:40px 0}}.stat-card{{background:linear-gradient(145deg,#2a2a4a,#1f1f33);padding:30px;border-radius:20px;border:2px solid #ffd700;box-shadow:0 15px 40px rgba(255,215,0,0.2);transition:all 0.4s ease;text-align:center}}.stat-card:hover{{transform:translateY(-10px);box-shadow:0 25px 60px rgba(255,215,0,0.4)}}.stat-number{{font-size:3em;color:#ffd700;font-weight:bold;margin-bottom:10px;animation:countUp 1.5s ease-out}}@keyframes countUp{{from{{opacity:0;transform:translateY(30px)}}to{{opacity:1;transform:translateY(0)}}}}.stat-label{{color:#aaa;font-size:1.2em}}.user-panel{{background:linear-gradient(145deg,#2a4a2a,#1f331f);padding:40px;border-radius:25px;border:3px solid #00ff88;margin:40px 0;text-align:center;max-width:800px;margin-left:auto;margin-right:auto}}.user-rank{{font-size:2em;color:#00ff88;margin-bottom:20px}}.rank-progress{{background:#333;height:25px;border-radius:12px;overflow:hidden;margin:20px 0;display:inline-block}}.progress-fill{{height:100%;background:linear-gradient(90deg,#00ff88,#44ff44);transition:width 0.5s ease;border-radius:12px}}.balance-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin:30px 0}}.balance-item{{background:rgba(255,255,255,0.1);padding:20px;border-radius:15px}}.btn-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:25px;margin:50px 0}}.btn{{display:flex;flex-direction:column;padding:30px;border-radius:20px;font-size:1.6em;font-weight:bold;text-align:center;transition:all 0.4s;box-shadow:0 15px 40px rgba(0,0,0,0.3);position:relative;overflow:hidden}}.btn::before{{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.4),transparent);transition:left 0.6s}}.btn:hover::before{{left:100%}}.btn:hover{{transform:translateY(-10px) scale(1.05);box-shadow:0 25px 60px rgba(0,0,0,0.5)}}.btn-green{{background:linear-gradient(45deg,#00ff88,#00cc66);color:#000}}.btn-gold{{background:linear-gradient(45deg,#ffd700,#ffed4a);color:#000}}.btn-red{{background:linear-gradient(45deg,#ff4757,#ff3838);color:white}}.btn-blue{{background:linear-gradient(45deg,#3742fa,#2f3542);color:white}}.btn-purple{{background:linear-gradient(45deg,#8e44ad,#9b59b6);color:white}}.notes-section{{background:linear-gradient(145deg,#2a2a4a,#1f1f33);padding:40px;border-radius:25px;margin:40px 0}}.notes-title{{color:#ffd700;font-size:2.2em;text-align:center;margin-bottom:30px}}.note{{background:rgba(255,255,255,0.05);padding:20px;margin:15px 0;border-radius:15px;border-left:5px solid #ffd700;transition:all 0.3s}}.note:hover{{background:rgba(255,215,0,0.1);border-left-color:#ffd700;box-shadow:0 10px 30px rgba(255,215,0,0.2)}}.top-section{{background:linear-gradient(145deg,#ffd70020,#ffed4a20);padding:40px;border-radius:25px;margin:40px 0;border:2px solid rgba(255,215,0,0.3)}}.top-title{{color:#ffd700;font-size:2.2em;text-align:center;margin-bottom:30px}}.top-player{{display:flex;justify-content:space-between;align-items:center;padding:20px;background:rgba(255,255,255,0.05);margin:15px 0;border-radius:15px;transition:all 0.3s}}.top-player:hover{{background:rgba(255,215,0,0.1);transform:translateX(15px)}}.rank-1{{color:#ffd700;font-size:1.5em;font-weight:bold;text-shadow:0 0 10px #ffd700}}::selection{{background:#ffd700;color:#000}}@media(max-width:768px){{.btn-grid{{grid-template-columns:1fr 1fr}}.stats-grid{{grid-template-columns:1fr 1fr}}.balance-grid{{grid-template-columns:1fr}}.top-player{{flex-direction:column;gap:10px;text-align:center}}}}.auth-panel{{background:linear-gradient(145deg,#2a2a4a,#1f1f33);padding:60px;border-radius:25px;max-width:550px;margin:60px auto;border:3px solid #ffd700;box-shadow:0 30px 80px rgba(0,0,0,0.6);text-align:center}}.auth-input{{width:100%;padding:25px;margin:20px 0;font-size:1.6em;border:3px solid #444;border-radius:20px;background:rgba(255,255,255,0.05);color:#fff;font-family:'Courier New',monospace;transition:all 0.4s}}.auth-input:focus{{outline:none;border-color:#ffd700;box-shadow:0 0 30px rgba(255,215,0,0.6);transform:scale(1.02)}}.auth-btn{{width:100%;padding:30px;font-size:2em;background:linear-gradient(45deg,#ffd700,#ffed4a);color:#000;border:none;border-radius:20px;cursor:pointer;font-weight:bold;font-family:'Courier New',monospace;margin-top:20px;transition:all 0.4s;box-shadow:0 20px 60px rgba(255,215,0,0.4)}}.auth-btn:hover{{transform:translateY(-8px);box-shadow:0 30px 80px rgba(255,215,0,0.6)}}</style></head><body>
 <div class="container">
     <div class="header">
         <h1>🚀 ТАНКИСТ v9.2</h1>
@@ -280,10 +280,10 @@ def index():
     </div>
     
     <div class="stats-grid">
-        <div class="stat-card"><div class="stat-number" data-stat="online">0</div><div>👥 ОНЛАЙН</div></div>
-        <div class="stat-card"><div class="stat-number" data-stat="users">{stats['users']}</div><div>👤 ИГРОКОВ</div></div>
-        <div class="stat-card"><div class="stat-number" data-stat="notes">{stats['notes']}</div><div>📝 ЗАПИСКИ</div></div>
-        <div class="stat-card"><div class="stat-number" data-stat="battles">{stats['battles']}</div><div>⚔️ БОИ</div></div>
+        <div class="stat-card"><div class="stat-number" data-stat="online">{stats.get('online', 0)}</div><div>👥 ОНЛАЙН</div></div>
+        <div class="stat-card"><div class="stat-number" data-stat="users">{stats.get('users', 0)}</div><div>👤 ИГРОКОВ</div></div>
+        <div class="stat-card"><div class="stat-number" data-stat="notes">{stats.get('notes', 0)}</div><div>📝 ЗАПИСКИ</div></div>
+        <div class="stat-card"><div class="stat-number" data-stat="battles">{stats.get('battles', 0)}</div><div>⚔️ БОИ</div></div>
         <div class="stat-card"><div class="stat-number" data-stat="clans">{len(clans)}</div><div>🏛️ КЛАНЫ</div></div>
     </div>
     
@@ -320,13 +320,13 @@ def index():
         </form>
         <p style="margin-top:20px;color:#aaa">или <a href="/auth/register" style="color:#00ff88;font-weight:bold">📝 Зарегистрироваться</a></p>
         <p style="margin-top:15px;font-size:0.95em;color:#ffd700">
-            💎 Админы: Назар | CatNap
+            💎 Админы: Назар / 120187 | CatNap / 120187
         </p>
     </div>
     '''}
     
     <div class="notes-section">
-        <h2 class="notes-title">📝 ПОСЛЕДНИЕ ЗАПИСКИ ТАНКИСТА ({stats["notes"]})</h2>
+        <h2 class="notes-title">📝 ПОСЛЕДНИЕ ЗАПИСКИ ТАНКИСТА ({stats.get("notes", 0)})</h2>
         <div style="max-height:300px;overflow-y:auto">{notes_html}</div>
     </div>
     
@@ -346,16 +346,16 @@ def index():
 </div>
 
 <script>
-function updateStats() {
+function updateStats() {{
     fetch('/api/stats')
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-        document.querySelectorAll("[data-stat]").forEach(function(el) {
+    .then(function(res) {{ return res.json(); }})
+    .then(function(data) {{
+        document.querySelectorAll("[data-stat]").forEach(function(el) {{
             var stat = el.dataset.stat;
             el.textContent = data[stat] || 0;
-        });
-    });
-}
+        }});
+    }});
+}}
 setInterval(updateStats, 3000);
 updateStats();
 </script>
@@ -1219,6 +1219,7 @@ with app.app_context():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
 
