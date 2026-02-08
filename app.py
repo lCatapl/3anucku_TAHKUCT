@@ -739,93 +739,82 @@ def games():
 # 🔥 PvP АРЕНА (ПОЛНЫЙ ДИЗАЙН + ФЛАГИ)
 @app.route('/battles')
 def battles():
-    if not session.get('username'): return redirect('/auth/login')
-    user = get_user()
-    garage = user.get_garage()
+    if not session.get('username'):
+        return redirect('/auth/login')
     
-    tank_options = ''.join([
-        f'<option value="{tank}">{TANK_CATALOG[tank]["emoji"]} {tank} (Tier {TANK_CATALOG[tank]["tier"]})</option>'
-        for tank in garage
-    ]) or '<option disabled>🚫 Гараж пустой! Купи Tier 1 бесплатно!</option>'
+    user = get_user()
+    tier = user.tier
+    available_tanks = [tank for tank in TANKS if tank['tier'] == tier]
+    
+    # АКТИВНЫЕ БОИ
+    active_battles = []
+    for battle_id, battle in active_battles_data.items():
+        if battle['status'] == 'active':
+            active_battles.append({
+                'id': battle_id,
+                'player1': battle['player1'],
+                'player2': battle['player2'] or 'Ожидает...',
+                'tier': battle['tier']
+            })
     
     return f'''<!DOCTYPE html>
 <html><head><title>⚔️ ТАНКИСТ v9.2 - PvP АРЕНА</title>
 <meta charset="utf-8">
-<style>*{{margin:0;padding:0;box-sizing:border-box}}body{{background:linear-gradient(135deg,#1a0000,#2d0f0f);color:#fff;font-family:'Courier New',monospace;padding:20px;min-height:100vh}}.container{{max-width:1400px;margin:0 auto}}.header{{text-align:center;margin-bottom:40px}}.header h1{{font-size:clamp(3em,8vw,6em);color:#ff4444;text-shadow:0 0 40px #ff4444,0 0 60px #cc0000;animation:pulse 1.5s infinite}}@keyframes pulse{{0%,100%{{transform:scale(1)}}50%{{transform:scale(1.05)}}}}.battle-stats{{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;margin-bottom:40px}}.stat-card{{background:linear-gradient(145deg,#4a1a1a,#2d0f0f);padding:30px;border-radius:20px;border:2px solid #ff4444;text-align:center}}.battle-panels{{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-bottom:50px}}@media(max-width:1000px){{.battle-panels{{grid-template-columns:1fr}}}}.panel{{background:linear-gradient(145deg,#2a1a1a,#1a0f0f);padding:40px;border-radius:25px;border:3px solid #ff6666}}.panel h2{{color:#ff4444;font-size:2.5em;margin-bottom:30px;text-align:center;text-shadow:0 0 20px #ff4444}}.queue-list,.battles-list{{max-height:400px;overflow-y:auto}}.queue-item,.battle-item{{background:rgba(255,68,68,0.2);padding:20px;margin:15px 0;border-radius:15px;border-left:4px solid #ff4444;transition:all 0.3s}}.queue-item:hover,.battle-item:hover{{background:rgba(255,68,68,0.4);transform:translateX(10px)}}.join-section{{background:linear-gradient(145deg,#4a1a1a,#2d0f0f);padding:50px;border-radius:25px;border:4px solid #ff4444;text-align:center}}.join-section h2{{color:#ff4444;font-size:3em;margin-bottom:40px}}.tank-select{{width:100%;max-width:500px;padding:25px;font-size:1.5em;border:3px solid #ff4444;border-radius:20px;background:#1a0f0f;color:#fff;margin-bottom:30px;font-family:'Courier New',monospace}}.join-btn,.leave-btn{{padding:25px 60px;font-size:2em;margin:0 15px;border-radius:25px;font-weight:bold;cursor:pointer;transition:all 0.4s;font-family:'Courier New',monospace;border:none}}.join-btn{{background:linear-gradient(45deg,#ff4757,#ff3838);color:white;box-shadow:0 15px 40px rgba(255,71,87,0.4)}}.leave-btn{{background:linear-gradient(45deg,#666,#555);color:#fff;box-shadow:0 15px 40px rgba(102,102,102,0.4)}}.join-btn:hover,.leave-btn:hover{{transform:translateY(-8px);box-shadow:0 25px 60px rgba(255,71,87,0.6)}}</style></head>
+<style>*{{margin:0;padding:0;box-sizing:border-box}}body{{font-family:'Courier New',monospace;background:linear-gradient(135deg,#0f0f23,#1a1a2e);color:#fff;min-height:100vh;padding:20px}}.container{{max-width:1400px;margin:0 auto}}.header{{background:linear-gradient(145deg,#4a1a1a,#2d0f0f);padding:40px;border-radius:25px;border:3px solid #ff4757;text-align:center;margin-bottom:40px}}.header h1{{font-size:4em;color:#ff4757;text-shadow:0 0 40px #ff4757;margin:0}}.user-stats{{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:25px;margin:30px 0}}.stat-card{{background:linear-gradient(145deg,#2a2a4a,#1f1f33);padding:30px;border-radius:20px;border:2px solid #ffd700;text-align:center}}.stat-number{{font-size:3em;color:#ffd700;font-weight:bold}}.tier-badge{{display:inline-block;background:linear-gradient(45deg,#ffd700,#ff6b35);color:#000;padding:15px 30px;border-radius:50px;font-size:2em;font-weight:bold;margin:20px 0;text-shadow:none;box-shadow:0 10px 30px rgba(255,215,0,0.4)}}.battle-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:30px;margin:40px 0}}.battle-card{{background:linear-gradient(145deg,#2a4a2a,#1f331f);padding:40px;border-radius:25px;border:3px solid #00ff88;text-align:center;transition:all 0.4s}}.battle-card:hover{{transform:translateY(-10px);box-shadow:0 25px 60px rgba(0,255,136,0.4)}}.tank-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:25px;margin:50px 0}}.tank-card{{background:linear-gradient(145deg,#2a2a4a,#1f1f33);padding:30px;border-radius:20px;border:2px solid #ffd700;text-align:center;transition:all 0.4s;position:relative;overflow:hidden}}.tank-card:hover{{transform:translateY(-15px);box-shadow:0 30px 70px rgba(255,215,0,0.5)}}.tank-name{{font-size:2em;color:#ffd700;margin-bottom:15px}}.tank-tier{{background:linear-gradient(45deg,#ff6b35,#ffd700);color:#000;padding:10px 20px;border-radius:25px;font-weight:bold;display:inline-block;margin-bottom:20px}}.tank-stats{{display:flex;justify-content:space-around;margin:20px 0;font-size:1.3em;color:#aaa}}.btn{{display:block;width:100%;padding:25px;margin:20px 0;font-size:1.6em;font-weight:bold;border-radius:20px;transition:all 0.4s;box-shadow:0 15px 50px rgba(0,0,0,0.4);text-decoration:none;text-align:center}}.btn-quick{{background:linear-gradient(45deg,#00ff88,#00cc66);color:#000}}.btn-quick:hover{{transform:translateY(-8px);box-shadow:0 25px 70px rgba(0,255,136,0.6)}}.btn-spectate{{background:linear-gradient(45deg,#ffd700,#ffed4a);color:#000}}.btn-spectate:hover{{transform:translateY(-8px);box-shadow:0 25px 70px rgba(255,215,0,0.6)}}.back-btn{{display:inline-block;padding:20px 50px;font-size:1.8em;background:linear-gradient(45deg,#4CAF50,#45a049);color:white;margin:40px auto;border-radius:25px;box-shadow:0 20px 60px rgba(76,175,80,0.4)}}@media(max-width:768px){{.tank-grid,.battle-grid{{grid-template-columns:1fr}}}}</style></head>
 <body>
 <div class="container">
     <div class="header">
-        <h1>⚔️ PvP АРЕНА</h1>
-        <p style="font-size:1.5em;color:#ff6666">МАТЧМЕЙКИНГ ПО УРОВНЯМ ТАНКОВ!</p>
+        <h1>⚔️ PvP АРЕНА ТАНКИСТА</h1>
+        <div class="tier-badge">ТР {user.tier} • {user.username}</div>
     </div>
     
-    <div class="battle-stats">
-        <div class="stat-card">
-            <div style="font-size:3em;color:#ff4444">⏳ <span id="queueCount">0</span></div>
-            <div style="font-size:1.2em;color:#ff6666">В ОЧЕРЕДИ</div>
-        </div>
-        <div class="stat-card">
-            <div style="font-size:3em;color:#ff4444">⚔️ <span id="battleCount">0</span></div>
-            <div style="font-size:1.2em;color:#ff6666">АКТИВНЫХ БОЁВ</div>
-        </div>
-        <div class="stat-card">
-            <div style="font-size:2em;color:#ffd700">{user.wins}/{user.battles}</div>
-            <div style="font-size:1.2em;color:#ff6666">ТВОИ ВР</div>
-        </div>
+    <div class="user-stats">
+        <div class="stat-card"><div class="stat-number">{user.wins}</div>Побед</div>
+        <div class="stat-card"><div class="stat-number">{user.battles}</div>Боев</div>
+        <div class="stat-card"><div class="stat-number">{user.wins/user.battles*100:.0f}%</div>Винрейт</div>
+        <div class="stat-card"><div class="stat-number">{len(available_tanks)}</div>Танков ТР{tier}</div>
     </div>
     
-    <div class="battle-panels">
-        <div class="panel">
-            <h2>⏳ ОЧЕРЕДЬ ПО ТИЕРАМ</h2>
-            <div class="queue-list" id="queueList">Ожидание данных...</div>
+    <div style="text-align:center;margin:40px 0">
+        <h2 style="color:#ffd700;font-size:2.5em;margin-bottom:30px">🔥 АКТИВНЫЕ БОИ</h2>
+        ''' + ('''
+        <div class="battle-grid">
+        ''' + ''.join([f'''
+            <div class="battle-card">
+                <h3>⚔️ Бой #{battle["id"]} (ТР{battle["tier"]})</h3>
+                <div style="font-size:2em;margin:20px 0">
+                    {battle["player1"]} vs {battle["player2"]}
+                </div>
+                <a href="/battle/{battle["id"]}/spectate" class="btn btn-spectate">👁️ Посмотреть</a>
+            </div>
+        ''' for battle in active_battles[:6]]) + '''
         </div>
-        <div class="panel">
-            <h2>⚔️ АКТИВНЫЕ БОИ</h2>
-            <div class="battles-list" id="battlesList">Ожидание данных...</div>
+        ''' if active_battles else '''
+        <div style="color:#aaa;font-size:1.5em;padding:60px;background:rgba(255,255,255,0.05);border-radius:25px">
+            🤝 Нет активных боев... Будь первым!
         </div>
+        ''') + '''
     </div>
     
-    <div class="join-section">
-        <h2>🚀 ВЫБЕРИ ТАНК И В БОЙ!</h2>
-        <select id="tankSelect" class="tank-select">{tank_options}</select>
-        <br>
-        <button onclick="joinBattle()" class="join-btn">⚔️ В ОЧЕРЕДЬ</button>
-        <button onclick="leaveBattle()" class="leave-btn">❌ ВЫЙТИ</button>
+    <h2 style="color:#00ff88;font-size:2.5em;text-align:center;margin:50px 0">🚀 БЫСТРЫЙ БОЙ (25 сек)</h2>
+    <div class="tank-grid">
+        ''' + ''.join([f'''
+        <div class="tank-card">
+            <div class="tank-name">{tank["name"]}</div>
+            <div class="tank-tier">ТР{tank["tier"]}</div>
+            <div class="tank-stats">
+                <span>💰 {tank["price"]}г</span>
+                <span>⚔️ {tank["damage"]} урона</span>
+                <span>🛡️ {tank["hp"]} HP</span>
+            </div>
+            <a href="/battle/quick?tank={tank["id"]}" class="btn btn-quick">⚔️ БЫСТРЫЙ БОЙ</a>
+        </div>
+        ''' for tank in available_tanks[:8]]) + '''
     </div>
+    
+    <a href="/" class="back-btn">🏠 ГЛАВНАЯ</a>
 </div>
-
-<script>
-async function joinBattle() {{
-    const tank = document.getElementById('tankSelect').value;
-    if (!tank || tank === '🚫 Гараж пустой!') {{
-        alert('🚫 Купи танк 1 уровня бесплатно в магазине!');
-        return;
-    }}
-    
-    const res = await fetch('/api/battle/join', {{
-        method: 'POST',
-        headers: {{"Content-Type": "application/json"}},
-        body: JSON.stringify({{tank}})
-    }});
-    const data = await res.json();
-    alert(data.message || data.error);
-    updateArena();
-}}
-
-async function leaveBattle() {{
-    await fetch('/api/battle/leave');
-    updateArena();
-}}
-
-async function updateArena() {{
-    const data = await (await fetch('/api/battles')).json();
-    document.getElementById('queueCount').textContent = data.queue.length;
-    document.getElementById('battleCount').textContent = Object.keys(data.battles).length;
-}}
-
-setInterval(updateArena, 2000);
-updateArena();
-</script></body></html>'''
+</body></html>'''
 
 print("✅ Часть 2: Регистрация + Полный дизайн игр/арены + Флаги")
 print("✅ Часть 1: 40+ WoT танков + матчмейкинг по тиерам + 25сек бои")
@@ -1069,87 +1058,6 @@ def api_stats():
     return jsonify(get_stats())
 
 print("✅ Часть 4: Магазин с фильтром + Турниры + 1 ур бесплатно!")
-# 🔥 АРЕНА PvP (ПОЛНАЯ С ТАНКАМИ + ВЫБОР)
-@app.route('/battles')
-def battles():
-    if not session.get('username'): return redirect('/auth/login')
-    user = get_user()
-    garage = user.get_garage()
-    
-    # Танки для выбора
-    tank_options = ''.join([
-        f'<option value="{tank}">{TANK_CATALOG[tank]["emoji"]} {tank}</option>'
-        for tank in garage
-    ]) or '<option>Гараж пуст! Купи танки!</option>'
-    
-    queue_html = ''.join([
-        f'<div class="queue-item">#{i+1} {p}</div>'
-        for i, p in enumerate(battle_queue[:8])
-    ]) or '<div class="empty">Очередь пуста</div>'
-    
-    battles_html = ''.join([
-        f'<div class="battle-item">⚔️ {d["player1"]} ({d["tank1"][0]}) vs {d["player2"]} ({d["tank2"][0]})</div>'
-        for _, d in list(active_battles.items())[:5]
-    ]) or '<div class="empty">Нет боёв</div>'
-    
-    return f'''<!DOCTYPE html>
-<html><head><title>⚔️ ТАНКИСТ v9.0 - PvP АРЕНА</title>
-<meta charset="utf-8">
-<style>/* Арена дизайн */</style>
-</head><body>
-<div class="container">
-    <h1 style="font-size:4em;color:#ff4444">⚔️ PvP АРЕНА</h1>
-    
-    <div class="battle-stats">
-        <div>Очередь: <span id="queueCount">{len(battle_queue)}</span></div>
-        <div>Бои: <span id="battleCount">{len(active_battles)}</span></div>
-        <div>Твои победы: {user.wins}/{user.battles}</div>
-    </div>
-    
-    <div class="battle-panels">
-        <div class="panel queue-panel">
-            <h2>⏳ ОЧЕРЕДЬ</h2>
-            <div class="queue-list">{queue_html}</div>
-        </div>
-        <div class="panel battles-panel">
-            <h2>⚔️ АКТИВНЫЕ БОИ</h2>
-            <div class="battles-list">{battles_html}</div>
-        </div>
-    </div>
-    
-    <div class="join-section">
-        <h2>🚀 В БОЙ</h2>
-        <select id="tankSelect">{tank_options}</select>
-        <button onclick="joinBattle()" class="join-btn">⚔️ В ОЧЕРЕДЬ</button>
-        <button onclick="leaveBattle()" class="leave-btn">❌ ВЫЙТИ</button>
-    </div>
-</div>
-
-<script>
-async function joinBattle() {{
-    const tank = document.getElementById('tankSelect').value;
-    if (!tank) return alert('Выбери танк!');
-    
-    const res = await fetch('/api/battle/join', {{
-        method: 'POST',
-        headers: {{"Content-Type": "application/json"}},
-        body: JSON.stringify({{tank}})
-    }});
-    const data = await res.json();
-    alert(data.message);
-    setTimeout(() => location.reload(), 1000);
-}}
-
-async function leaveBattle() {{
-    await fetch('/api/battle/leave');
-    location.reload();
-}}
-
-setInterval(async () => {{
-    document.getElementById('queueCount').textContent = (await (await fetch('/api/battles')).json()).queue.length;
-    document.getElementById('battleCount').textContent = Object.keys((await (await fetch('/api/battles')).json()).battles).length;
-}}, 3000);
-</script></body></html>'''
 
 # 🔥 ПРОФИЛЬ (ЗВАНИЯ + ПРОГРЕСС + ГАРАЖ)
 @app.route('/profile')
@@ -1218,6 +1126,7 @@ with app.app_context():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
 
