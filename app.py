@@ -272,8 +272,10 @@ def api_stats():
         'users': User.query.count()
     })
 
+# 🔥 Render WSGI + Development - 100% совместимо
 if __name__ == '__main__':
     import os
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port, debug=False)
-    print("🚀 TANKIST v6.0 - Render Ready!")
+    port = int(os.environ.get('PORT', 5000))
+    host = os.environ.get('HOST', '0.0.0.0')
+    app.run(host=host, port=port, debug=False)
+    print("🚀 TANKIST v6.0 - Render + Local Ready!")
