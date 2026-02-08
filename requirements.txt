@@ -1,10 +1,4 @@
-flask==3.0.0
-flask-login==0.6.3
-flask-sqlalchemy==3.1.1
-flask-migrate==4.0.7
-flask-wtf==1.2.1
-bcrypt==4.1.2
-Pillow==10.4.0
-wtforms==3.1.2
-python-dotenv==1.0.0
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+Werkzeug==3.0.3
 gunicorn==22.0.0
