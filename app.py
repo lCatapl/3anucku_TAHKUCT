@@ -285,28 +285,29 @@ def index():
         '''
     
     html += f'''
-    <!-- Записки танкиста -->
-    <div class="notes-section">
-        <h2>📝 ПОСЛЕДНИЕ ЗАПИСКИ ({stats["notes"]})</h2>
-        <div class="notes-list">{notes_html}</div>
-    </div>
-    
-    <!-- Топ-5 -->
-    <div class="leaderboard-mini">{top_html}</div>
+<!-- Записки танкиста -->
+<div class="notes-section">
+    <h2>📝 ПОСЛЕДНИЕ ЗАПИСКИ ({stats["notes"]})</h2>
+    <div class="notes-list">{notes_html}</div>
+</div>
+
+<!-- Топ-5 -->
+<div class="leaderboard-mini">{top_html}</div>
 </div>
 
 <script>
-setInterval(async()=>{
-    const res=await fetch('/api/stats');
-    const data=await res.json();
-    document.querySelectorAll('[data-target]').forEach(el=>{
-        el.dataset.target=data[el.dataset.target.split('*')[0]];
-        // animate counter
-    });
-},3000);
+setInterval(async function() {{
+    fetch('/api/stats')
+    .then(res => res.json())
+    .then(data => {{
+        document.querySelectorAll("[data-target]").forEach(el => {{
+            el.textContent = data.online || 0;
+        }});
+    }});
+}}, 3000);
 </script>
 </body></html>'''
-    
+
     return html
 
 # 🔥 ЛОГИН (БЕЗ ИЗМЕНЕНИЙ)
@@ -940,3 +941,4 @@ with app.app_context():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
