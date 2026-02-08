@@ -348,10 +348,10 @@ def index():
 <script>
 function updateStats() {
     fetch('/api/stats')
-    .then(res => res.json())
-    .then(data => {
-        document.querySelectorAll("[data-stat]").forEach(el => {
-            const stat = el.dataset.stat;
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        document.querySelectorAll("[data-stat]").forEach(function(el) {
+            var stat = el.dataset.stat;
             el.textContent = data[stat] || 0;
         });
     });
@@ -1219,5 +1219,6 @@ with app.app_context():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
