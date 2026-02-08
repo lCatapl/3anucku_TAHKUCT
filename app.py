@@ -448,12 +448,16 @@ def logout():
 # 🔥 ЧАТ ПРО (КАК В БОЛЬШИХ КОМПАНИЯХ)
 @app.route('/chat')
 def chat():
-    if not session.get('username'): return redirect('/auth/login')
+    # ПРОВЕРКА ЛОГИНА
+    if not session.get('username'): 
+        return redirect('/auth/login')
+    
+    # ПОЛУЧАЕМ ДАННЫЕ
     user = get_user()
     is_moderator = session['username'] in MODERATORS
     is_muted = session['username'] in MUTED_PLAYERS
     
-    # Последние 100 сообщений
+    # ГЕНЕРАЦИЯ HTML СООБЩЕНИЙ (100 последних)
     recent_messages = chat_messages[-100:]
     chat_html = ''
     for msg in recent_messages:
@@ -469,24 +473,13 @@ def chat():
         </div>
         '''
     
-    return f'''<!DOCTYPE html>
-<html><head><title>💬 ТАНКИСТ v9.2 - ГЛАВНЫЙ ЧАТ</title>
-<meta charset="utf-8">
-<style>*{{margin:0;padding:0;box-sizing:border-box}}body{{background:linear-gradient(135deg,#0f0f23,#1a1a2e);color:#fff;font-family:'Courier New',monospace;padding:20px;min-height:100vh}}.chat-container{{max-width:1200px;margin:0 auto}}.chat-header{{background:linear-gradient(145deg,#2a4a2a,#1f331f);padding:30px;border-radius:25px;border:3px solid #00ff88;margin-bottom:30px;text-align:center}}.chat-header h1{{font-size:3.5em;color:#00ff88;text-shadow:0 0 30px #00ff88;margin:0}}.chat-stats{{display:flex;justify-content:center;gap:40px;font-size:1.2em;color:#aaa;margin-top:15px;flex-wrap:wrap}}.chat-messages{{height:550px;overflow-y:auto;background:linear-gradient(145deg,#222,#111);padding:25px;border-radius:20px;border:2px solid #444;margin-bottom:25px;position:relative}}.msg{{margin:15px 0;padding:18px 20px;background:rgba(255,255,255,0.03);border-radius:15px;border-left:5px solid #00ff88;position:relative;transition:all 0.3s;animation:slideIn 0.3s ease-out}}.msg:hover{{background:rgba(255,255,255,0.08);transform:translateX(10px);box-shadow:0 5px 25px rgba(0,255,136,0.2)}}.username{{font-weight:bold;margin-right:10px}}.time{{color:#666;font-size:0.9em;margin:0 10px;opacity:0.7}}.text{{word-break:break-word}}.msg.mod::before{{content:"👮";position:absolute;top:10px;right:10px;color:#00ff88;font-size:1.2em}}.chat-input-container{{background:linear-gradient(145deg,#2a2a4a,#1f1f33);padding:25px;border-radius:20px;border:2px solid #ffd700}}.chat-input{{display:flex;gap:15px;align-items:center;flex-wrap:wrap}}.message-input{{flex:1;padding:20px;font-size:1.3em;border:3px solid #444;border-radius:15px;background:rgba(255,255,255,0.05);color:#fff;font-family:'Courier New',monospace;transition:all 0.4s}}.message-input:focus{{outline:none;border-color:#ffd700;box-shadow:0 0 25px rgba(255,215,0,0.5)}}.send-btn{{padding:20px 40px;background:linear-gradient(45deg,#00ff88,#00cc66);color:#000;border:none;border-radius:15px;cursor:pointer;font-weight:bold;font-size:1.2em;font-family:'Courier New',monospace;transition:all 0.4s;box-shadow:0 10px 30px rgba(0,255,136,0.4)}}.send-btn:hover{{transform:translateY(-3px);box-shadow:0 20px 50px rgba(0,255,136,0.6)}}.emotes-grid{{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;max-width:600px;justify-content:center}}.emote-btn{{padding:12px 18px;background:rgba(255,255,255,0.1);color:#fff;border:2px solid #444;border-radius:12px;cursor:pointer;font-size:1.2em;transition:all 0.3s;font-family:'Courier New',monospace}}.emote-btn:hover{{background:#ffd700;color:#000;border-color:#ffd700;transform:scale(1.1)}}.chat-rules{{background:linear-gradient(145deg,#4a1a1a,#2d0f0f);padding:25px;border-radius:20px;border:2px solid #ff4444;margin-top:30px}}.chat-rules h3{{color:#ff4444;font-size:1.8em;margin-bottom:15px}}.chat-rules pre{{background:#1a0f0f;padding:20px;border-radius:15px;border-left:4px solid #ff6666;font-size:0.95em;line-height:1.5;color:#ff6666;overflow-x:auto;white-space:pre-wrap}}.moderator-tools{{margin-top:30px;padding:20px;background:rgba(0,255,136,0.1);border-radius:15px;border:2px solid #00ff88;display: {{"none" if not is_moderator else "block"}}}}.mod-btn{{padding:10px 20px;margin:5px;background:#ff4757;color:white;border:none;border-radius:10px;cursor:pointer;font-size:1em;font-family:'Courier New',monospace}}.back-btn{{display:block;margin:40px auto 0;padding:20px 60px;font-size:1.8em;background:linear-gradient(45deg,#4CAF50,#45a049);color:white;text-decoration:none;border-radius:20px;font-weight:bold;box-shadow:0 20px 60px rgba(76,175,80,0.4);transition:all 0.4s}}.back-btn:hover{{transform:translateY(-5px);box-shadow:0 30px 80px rgba(76,175,80,0.6)}}@keyframes slideIn{{from{{opacity:0;transform:translateX(-20px)}}to{{opacity:1;transform:translateX(0)}}}}@media(max-width:768px){{.chat-input{{flex-direction:column;align-items:stretch}}.chat-stats{{flex-direction:column;gap:20px}}}}</style></head>
-<body>
-<div class="chat-container">
-    <div class="chat-header">
-        <h1>💬 ГЛАВНЫЙ ЧАТ ТАНКИСТА</h1>
-        <div class="chat-stats">
-            <span>👥 Онлайн: <span id="onlineCount">0</span></span>
-            <span>💬 Сообщений: <span id="msgCount">{len(recent_messages)}</span></span>
-            <span>🔇 Замучено: <span id="mutedCount">{len(MUTED_PLAYERS)}</span></span>
-        </div>
-    </div>
+    # СТАТИСТИКА
+    muted_count = len(MUTED_PLAYERS)
+    msg_count = len(recent_messages)
     
-    <div class="chat-messages" id="messages">{chat_html}</div>
-    
-    {'''
+    # ✅ КОНЕЦ ЧАСТИ 1 - КОПИРУЙ ДАЛЬШЕ ЧАСТЬ 2
+    # INPUT SECTION (если не замучен)
+    input_section = '''
     <div class="chat-input-container">
         <form id="chatForm" class="chat-input">
             <input id="messageInput" class="message-input" placeholder="Напиши сообщение... (макс. 120 символов)" maxlength="120">
@@ -511,14 +504,10 @@ def chat():
         <p style="font-size:1.2em;color:#ff8888">Обратитесь к модератору для разбана</p>
         <p style="color:#aaa">Модеры: Назар, CatNap</p>
     </div>
-    '}
+    '''
     
-    <div class="chat-rules">
-        <h3>📜 ПРАВИЛА ЧАТА</h3>
-        <pre>{CHAT_RULES}</pre>
-    </div>
-    
-    {'''
+    # MODERATOR TOOLS (только для модеров)
+    mod_tools = '''
     <div class="moderator-tools">
         <h3 style="color:#00ff88">🛠️ ИНСТРУМЕНТЫ МОДЕРАТОРА</h3>
         <button class="mod-btn" onclick="clearChat()">🗑️ ОЧИСТИТЬ ЧАТ</button>
@@ -526,126 +515,136 @@ def chat():
         <button class="mod-btn" onclick="mutePlayer()">🔇 МУТ 24ч</button>
         <button class="mod-btn" onclick="unmuteAll()">🔓 РАЗМУТАТЬ ВСЕХ</button>
     </div>
-    ''' if is_moderator else ''}
+    ''' if is_moderator else ''
+    
+    # ✅ КОНЕЦ ЧАСТИ 2 - КОПИРУЙ ДАЛЬШЕ ЧАСТЬ 3
+    # ГЛАВНЫЙ HTML (БЕЗ f-STRING ПРОБЛЕМ)
+    html = f'''<!DOCTYPE html>
+<html><head><title>💬 ТАНКИСТ v9.2 - ГЛАВНЫЙ ЧАТ</title>
+<meta charset="utf-8">
+<style>*{{margin:0;padding:0;box-sizing:border-box}}
+body{{background:linear-gradient(135deg,#0f0f23,#1a1a2e);color:#fff;font-family:'Courier New',monospace;padding:20px;min-height:100vh}}
+.chat-container{{max-width:1200px;margin:0 auto}}
+.chat-header{{background:linear-gradient(145deg,#2a4a2a,#1f331f);padding:30px;border-radius:25px;border:3px solid #00ff88;margin-bottom:30px;text-align:center}}
+.chat-header h1{{font-size:3.5em;color:#00ff88;text-shadow:0 0 30px #00ff88;margin:0}}
+.chat-stats{{display:flex;justify-content:center;gap:40px;font-size:1.2em;color:#aaa;margin-top:15px;flex-wrap:wrap}}
+.chat-messages{{height:550px;overflow-y:auto;background:linear-gradient(145deg,#222,#111);padding:25px;border-radius:20px;border:2px solid #444;margin-bottom:25px;position:relative}}
+.msg{{margin:15px 0;padding:18px 20px;background:rgba(255,255,255,0.03);border-radius:15px;border-left:5px solid #00ff88;position:relative;transition:all 0.3s;animation:slideIn 0.3s ease-out}}
+.msg:hover{{background:rgba(255,255,255,0.08);transform:translateX(10px);box-shadow:0 5px 25px rgba(0,255,136,0.2)}}
+.username{{font-weight:bold;margin-right:10px}}.time{{color:#666;font-size:0.9em;margin:0 10px;opacity:0.7}}.text{{word-break:break-word}}
+.chat-input-container{{background:linear-gradient(145deg,#2a2a4a,#1f1f33);padding:25px;border-radius:20px;border:2px solid #ffd700}}
+.chat-input{{display:flex;gap:15px;align-items:center;flex-wrap:wrap}}
+.message-input{{flex:1;padding:20px;font-size:1.3em;border:3px solid #444;border-radius:15px;background:rgba(255,255,255,0.05);color:#fff;font-family:'Courier New',monospace;transition:all 0.4s}}
+.message-input:focus{{outline:none;border-color:#ffd700;box-shadow:0 0 25px rgba(255,215,0,0.5)}}
+.send-btn{{padding:20px 40px;background:linear-gradient(45deg,#00ff88,#00cc66);color:#000;border:none;border-radius:15px;cursor:pointer;font-weight:bold;font-size:1.2em;font-family:'Courier New',monospace;transition:all 0.4s;box-shadow:0 10px 30px rgba(0,255,136,0.4)}}
+.send-btn:hover{{transform:translateY(-3px);box-shadow:0 20px 50px rgba(0,255,136,0.6)}}
+.emotes-grid{{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;max-width:600px;justify-content:center}}
+.emote-btn{{padding:12px 18px;background:rgba(255,255,255,0.1);color:#fff;border:2px solid #444;border-radius:12px;cursor:pointer;font-size:1.2em;transition:all 0.3s;font-family:'Courier New',monospace}}
+.emote-btn:hover{{background:#ffd700;color:#000;border-color:#ffd700;transform:scale(1.1)}}
+.chat-rules{{background:linear-gradient(145deg,#4a1a1a,#2d0f0f);padding:25px;border-radius:20px;border:2px solid #ff4444;margin-top:30px}}
+.chat-rules h3{{color:#ff4444;font-size:1.8em;margin-bottom:15px}}
+.chat-rules pre{{background:#1a0f0f;padding:20px;border-radius:15px;border-left:4px solid #ff6666;font-size:0.95em;line-height:1.5;color:#ff6666;overflow-x:auto;white-space:pre-wrap}}
+.moderator-tools{{margin-top:30px;padding:20px;background:rgba(0,255,136,0.1);border-radius:15px;border:2px solid #00ff88}}
+.mod-btn{{padding:10px 20px;margin:5px;background:#ff4757;color:white;border:none;border-radius:10px;cursor:pointer;font-size:1em;font-family:'Courier New',monospace}}
+.back-btn{{display:block;margin:40px auto 0;padding:20px 60px;font-size:1.8em;background:linear-gradient(45deg,#4CAF50,#45a049);color:white;text-decoration:none;border-radius:20px;font-weight:bold;box-shadow:0 20px 60px rgba(76,175,80,0.4);transition:all 0.4s}}
+.back-btn:hover{{transform:translateY(-5px);box-shadow:0 30px 80px rgba(76,175,80,0.6)}}
+@keyframes slideIn{{from{{opacity:0;transform:translateX(-20px)}}to{{opacity:1;transform:translateX(0)}}}}
+@media(max-width:768px){{.chat-input{{flex-direction:column;align-items:stretch}}.chat-stats{{flex-direction:column;gap:20px}}}}
+</style></head>
+<body>
+<div class="chat-container">
+    <div class="chat-header">
+        <h1>💬 ГЛАВНЫЙ ЧАТ ТАНКИСТА</h1>
+        <div class="chat-stats">
+            <span>👥 Онлайн: <span id="onlineCount">0</span></span>
+            <span>💬 Сообщений: <span id="msgCount">{msg_count}</span></span>
+            <span>🔇 Замучено: <span id="mutedCount">{muted_count}</span></span>
+        </div>
+    </div>
+    
+    <div class="chat-messages" id="messages">
+        {chat_html}
+    </div>
+    
+    {input_section}
+    
+    <div class="chat-rules">
+        <h3>📜 ПРАВИЛА ЧАТА</h3>
+        <pre>🚫 ПРАВИЛА ЧАТА:
+1. Без мата/оскорблений
+2. Без спама/флуда  
+3. Без рекламы/ссылок
+4. Без политики/религии
+⚠️ Нарушители = БотМут 24ч
+👮 Модеры: Назар, CatNap</pre>
+    </div>
+    
+    {mod_tools}
     
     <a href="/" class="back-btn">🏠 ГЛАВНАЯ</a>
 </div>
-
+'''
+    # JAVASCRIPT (все {{ }} экранированы!)
+    js = '''
 <script>
-const messagesEl = document.getElementById('messages');
-const form = document.getElementById('chatForm');
-const input = document.getElementById('messageInput');
+const messagesEl = document.getElementById("messages");
+const form = document.getElementById("chatForm");
+const input = document.getElementById("messageInput");
 
 if (form) {{
-    form.onsubmit = async (e) => {{
+    form.onsubmit = function(e) {{
         e.preventDefault();
-        const message = input.value.trim();
+        var message = input.value.trim();
         if (!message) return;
         
-        try {{
-            await fetch('/api/chat', {{
-                method: 'POST',
-                headers: {{"Content-Type": "application/json"}},
-                body: JSON.stringify({{message}})
-            }});
-            input.value = '';
-        }} catch(e) {{ console.log('Send failed'); }}
+        fetch("/api/chat", {{
+            method: "POST",
+            headers: {{"Content-Type": "application/json"}},
+            body: JSON.stringify({{message: message}})
+        }}).then(function() {{
+            input.value = "";
+            // updateChat(); // TODO: добавить автообновление
+        }});
     }};
 }}
 
 function addEmote(emote) {{
     if (input) {{
-        input.value += emote + ' ';
+        input.value += emote + " ";
         input.focus();
     }}
 }}
 
-async function clearChat() {{
-    if (confirm('Очистить чат?')) {{
-        await fetch('/api/chat/clear');
-        updateChat();
+function clearChat() {{
+    if (confirm("Очистить чат?")) {{
+        fetch("/api/chat/clear");
+        location.reload();
     }}
 }}
 
-async function mutePlayer() {{
-    const username = document.getElementById('muteInput').value.trim();
+function mutePlayer() {{
+    var username = document.getElementById("muteInput").value.trim();
     if (username) {{
-        await fetch('/api/chat/mute', {{
-            method: 'POST',
+        fetch("/api/chat/mute", {{
+            method: "POST",
             headers: {{"Content-Type": "application/json"}},
-            body: JSON.stringify({{username}})
+            body: JSON.stringify({{username: username}})
         }});
-        alert(`🔇 ${{username}} замучен на 24ч`);
+        alert("🔇 " + username + " замучен на 24ч");
     }}
 }}
 
-async function unmuteAll() {{
-    if (confirm('Размутать всех?')) {{
-        await fetch('/api/chat/unmute-all');
-        alert('✅ Все размучены');
+function unmuteAll() {{
+    if (confirm("Размутать всех?")) {{
+        fetch("/api/chat/unmute-all");
+        alert("✅ Все размучены");
     }}
 }}
-
-async function updateChat() {{
-    const res = await fetch('/api/chat/messages');
-    const data = await res.json();
-    // Обновление сообщений...
-    document.getElementById('msgCount').textContent = data.messages.length;
-}}
-
-setInterval(updateChat, 2000);
-updateChat();
-</script></body></html>'''
-
-# 🔥 API ЧАТ ПРО
-@app.route('/api/chat', methods=['POST'])
-def api_chat():
-    if not session.get('username'): return jsonify({'error': 'login'})
-    if session['username'] in MUTED_PLAYERS: return jsonify({'error': 'muted'})
+</script>
+</body></html>'''
     
-    data = request.get_json()
-    message = data.get('message', '').strip()
-    if len(message) < 1 or len(message) > 120:
-        return jsonify({'error': '1-120 символов'})
-    
-    # ФИЛЬТР МАТА
-    bad_words = ['мат1', 'мат2', 'оскорбление']
-    if any(word in message.lower() for word in bad_words):
-        MUTED_PLAYERS.add(session['username'])
-        return jsonify({'error': '🔇 Мут за мат!'})
-    
-    chat_messages.append({
-        'username': session['username'],
-        'message': message,
-        'time': time.time(),
-        'muted': False
-    })
-    
-    chat_messages[:] = chat_messages[-200:]  # Макс 200 сообщений
-    return jsonify({'success': True})
-
-@app.route('/api/chat/clear')
-@app.route('/api/chat/mute', methods=['POST'])
-@app.route('/api/chat/unmute-all')
-def chat_moderation():
-    username = session.get('username')
-    if username not in MODERATORS:
-        return jsonify({'error': 'Только Модераторы/Администраторы!'})
-    
-    if request.path == '/api/chat/clear':
-        chat_messages.clear()
-        return jsonify({'success': True})
-    elif request.path == '/api/chat/unmute-all':
-        MUTED_PLAYERS.clear()
-        return jsonify({'success': True})
-    else:  # mute
-        data = request.get_json()
-        target = data.get('username')
-        if target:
-            MUTED_PLAYERS.add(target)
-            return jsonify({'success': True})
-'''
-print("✅ Часть 3: Чат Про (БотМут/Модеры/Правила) + Фильтр мата")
+    # ✅ ФИНАЛЬНЫЙ RETURN
+    return html + js
 
 # 🔥 РЕГИСТРАЦИЯ (НОВЫЙ РОУТ)
 @app.route('/auth/register', methods=['GET', 'POST'])
@@ -1219,6 +1218,7 @@ with app.app_context():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
 
