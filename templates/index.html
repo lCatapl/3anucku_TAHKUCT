@@ -1,52 +1,20 @@
-{% extends "base.html" %}
-
-{% block content %}
-<div class="hero-section">
-    <div class="hero-content">
-        <h1 class="hero-title">⚔️ ТАНКОВЫЙ БОТ v2.0 ⚔️</h1>
-        <p class="hero-subtitle">200+ танков • 25 званий • Турниры • Ежедневки</p>
-        
-        {% if session.logged_in and player %}
-        <div class="dashboard-grid">
-            <div class="stat-card gold-card">
-                <h3>💰 Золото</h3>
-                <div class="stat-value">{{ "{:,}".format(player.gold) }}</div>
-            </div>
-            <div class="stat-card silver-card">
-                <h3>🪙 Серебро</h3>
-                <div class="stat-value">{{ "{:,}".format(player.silver) }}</div>
-            </div>
-            <div class="stat-card points-card">
-                <h3>⭐ Очки</h3>
-                <div class="stat-value">{{ "{:,}".format(player.points) }}</div>
-            </div>
-            <div class="stat-card tanks-card">
-                <h3>🚀 Танки</h3>
-                <div class="stat-value">{{ player.tanks|length }}</div>
-            </div>
-        </div>
-
-        <div class="rank-section">
-            <h2>{{ rank_info.rank_emoji }} {{ rank_info.current }}</h2>
-            <div class="progress-container">
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: {{ rank_info.progress }}%"></div>
-                </div>
-                <span class="progress-text">{{ "%.0f"|format(rank_info.progress) }}% до {{ rank_info.next }}</span>
-            </div>
-        </div>
-
-        <div class="action-buttons">
-            <button onclick="claimDaily()" class="btn btn-gold">🎁 Ежедневка</button>
-            <button onclick="quickBattle()" class="btn btn-danger">⚔️ Быстрый бой</button>
-            <a href="{{ url_for('shop') }}" class="btn btn-primary">🏪 Магазин</a>
-        </div>
-        {% else %}
-        <div class="hero-buttons">
-            <a href="{{ url_for('register') }}" class="btn btn-hero">🚀 Начать игру</a>
-            <a href="{{ url_for('login') }}" class="btn btn-secondary">🔐 Войти</a>
-        </div>
-        {% endif %}
-    </div>
-</div>
-{% endblock %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>⚔️ Танковый Бот</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial; background: #1a1a2e; color: white; text-align: center; padding: 50px; }
+        .btn { padding: 15px 30px; margin: 10px; font-size: 18px; border: none; border-radius: 10px; cursor: pointer; }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-secondary { background: #444; color: white; }
+    </style>
+</head>
+<body>
+    <h1>⚔️ ТАНКОВЫЙ БОТ v2.0 ⚔️</h1>
+    <p>200+ танков • 25 званий • Турниры</p>
+    
+    <a href="/register" class="btn btn-primary">🚀 Начать игру</a>
+    <a href="/login" class="btn btn-secondary">🔐 Войти</a>
+</body>
+</html>
