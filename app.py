@@ -555,7 +555,11 @@ def daily():
 
 @app.errorhandler(404)
 def not_found(error):
-    return render_template('404.html'), 404
+    return """
+    <!DOCTYPE html>
+    <html><head><title>404</title><style>body{font-family:Arial;background:#1a1a2e;color:white;text-align:center;padding:100px;}</style></head>
+    <body><h1>❌ 404 - Страница не найдена</h1><a href="/" style="color:#667eea;">🏠 На главную</a></body></html>
+    """, 404
 
 # ========================================
 # ✅ 1.14 ЗАПУСК СЕРВЕРА
