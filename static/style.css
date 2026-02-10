@@ -1,0 +1,73 @@
+/* 🎨 ГЛАВНЫЕ СТИЛИ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { 
+    font-family: 'Roboto', sans-serif; 
+    background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #2d1b69 100%);
+    color: #fff; 
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.navbar {
+    background: rgba(0,0,20,0.95); backdrop-filter: blur(20px);
+    padding: 1rem 0; position: fixed; width: 100%; top: 0; z-index: 1000;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.nav-container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: center; }
+.nav-logo { font-family: 'Orbitron', monospace; font-size: 1.5rem; font-weight: 900; color: #ffd700; text-decoration: none; }
+.nav-menu { display: flex; gap: 2rem; }
+.nav-menu a { color: #ccc; text-decoration: none; font-weight: 500; transition: all 0.3s; }
+.nav-menu a:hover { color: #ffd700; }
+.logout-btn { background: #ff4444; padding: 0.5rem 1rem; border-radius: 25px; }
+.admin-link { color: #ff69b4; font-weight: bold; }
+
+.main-content { margin-top: 80px; padding: 2rem; max-width: 1200px; margin-left: auto; margin-right: auto; }
+
+/* 🎯 КНОПКИ */
+.btn { 
+    padding: 1rem 2rem; border: none; border-radius: 50px; 
+    font-size: 1.1rem; font-weight: 700; cursor: pointer; 
+    transition: all 0.3s; text-decoration: none; display: inline-block;
+    font-family: 'Orbitron', monospace;
+}
+.btn-primary { background: linear-gradient(45deg, #667eea 0%, #764ba2 100%); color: white; }
+.btn-gold { background: linear-gradient(45deg, #ffd700 0%, #ffed4a 100%); color: #333; }
+.btn-danger { background: linear-gradient(45deg, #ff416c 0%, #ff4b2b 100%); color: white; }
+.btn-secondary { background: rgba(255,255,255,0.1); color: #fff; border: 2px solid #fff; }
+.btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+
+/* 📊 СТАТИСТИКА */
+.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin: 3rem 0; }
+.stat-card { 
+    background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); 
+    padding: 2rem; border-radius: 20px; text-align: center; 
+    border: 1px solid rgba(255,255,255,0.2); transition: all 0.3s;
+}
+.stat-card:hover { transform: translateY(-10px); background: rgba(255,255,255,0.2); }
+.stat-value { font-size: 2.5rem; font-weight: 900; font-family: 'Orbitron', monospace; margin-top: 0.5rem; }
+
+/* 🏆 ЗВАНИЯ */
+.rank-section { background: rgba(0,0,0,0.5); padding: 2rem; border-radius: 20px; margin: 2rem 0; text-align: center; }
+.progress-container { margin-top: 1rem; }
+.progress-bar { 
+    width: 100%; height: 20px; background: rgba(255,255,255,0.1); 
+    border-radius: 10px; overflow: hidden; margin-bottom: 1rem;
+}
+.progress-fill { 
+    height: 100%; background: linear-gradient(90deg, #ffd700, #ffed4a); 
+    border-radius: 10px; transition: width 0.5s ease; 
+    box-shadow: 0 0 20px rgba(255,215,0,0.6);
+}
+
+/* ✨ АНИМАЦИИ */
+@keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(255,215,0,0.5); } 50% { box-shadow: 0 0 40px rgba(255,215,0,1); } }
+.glow { animation: glow 2s infinite; }
+@keyframes tankShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.tank-shake { animation: tankShake 0.5s; }
+
+/* 📱 АДАПТИВНОСТЬ */
+@media (max-width: 768px) {
+    .nav-menu { flex-direction: column; gap: 1rem; }
+    .dashboard-grid { grid-template-columns: 1fr; }
+    .btn { padding: 0.8rem 1.5rem; font-size: 1rem; }
+}
