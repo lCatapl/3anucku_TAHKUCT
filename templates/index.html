@@ -1,45 +1,52 @@
 {% extends "base.html" %}
-{% block content %}
-<div class="text-center py-20">
-    <h1 class="text-6xl font-bold text-yellow-400 mb-8 animate-pulse">⚔️ Записки Танкиста</h1>
-    <p class="text-xl mb-12 max-w-2xl mx-auto">Ультимативный гейм-хаб для танкистов!</p>
-    
-    <!-- Реальная статистика (обновляется каждую секунду) -->
-    <div class="grid md:grid-cols-4 gap-8 mb-12" id="stats">
-        <div class="bg-gray-800 p-8 rounded-xl" data-type="online">
-            <div class="text-3xl font-bold text-yellow-400" id="online-count">1,247</div>
-            <div>Игроков онлайн</div>
-        </div>
-        <div class="bg-gray-800 p-8 rounded-xl" data-type="battles">
-            <div class="text-3xl font-bold text-green-400" id="battles-count">5,892</div>
-            <div>Битв сегодня</div>
-        </div>
-        <div class="bg-gray-800 p-8 rounded-xl" data-type="tournaments">
-            <div class="text-3xl font-bold text-blue-400" id="tournaments-count">127</div>
-            <div>Турниров</div>
-        </div>
-        <div class="bg-gray-800 p-8 rounded-xl" data-type="posts">
-            <div class="text-3xl font-bold text-purple-400" id="posts-count">42</div>
-            <div>Записок</div>
-        </div>
-    </div>
-    
-    <a href="/game" class="bg-gradient-to-r from-yellow-500 to-orange-500 text-xl px-12 py-4 rounded-full font-bold hover:shadow-2xl">⚡ ИГРАТЬ СЕЙЧАС</a>
-</div>
 
-<script>
-// Реальная статистика каждую секунду
-function updateStats() {
-    fetch('/api/stats')
-        .then(r => r.json())
-        .then(data => {
-            document.getElementById('online-count').textContent = data.online;
-            document.getElementById('battles-count').textContent = data.battles;
-            document.getElementById('tournaments-count').textContent = data.tournaments;
-            document.getElementById('posts-count').textContent = data.posts;
-        });
-}
-setInterval(updateStats, 1000);
-updateStats();
-</script>
+{% block content %}
+<div class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">⚔️ ТАНКОВЫЙ БОТ v2.0 ⚔️</h1>
+        <p class="hero-subtitle">200+ танков • 25 званий • Турниры • Ежедневки</p>
+        
+        {% if session.logged_in and player %}
+        <div class="dashboard-grid">
+            <div class="stat-card gold-card">
+                <h3>💰 Золото</h3>
+                <div class="stat-value">{{ "{:,}".format(player.gold) }}</div>
+            </div>
+            <div class="stat-card silver-card">
+                <h3>🪙 Серебро</h3>
+                <div class="stat-value">{{ "{:,}".format(player.silver) }}</div>
+            </div>
+            <div class="stat-card points-card">
+                <h3>⭐ Очки</h3>
+                <div class="stat-value">{{ "{:,}".format(player.points) }}</div>
+            </div>
+            <div class="stat-card tanks-card">
+                <h3>🚀 Танки</h3>
+                <div class="stat-value">{{ player.tanks|length }}</div>
+            </div>
+        </div>
+
+        <div class="rank-section">
+            <h2>{{ rank_info.rank_emoji }} {{ rank_info.current }}</h2>
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ rank_info.progress }}%"></div>
+                </div>
+                <span class="progress-text">{{ "%.0f"|format(rank_info.progress) }}% до {{ rank_info.next }}</span>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button onclick="claimDaily()" class="btn btn-gold">🎁 Ежедневка</button>
+            <button onclick="quickBattle()" class="btn btn-danger">⚔️ Быстрый бой</button>
+            <a href="{{ url_for('shop') }}" class="btn btn-primary">🏪 Магазин</a>
+        </div>
+        {% else %}
+        <div class="hero-buttons">
+            <a href="{{ url_for('register') }}" class="btn btn-hero">🚀 Начать игру</a>
+            <a href="{{ url_for('login') }}" class="btn btn-secondary">🔐 Войти</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}
