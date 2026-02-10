@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Регистрация - Танковый Бот</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial; background: #1a1a2e; color: white; padding: 50px; }
+        .form-container { max-width: 400px; margin: 0 auto; background: rgba(0,0,0,0.5); padding: 30px; border-radius: 15px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 8px; font-size: 16px; }
+        .btn { width: 100%; padding: 15px; font-size: 18px; background: #667eea; color: white; border: none; border-radius: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>📝 Регистрация</h2>
+        <form method="POST">
+            <input type="text" name="username" placeholder="Имя пользователя (минимум 3 символа)" required>
+            <input type="password" name="password" placeholder="Пароль" required>
+            <button type="submit" class="btn">🚀 Создать аккаунт</button>
+        </form>
+        <p style="margin-top: 20px;"><a href="/login" style="color: #667eea;">Уже есть аккаунт? Войти</a></p>
+    </div>
+</body>
+</html>
