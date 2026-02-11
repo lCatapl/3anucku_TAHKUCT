@@ -20,29 +20,6 @@ MUTED_PLAYERS_TIME = {}
 chat_messages = []
 DB_PATH = 'tankist.db'
 
-# players_init.py (запустить ЛОКАЛЬНО один раз)
-import sqlite3
-import os
-
-conn = sqlite3.connect('players.db')
-cursor = conn.cursor()
-
-cursor.execute('''CREATE TABLE IF NOT EXISTS players (
-    id TEXT PRIMARY KEY, username TEXT UNIQUE, password TEXT, 
-    gold INTEGER DEFAULT 5000, silver INTEGER DEFAULT 100000,
-    points INTEGER DEFAULT 0, tanks TEXT DEFAULT '[]',
-    battles INTEGER DEFAULT 0, wins INTEGER DEFAULT 0,
-    created_at TEXT, role TEXT DEFAULT 'player'
-)''')
-
-# Тестовый админ
-cursor.execute("INSERT OR IGNORE INTO players (id, username, password, role, gold) VALUES (?, ?, ?, 'admin', 999999)", 
-               ('admin123', 'admin', '$2b$12$...', 'admin', 999999))
-
-conn.commit()
-conn.close()
-print("✅ База создана!")
-
 # ========================================
 # 🔥 АДМИНЫ С ПРАВАМИ БОГА
 # ========================================
@@ -1132,7 +1109,7 @@ def register():
     # Проверка rate limit (10 мин)
     if request.method == 'POST':
         try:
-            conn = sqlite3.connect('players.db')
+            conn = sqlite3.connect('players.db', check_same_thread=False)
             cursor = conn.cursor()
             
             # Проверка последнего создания аккаунта
@@ -1153,7 +1130,7 @@ def register():
     # Обработка формы
     if form.validate_on_submit():
         try:
-            conn = sqlite3.connect('players.db')
+            conn = sqlite3.connect('players.db', check_same_thread=False)
             cursor = conn.cursor()
             
             # Проверка уникальности логина
@@ -1309,6 +1286,7 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
 
