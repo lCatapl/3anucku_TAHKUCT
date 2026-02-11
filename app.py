@@ -12,6 +12,8 @@ import secrets
 app = Flask(__name__)
 app.secret_key = 'tankist_v9.6_super_secret_key_2026'
 
+csrf = CSRFProtect(app)
+
 # ✅ ГЛОБАЛЬНЫЕ КОНСТАНТЫ v9.6
 PLAYERS_EQUAL = True
 ADMIN_LOGINS = ["Назар", "CatNap"]
@@ -1286,6 +1288,7 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
 
