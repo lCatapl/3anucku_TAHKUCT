@@ -59,71 +59,399 @@ def validate_session(admin_required=False):
 # ✅ 1.1 ПОЛНЫЙ СПИСОК 60+ ТАНКОВ v9.4
 # ========================================
 TANKS = {
-    # 🇷🇺 СССР - S-TIER META (НОВЫЕ ЦЕНЫ)
-    "obj140": {"name": "Объект 140", "nation": "USSR", "tier": 10, "type": "MT", "price": 950000, "hp": 1940, "damage": 440, "pen": 258, "speed": 55, "premium": False},
-    "t62a": {"name": "Т-62А", "nation": "USSR", "tier": 10, "type": "MT", "price": 920000, "hp": 2120, "damage": 360, "pen": 264, "speed": 50, "premium": False},
-    "obj430u": {"name": "Объект 430У", "nation": "USSR", "tier": 9, "type": "MT", "price": 380000, "hp": 1860, "damage": 390, "pen": 252, "speed": 50, "premium": False},
-    "obj268v4": {"name": "Объект 268 Вариант 4", "nation": "USSR", "tier": 10, "type": "TD", "price": 980000, "hp": 2120, "damage": 490, "pen": 299, "speed": 42, "premium": False},
-    "obj432": {"name": "Объект 432", "nation": "USSR", "tier": 8, "type": "MT", "price": 145000, "hp": 1520, "damage": 320, "pen": 220, "speed": 52, "premium": False},
-    "obj907": {"name": "Объект 907", "nation": "USSR", "tier": 10, "type": "MT", "price": 960000, "hp": 1960, "damage": 390, "pen": 270, "speed": 52, "premium": False},
-    "obj258": {"name": "Объект 258", "nation": "USSR", "tier": 10, "type": "LT", "price": 880000, "hp": 1750, "damage": 360, "pen": 264, "speed": 68, "premium": False},
-    "is7": {"name": "ИС-7", "nation": "USSR", "tier": 10, "type": "HT", "price": 990000, "hp": 2300, "damage": 490, "pen": 270, "speed": 30, "premium": False},
-    "stii": {"name": "СТ-II", "nation": "USSR", "tier": 10, "type": "HT", "price": 940000, "hp": 2250, "damage": 440, "pen": 252, "speed": 28, "premium": False},
-    "t44_100": {"name": "Т-44-100", "nation": "USSR", "tier": 8, "type": "MT", "price": 185000, "hp": 1620, "damage": 440, "pen": 259, "speed": 52, "premium": True},
-    "obj263": {"name": "Объект 263", "nation": "USSR", "tier": 10, "type": "TD", "price": 1250000, "hp": 2120, "damage": 490, "pen": 299, "speed": 45, "premium": True},
-    
-    # 🇩🇪 ГЕРМАНИЯ
-        # 🇩🇪 ГЕРМАНИЯ
+    # 🔥 I УРОВЕНЬ - ЛЕГЕНДЫ ВОЙНЫ
+    "ms1": {"name": "МС-1 (Т-18)", "tier": 1, "type": "LT", "price": 2500, "hp": 240, "damage": 40, "pen": 28, "speed": 30, "premium": False},
+    # 🛡️ II УРОВЕНЬ
+    "t26": {"name": "Т-26 об.1933", "tier": 2, "type": "LT", "price": 4500, "hp": 460, "damage": 70, "pen": 45, "speed": 33, "premium": False},
+    # ⚔️ III УРОВЕНЬ
+    "bt2": {"name": "БТ-2", "tier": 3, "type": "LT", "price": 8500, "hp": 680, "damage": 85, "pen": 58, "speed": 56, "premium": False},
+    "t46": {"name": "Т-46", "tier": 3, "type": "LT", "price": 9500, "hp": 720, "damage": 90, "pen": 62, "speed": 48, "premium": False},
+    "su76i": {"name": "СУ-76и", "tier": 3, "type": "TD", "price": 7200, "hp": 620, "damage": 110, "pen": 56, "speed": 42, "premium": True},
+    # 🎯 IV УРОВЕНЬ
+    "t28": {"name": "Т-28", "tier": 4, "type": "MT", "price": 16500, "hp": 950, "damage": 110, "pen": 68, "speed": 42, "premium": False},
+    "t34": {"name": "Т-34", "tier": 5, "type": "MT", "price": 28500, "hp": 1280, "damage": 180, "pen": 125, "speed": 55, "premium": False},
+    "kv1": {"name": "КВ-1", "tier": 5, "type": "HT", "price": 32000, "hp": 860, "damage": 300, "pen": 61, "speed": 35, "premium": False},
+    "su85": {"name": "СУ-85", "tier": 4, "type": "TD", "price": 19500, "hp": 780, "damage": 240, "pen": 145, "speed": 55, "premium": False},
+    # 🏆 V УРОВЕНЬ
+    "t34_85": {"name": "Т-34-85", "tier": 6, "type": "MT", "price": 45000, "hp": 1350, "damage": 180, "pen": 158, "speed": 55, "premium": False},
+    "kv2": {"name": "КВ-2", "tier": 6, "type": "HT", "price": 52000, "hp": 860, "damage": 910, "pen": 86, "speed": 35, "premium": False},
+    "is": {"name": "ИС", "tier": 6, "type": "HT", "price": 48500, "hp": 1200, "damage": 390, "pen": 175, "speed": 37, "premium": False},
+    # ⚡ VI УРОВЕНЬ
+    "t44": {"name": "Т-44", "tier": 8, "type": "MT", "price": 145000, "hp": 1620, "damage": 320, "pen": 220, "speed": 52, "premium": False},
+    "is2": {"name": "ИС-2", "tier": 7, "type": "HT", "price": 85000, "hp": 1470, "damage": 390, "pen": 200, "speed": 37, "premium": False},
+    "su100": {"name": "СУ-100", "tier": 6, "type": "TD", "price": 62000, "hp": 1220, "damage": 390, "pen": 225, "speed": 50, "premium": False},
+    # 🔥 VII УРОВЕНЬ
+    "obj244": {"name": "Объект 244", "tier": 7, "type": "HT", "price": 95000, "hp": 1600, "damage": 440, "pen": 234, "speed": 42, "premium": True},
+    "t43": {"name": "Т-43", "tier": 7, "type": "MT", "price": 78000, "hp": 1470, "damage": 280, "pen": 200, "speed": 52, "premium": False},
+    # 🛡️ VIII УРОВЕНЬ - МЕТА ТАНКИ
+    "is3": {"name": "ИС-3", "tier": 8, "type": "HT", "price": 185000, "hp": 1850, "damage": 490, "pen": 252, "speed": 40, "premium": False},
+    "t44_100": {"name": "Т-44-100", "tier": 8, "type": "MT", "price": 185000, "hp": 1620, "damage": 440, "pen": 259, "speed": 52, "premium": True},
+    "obj432": {"name": "Объект 432", "tier": 8, "type": "MT", "price": 165000, "hp": 1520, "damage": 320, "pen": 220, "speed": 52, "premium": False},
+    "obj252u": {"name": "Объект 252У", "tier": 8, "type": "HT", "price": 195000, "hp": 2000, "damage": 440, "pen": 270, "speed": 35, "premium": True},
+    # 🎯 IX УРОВЕНЬ
+    "obj430u": {"name": "Объект 430У", "tier": 9, "type": "MT", "price": 380000, "hp": 1860, "damage": 390, "pen": 252, "speed": 50, "premium": False},
+    "is4m": {"name": "ИС-4М", "tier": 9, "type": "HT", "price": 420000, "hp": 2250, "damage": 490, "pen": 270, "speed": 32, "premium": False},
+    "obj257": {"name": "Объект 257", "tier": 9, "type": "HT", "price": 410000, "hp": 2100, "damage": 490, "pen": 270, "speed": 34, "premium": False},
+    # 🏆 X УРОВЕНЬ - ЛУЧШИЕ СССР
+    "obj140": {"name": "Объект 140", "tier": 10, "type": "MT", "price": 950000, "hp": 1940, "damage": 440, "pen": 258, "speed": 55, "premium": False},
+    "t62a": {"name": "Т-62А", "tier": 10, "type": "MT", "price": 920000, "hp": 2120, "damage": 360, "pen": 264, "speed": 50, "premium": False},
+    "obj907": {"name": "Объект 907", "tier": 10, "type": "MT", "price": 960000, "hp": 1960, "damage": 390, "pen": 270, "speed": 52, "premium": False},
+    "obj268v4": {"name": "Объект 268 Вариант 4", "tier": 10, "type": "TD", "price": 980000, "hp": 2120, "damage": 490, "pen": 299, "speed": 42, "premium": False},
+    "is7": {"name": "ИС-7", "tier": 10, "type": "HT", "price": 990000, "hp": 2300, "damage": 490, "pen": 270, "speed": 30, "premium": False},
+    "stii": {"name": "СТ-II", "tier": 10, "type": "HT", "price": 940000, "hp": 2250, "damage": 440, "pen": 252, "speed": 28, "premium": False},
+    "obj263": {"name": "Объект 263", "tier": 10, "type": "TD", "price": 1250000, "hp": 2120, "damage": 490, "pen": 299, "speed": 45, "premium": True},
+    "obj279": {"name": "Объект 279(e)", "tier": 10, "type": "HT", "price": 1350000, "hp": 2400, "damage": 490, "pen": 299, "speed": 28, "premium": True},
+    # 🔥 XI УРОВЕНЬ 2026 (Update 2.1.1)
+    "kr1": {"name": "КР-1", "tier": 11, "type": "HT", "price": 4500000, "hp": 2600, "damage": 550, "pen": 320, "speed": 30, "premium": True},
+    "obj120": {"name": "Объект 120", "tier": 11, "type": "MT", "price": 4200000, "hp": 2200, "damage": 520, "pen": 310, "speed": 60, "premium": True},
+    "bzt70": {"name": "BZT-70", "tier": 11, "type": "HT", "price": 4600000, "hp": 2700, "damage": 600, "pen": 330, "speed": 28, "premium": True},
+    # 🎮 ПРЕМИУМНЫЕ СССР (любимцы игроков)
+    "t44_122": {"name": "Т-44-122", "tier": 7, "type": "MT", "price": 125000, "hp": 1470, "damage": 440, "pen": 234, "speed": 52, "premium": True},
+    "obj258": {"name": "Объект 258", "tier": 10, "type": "LT", "price": 880000, "hp": 1750, "damage": 360, "pen": 264, "speed": 68, "premium": False},
+
+    # 🔥 I УРОВЕНЬ - ЛЕГЕНДАРНЫЕ ПУШКИ
+    "leichter_pz1": {"name": "Leichter Pz.Kpfw. I", "tier": 1, "type": "LT", "price": 2800, "hp": 270, "damage": 45, "pen": 32, "speed": 38, "premium": False},
+    # 🛡️ II УРОВЕНЬ
+    "pz2": {"name": "Pz.Kpfw. II", "tier": 2, "type": "LT", "price": 5200, "hp": 520, "damage": 75, "pen": 52, "speed": 40, "premium": False},
+    "pz38t": {"name": "Pz.Kpfw. 38(t)", "tier": 3, "type": "LT", "price": 7800, "hp": 680, "damage": 90, "pen": 64, "speed": 42, "premium": False},
+    # ⚔️ III УРОВЕНЬ
+    "pz3j": {"name": "Pz.Kpfw. III J", "tier": 4, "type": "MT", "price": 12500, "hp": 880, "damage": 120, "pen": 78, "speed": 40, "premium": False},
+    "stug3b": {"name": "StuG III Ausf. B", "tier": 4, "type": "TD", "price": 14800, "hp": 820, "damage": 280, "pen": 110, "speed": 32, "premium": False},
+    # 🎯 IV УРОВЕНЬ
+    "pz4h": {"name": "Pz.Kpfw. IV Ausf. H", "tier": 5, "type": "MT", "price": 28500, "hp": 1050, "damage": 160, "pen": 125, "speed": 40, "premium": False},
+    "hetzer": {"name": "Hetzer", "tier": 5, "type": "TD", "price": 32000, "hp": 960, "damage": 320, "pen": 138, "speed": 42, "premium": False},
+    # 🏆 V УРОВЕНЬ
+    "panzerh": {"name": "Panzer IV H", "tier": 6, "type": "MT", "price": 48500, "hp": 1270, "damage": 200, "pen": 158, "speed": 38, "premium": False},
+    "jagpanzeriv": {"name": "Jagdpanzer IV", "tier": 6, "type": "TD", "price": 52000, "hp": 1180, "damage": 440, "pen": 203, "speed": 38, "premium": False},
+    # ⚡ VI УРОВЕНЬ - ИКОНЫ ВОЙНЫ
+    "tiger1": {"name": "Tiger I", "tier": 7, "type": "HT", "price": 85000, "hp": 1880, "damage": 440, "pen": 237, "speed": 45, "premium": False},
+    "panther": {"name": "Panther", "tier": 7, "type": "MT", "price": 78000, "hp": 1650, "damage": 350, "pen": 198, "speed": 55, "premium": False},
+    "ferdinand": {"name": "Ferdinand", "tier": 7, "type": "TD", "price": 92000, "hp": 1620, "damage": 490, "pen": 237, "speed": 30, "premium": False},
+    # 🛡️ VII УРОВЕНЬ
+    "e75": {"name": "E 75", "tier": 9, "type": "HT", "price": 390000, "hp": 2100, "damage": 490, "pen": 270, "speed": 28, "premium": False},
+    "pantherii": {"name": "Panther II", "tier": 8, "type": "MT", "price": 185000, "hp": 1850, "damage": 390, "pen": 252, "speed": 55, "premium": False},
+    # 🔥 VIII УРОВЕНЬ - МЕТА ГЕРМАНИЯ
+    "tiger2": {"name": "Tiger II", "tier": 8, "type": "HT", "price": 195000, "hp": 1950, "damage": 440, "pen": 264, "speed": 38, "premium": False},
+    "leopard1": {"name": "Leopard 1", "tier": 10, "type": "LT", "price": 890000, "hp": 1850, "damage": 400, "pen": 264, "speed": 65, "premium": False},
+    "rhm_borsig": {"name": "Rhm.-Borsig Waffenträger", "tier": 8, "type": "TD", "price": 225000, "hp": 1750, "damage": 490, "pen": 280, "speed": 45, "premium": False},
+    "jagdpanzer_e100": {"name": "Jagdpanzer E 100", "tier": 10, "type": "TD", "price": 1150000, "hp": 2400, "damage": 1150, "pen": 299, "speed": 28, "premium": True},
+    # 🎯 IX УРОВЕНЬ
+    "e50": {"name": "E 50", "tier": 9, "type": "MT", "price": 420000, "hp": 1960, "damage": 440, "pen": 270, "speed": 52, "premium": False},
+    "vte100": {"name": "VK 100.01 (P)", "tier": 8, "type": "HT", "price": 155000, "hp": 1800, "damage": 440, "pen": 252, "speed": 22, "premium": False},
+    # 🏆 X УРОВЕНЬ - СУПЕРТЯЖИ
     "e100": {"name": "E 100", "nation": "Germany", "tier": 10, "type": "HT", "price": 1050000, "hp": 2400, "damage": 490, "pen": 299, "speed": 25, "premium": False},
-    "e75": {"name": "E 75", "nation": "Germany", "tier": 9, "type": "HT", "price": 390000, "hp": 2100, "damage": 490, "pen": 270, "speed": 28, "premium": False},
-    "vte100": {"name": "VK 100.01 (P)", "nation": "Germany", "tier": 8, "type": "HT", "price": 155000, "hp": 1800, "damage": 440, "pen": 252, "speed": 22, "premium": False},
-    "leopard1": {"name": "Leopard 1", "nation": "Germany", "tier": 10, "type": "LT", "price": 890000, "hp": 1850, "damage": 400, "pen": 264, "speed": 65, "premium": False},
-    "obj268": {"name": "Объект 268", "nation": "Germany", "tier": 10, "type": "TD", "price": 970000, "hp": 1940, "damage": 490, "pen": 299, "speed": 38, "premium": False},
-    "pro_art": {"name": "Progetto M35 mod. 46", "nation": "Germany", "tier": 8, "type": "MT", "price": 165000, "hp": 1580, "damage": 340, "pen": 234, "speed": 58, "premium": False},
+    "maus": {"name": "Maus", "nation": "Germany", "tier": 10, "type": "HT", "price": 3500000, "hp": 3000, "damage": 490, "pen": 299, "speed": 20, "premium": True},
     "e50m": {"name": "E 50 M", "nation": "Germany", "tier": 10, "type": "MT", "price": 1220000, "hp": 1960, "damage": 440, "pen": 270, "speed": 52, "premium": True},
     "vk7201": {"name": "VK 72.01 (K)", "nation": "Germany", "tier": 10, "type": "HT", "price": 1350000, "hp": 2350, "damage": 490, "pen": 299, "speed": 25, "premium": True},
+    "obj268": {"name": "Объект 268", "nation": "Germany", "tier": 10, "type": "TD", "price": 970000, "hp": 1940, "damage": 490, "pen": 299, "speed": 38, "premium": False},
+    # 🔥 XI УРОВЕНЬ 2026 (Новые супертяжи)
+    "taschenratte": {"name": "Taschenratte", "tier": 11, "type": "HT", "price": 4600000, "hp": 2700, "damage": 550, "pen": 330, "speed": 25, "premium": True},
+    "panzer_vii": {"name": "Panzer VII", "tier": 11, "type": "HT", "price": 4800000, "hp": 2800, "damage": 600, "pen": 340, "speed": 22, "premium": True},
+    # 🎮 ПРЕМИУМНЫЕ ГЕРМАНЦЫ
+    "lowe": {"name": "Löwe", "tier": 8, "type": "HT", "price": 235000, "hp": 2100, "damage": 490, "pen": 270, "speed": 35, "premium": True},
+    "pro_art": {"name": "Progetto M35 mod. 46", "tier": 8, "type": "MT", "price": 165000, "hp": 1580, "damage": 340, "pen": 234, "speed": 58, "premium": False},
 
-    # 🇺🇸 США
-    "sheridan": {"name": "M551 Sheridan", "nation": "USA", "tier": 10, "type": "LT", "price": 870000, "hp": 1620, "damage": 400, "pen": 268, "speed": 70, "premium": False},
-    "t110e5": {"name": "T110E5", "nation": "USA", "tier": 10, "type": "HT", "price": 1020000, "hp": 2250, "damage": 400, "pen": 252, "speed": 32, "premium": False},
-    "t95e6": {"name": "T95E6", "nation": "USA", "tier": 10, "type": "HT", "price": 1010000, "hp": 2250, "damage": 400, "pen": 252, "speed": 30, "premium": False},
-    "t29": {"name": "T29", "nation": "USA", "tier": 7, "type": "HT", "price": 65000, "hp": 1650, "damage": 400, "pen": 224, "speed": 35, "premium": False},
-    "t92htc": {"name": "T92 HMC", "nation": "USA", "tier": 8, "type": "ARTY", "price": 175000, "hp": 1650, "damage": 1100, "pen": 86, "speed": 40, "premium": False},
-    "t34": {"name": "T34", "nation": "USA", "tier": 9, "type": "HT", "price": 450000, "hp": 2100, "damage": 400, "pen": 252, "speed": 35, "premium": True},
-    "t110e3": {"name": "T110E3", "nation": "USA", "tier": 10, "type": "HT", "price": 1240000, "hp": 2250, "damage": 400, "pen": 252, "speed": 28, "premium": True},
+    # 🔥 I УРОВЕНЬ - АМЕРИКАНСКИЕ КЛАССИКИ
+    "m2lt": {"name": "M2 Light", "tier": 1, "type": "LT", "price": 3200, "hp": 300, "damage": 50, "pen": 35, "speed": 42, "premium": False},
+    # 🛡️ II УРОВЕНЬ
+    "m2a2": {"name": "M2A2", "tier": 2, "type": "LT", "price": 5800, "hp": 580, "damage": 80, "pen": 55, "speed": 45, "premium": False},
+    # ⚔️ III УРОВЕНЬ
+    "m3stuart": {"name": "M3 Stuart", "tier": 3, "type": "LT", "price": 9800, "hp": 720, "damage": 95, "pen": 68, "speed": 61, "premium": False},
+    "bt7a1": {"name": "MT-25", "tier": 6, "type": "LT", "price": 125000, "hp": 1220, "damage": 160, "pen": 145, "speed": 72, "premium": True},
+    # 🎯 IV УРОВЕНЬ
+    "m4a3": {"name": "M4A3 Sherman", "tier": 5, "type": "MT", "price": 28500, "hp": 1180, "damage": 180, "pen": 148, "speed": 48, "premium": False},
+    "t67": {"name": "T67", "tier": 4, "type": "TD", "price": 19800, "hp": 880, "damage": 240, "pen": 170, "speed": 62, "premium": False},
+    # 🏆 V УРОВЕНЬ
+    "t29": {"name": "T29", "tier": 7, "type": "HT", "price": 65000, "hp": 1650, "damage": 400, "pen": 224, "speed": 35, "premium": False},
+    "m4a32e8": {"name": "M4A3E8 Sherman", "tier": 6, "type": "MT", "price": 48500, "hp": 1350, "damage": 200, "pen": 158, "speed": 48, "premium": False},
+    "t92htc": {"name": "T92 HMC", "tier": 8, "type": "ARTY", "price": 175000, "hp": 1650, "damage": 1100, "pen": 86, "speed": 40, "premium": False},
+    # ⚡ VI УРОВЕНЬ
+    "m44": {"name": "M44", "tier": 6, "type": "TD", "price": 62000, "hp": 1220, "damage": 280, "pen": 200, "speed": 58, "premium": False},
+    "m26e4": {"name": "SuperPershing", "tier": 7, "type": "MT", "price": 85000, "hp": 1650, "damage": 280, "pen": 215, "speed": 50, "premium": True},
+    # 🛡️ VII УРОВЕНЬ
+    "t20": {"name": "T20", "tier": 7, "type": "MT", "price": 78000, "hp": 1470, "damage": 280, "pen": 200, "speed": 52, "premium": False},
+    "t32": {"name": "T32", "tier": 8, "type": "HT", "price": 185000, "hp": 1850, "damage": 400, "pen": 252, "speed": 42, "premium": False},
+    "t25at": {"name": "T25 AT", "tier": 7, "type": "TD", "price": 92000, "hp": 1620, "damage": 400, "pen": 258, "speed": 38, "premium": False},
+    # 🔥 VIII УРОВЕНЬ - АМЕРИКАНСКАЯ МЕТА
+    "t32": {"name": "T32", "tier": 8, "type": "HT", "price": 185000, "hp": 1850, "damage": 400, "pen": 252, "speed": 42, "premium": False},
+    "m48a5": {"name": "M48A5 Patton", "tier": 10, "type": "MT", "price": 920000, "hp": 1960, "damage": 360, "pen": 264, "speed": 50, "premium": False},
+    "t69": {"name": "T69", "tier": 9, "type": "MT", "price": 380000, "hp": 1860, "damage": 360, "pen": 252, "speed": 52, "premium": False},
+    # 🎯 IX УРОВЕНЬ
+    "m103": {"name": "M103", "tier": 9, "type": "HT", "price": 420000, "hp": 2250, "damage": 400, "pen": 252, "speed": 32, "premium": False},
+    "t54e1": {"name": "T54E1", "tier": 9, "type": "MT", "price": 410000, "hp": 2100, "damage": 400, "pen": 270, "speed": 52, "premium": False},
+    # 🏆 X УРОВЕНЬ - АМЕРИКАНСКИЕ ТИТАНЫ
+    "t110e5": {"name": "T110E5", "tier": 10, "type": "HT", "price": 1020000, "hp": 2250, "damage": 400, "pen": 252, "speed": 32, "premium": False},
+    "t95e6": {"name": "T95E6", "tier": 10, "type": "HT", "price": 1010000, "hp": 2250, "damage": 400, "pen": 252, "speed": 30, "premium": False},
+    "sheridan": {"name": "M551 Sheridan", "tier": 10, "type": "LT", "price": 870000, "hp": 1620, "damage": 400, "pen": 268, "speed": 70, "premium": False},
+    "t110e3": {"name": "T110E3", "tier": 10, "type": "TD", "price": 1240000, "hp": 2250, "damage": 400, "pen": 252, "speed": 28, "premium": True},
+    "t57heavy": {"name": "T57 Heavy", "tier": 10, "type": "HT", "price": 1180000, "hp": 2250, "damage": 400, "pen": 252, "speed": 34, "premium": True},
+    "t34": {"name": "T34", "tier": 9, "type": "HT", "price": 450000, "hp": 2100, "damage": 400, "pen": 252, "speed": 35, "premium": True},
+    # 🔥 XI УРОВЕНЬ 2026 (Новые американцы)
+    "t803": {"name": "T-803", "tier": 11, "type": "HT", "price": 4550000, "hp": 2550, "damage": 520, "pen": 310, "speed": 32, "premium": True},
+    "patton_xi": {"name": "Patton XI", "tier": 11, "type": "MT", "price": 4400000, "hp": 2200, "damage": 480, "pen": 320, "speed": 55, "premium": True},
+    # 🎮 ПРЕМИУМНЫЕ США
+    "skipped": {"name": "Skippé", "tier": 8, "type": "MT", "price": 235000, "hp": 2100, "damage": 390, "pen": 270, "speed": 52, "premium": True},
 
-    # 🇬🇧 БРИТАНИЯ
-    "fv215b": {"name": "FV215b (183)", "nation": "UK", "tier": 10, "type": "HT", "price": 1030000, "hp": 2200, "damage": 400, "pen": 257, "speed": 34, "premium": False},
-    "super_conqueror": {"name": "Super Conqueror", "nation": "UK", "tier": 10, "type": "HT", "price": 1080000, "hp": 2150, "damage": 400, "pen": 270, "speed": 36, "premium": False},
-    "chieftain_mk6": {"name": "Chieftain Mk. 6", "nation": "UK", "tier": 10, "type": "HT", "price": 1060000, "hp": 2100, "damage": 400, "pen": 270, "speed": 38, "premium": False},
-        "turtle_mk1": {"name": "Turtle Mk. I", "nation": "UK", "tier": 10, "type": "HT", "price": 1150000, "hp": 2400, "damage": 400, "pen": 257, "speed": 28, "premium": True},
+    # 🔥 I УРОВЕНЬ - БРИТАНСКИЕ КЛАССИКИ
+    "crusader": {"name": "Cruiser Mk. I", "tier": 1, "type": "LT", "price": 2900, "hp": 280, "damage": 48, "pen": 34, "speed": 40, "premium": False},
+    # 🛡️ II УРОВЕНЬ
+    "cruiser_mk3": {"name": "Cruiser Mk. III", "tier": 2, "type": "LT", "price": 5500, "hp": 540, "damage": 78, "pen": 54, "speed": 42, "premium": False},
+    "matilda1": {"name": "Matilda LVT", "tier": 4, "type": "LT", "price": 16500, "hp": 950, "damage": 110, "pen": 68, "speed": 42, "premium": True},
+    # ⚔️ III УРОВЕНЬ
+    "cruiser_mk4": {"name": "Cruiser Mk. IV", "tier": 4, "type": "MT", "price": 12500, "hp": 880, "damage": 120, "pen": 78, "speed": 45, "premium": False},
+    "valentine": {"name": "Valentine", "tier": 4, "type": "LT", "price": 14800, "hp": 820, "damage": 110, "pen": 70, "speed": 38, "premium": False},
+    # 🎯 IV УРОВЕНЬ
+    "covenanter": {"name": "Covenanter", "tier": 5, "type": "LT", "price": 28500, "hp": 1180, "damage": 180, "pen": 125, "speed": 62, "premium": False},
+    "churchill1": {"name": "Churchill I", "tier": 5, "type": "HT", "price": 32000, "hp": 1270, "damage": 200, "pen": 158, "speed": 27, "premium": False},
+    # 🏆 V УРОВЕНЬ
+    "excelsior": {"name": "Excelsior", "tier": 6, "type": "HT", "price": 48500, "hp": 1350, "damage": 240, "pen": 175, "speed": 32, "premium": True},
+    "achilles": {"name": "Achilles", "tier": 6, "type": "TD", "price": 52000, "hp": 1180, "damage": 280, "pen": 200, "speed": 42, "premium": False},
+    # ⚡ VI УРОВЕНЬ
+    "caernarvon": {"name": "Caernarvon", "tier": 8, "type": "HT", "price": 185000, "hp": 1850, "damage": 400, "pen": 252, "speed": 34, "premium": False},
+    "cromwell": {"name": "Cromwell", "tier": 6, "type": "MT", "price": 62000, "hp": 1220, "damage": 200, "pen": 158, "speed": 64, "premium": False},
+    "at8": {"name": "AT 8", "tier": 6, "type": "TD", "price": 65000, "hp": 1220, "damage": 280, "pen": 200, "speed": 28, "premium": False},
+    # 🛡️ VII УРОВЕНЬ
+    "centurion1": {"name": "Centurion Mk. I", "tier": 7, "type": "MT", "price": 78000, "hp": 1470, "damage": 280, "pen": 215, "speed": 50, "premium": False},
+    "crusader_5inch": {"name": "Crusader 5-inch", "tier": 7, "type": "MT", "price": 85000, "hp": 1650, "damage": 350, "pen": 198, "speed": 58, "premium": True},
+    # 🔥 VIII УРОВЕНЬ - БРИТАНСКАЯ МЕТА
+    "conqueror": {"name": "Conqueror", "tier": 9, "type": "HT", "price": 420000, "hp": 2100, "damage": 400, "pen": 245, "speed": 34, "premium": False},
+    "centurion_action": {"name": "Centurion Action X", "tier": 10, "type": "MT", "price": 920000, "hp": 1950, "damage": 360, "pen": 264, "speed": 50, "premium": False},
+    "fv215b": {"name": "FV215b (183)", "tier": 10, "type": "TD", "price": 1030000, "hp": 2200, "damage": 400, "pen": 257, "speed": 34, "premium": False},
+    "turtle_mk1": {"name": "Turtle Mk. I", "tier": 10, "type": "HT", "price": 1150000, "hp": 2400, "damage": 400, "pen": 257, "speed": 28, "premium": True},
+    # 🎯 IX УРОВЕНЬ
+    "super_conqueror": {"name": "Super Conqueror", "tier": 10, "type": "HT", "price": 1080000, "hp": 2150, "damage": 400, "pen": 270, "speed": 36, "premium": False},
+    "tortoise": {"name": "Tortoise", "tier": 9, "type": "TD", "price": 420000, "hp": 2000, "damage": 400, "pen": 280, "speed": 20, "premium": False},
+    "fv4004": {"name": "FV4004 Conway", "tier": 9, "type": "TD", "price": 410000, "hp": 1500, "damage": 400, "pen": 270, "speed": 38, "premium": False},
+    # 🏆 X УРОВЕНЬ - БРИТАНСКИЕ ТИТАНЫ
+    "chieftain_mk6": {"name": "Chieftain Mk. 6", "tier": 10, "type": "HT", "price": 1060000, "hp": 2100, "damage": 400, "pen": 270, "speed": 38, "premium": False},
+    "fv217_badger": {"name": "FV217 Badger", "tier": 10, "type": "TD", "price": 1070000, "hp": 1940, "damage": 400, "pen": 270, "speed": 34, "premium": False},
+    "concept_no5": {"name": "Concept No. 5", "tier": 10, "type": "MT", "price": 895000, "hp": 1800, "damage": 430, "pen": 260, "speed": 58, "premium": True},
+    # 🔥 XI УРОВЕНЬ 2026 (Новые британцы)
+    "chieftain_xi": {"name": "Chieftain XI", "tier": 11, "type": "HT", "price": 4450000, "hp": 2350, "damage": 520, "pen": 310, "speed": 36, "premium": True},
+    "saladin_xi": {"name": "Saladin XI", "tier": 11, "type": "LT", "price": 4300000, "hp": 1750, "damage": 430, "pen": 300, "speed": 72, "premium": True},
+    # 🎮 ПРЕМИУМНЫЕ БРИТАНЦЫ
+    "toga": {"name": "TOG II*", "tier": 9, "type": "HT", "price": 450000, "hp": 2350, "damage": 400, "pen": 245, "speed": 22, "premium": True},
+    "at15": {"name": "AT 15", "tier": 8, "type": "TD", "price": 225000, "hp": 1750, "damage": 400, "pen": 280, "speed": 20, "premium": False},
 
-    # 🇯🇵 ЯПОНИЯ
-    "sta1": {"name": "STA-1", "nation": "Japan", "tier": 10, "type": "MT", "price": 910000, "hp": 1960, "damage": 360, "pen": 264, "speed": 53, "premium": False},
-    "type71": {"name": "Type 71", "nation": "Japan", "tier": 10, "type": "HT", "price": 1040000, "hp": 2250, "damage": 490, "pen": 270, "speed": 32, "premium": False},
-    "ho_ri_3": {"name": "Ho-Ri 3", "nation": "Japan", "tier": 10, "type": "TD", "price": 1090000, "hp": 2120, "damage": 490, "pen": 299, "speed": 38, "premium": True},
+    # 🔥 I УРОВЕНЬ - САМУРАИ ТАНКОВ
+    "ha_go": {"name": "Ha-Go", "tier": 2, "type": "LT", "price": 4800, "hp": 520, "damage": 75, "pen": 52, "speed": 45, "premium": False},
+    # 🛡️ II УРОВЕНЬ
+    "ke_ni_a": {"name": "Ke-Ni A", "tier": 3, "type": "LT", "price": 8500, "hp": 680, "damage": 90, "pen": 64, "speed": 48, "premium": False},
+    # ⚔️ III УРОВЕНЬ
+    "chi_ha": {"name": "Chi-Ha", "tier": 4, "type": "MT", "price": 14500, "hp": 880, "damage": 120, "pen": 78, "speed": 42, "premium": False},
+    "ho_ni_i": {"name": "Ho-Ni I", "tier": 3, "type": "TD", "price": 12500, "hp": 820, "damage": 240, "pen": 110, "speed": 38, "premium": False},
+    # 🎯 IV УРОВЕНЬ
+    "chi_he": {"name": "Chi-He", "tier": 5, "type": "MT", "price": 28500, "hp": 1180, "damage": 180, "pen": 125, "speed": 45, "premium": False},
+    "type3_ho_ni_iii": {"name": "Type 3 Ho-Ni III", "tier": 5, "type": "TD", "price": 32000, "hp": 960, "damage": 320, "pen": 138, "speed": 40, "premium": False},
+    # 🏆 V УРОВЕНЬ
+    "chi_nu": {"name": "Chi-Nu", "tier": 6, "type": "MT", "price": 48500, "hp": 1350, "damage": 200, "pen": 158, "speed": 45, "premium": False},
+    "ji_ro": {"name": "Type 95 Ji-Ro", "tier": 6, "type": "TD", "price": 52000, "hp": 1180, "damage": 440, "pen": 203, "speed": 38, "premium": False},
+    # ⚡ VI УРОВЕНЬ
+    "o_i": {"name": "O-I", "tier": 6, "type": "HT", "price": 65000, "hp": 1470, "damage": 440, "pen": 237, "speed": 28, "premium": False},
+    "sta_1": {"name": "STA-1", "tier": 10, "type": "MT", "price": 910000, "hp": 1960, "damage": 360, "pen": 264, "speed": 53, "premium": False},
+    # 🛡️ VII УРОВЕНЬ
+    "sta_2": {"name": "STA-2", "tier": 9, "type": "MT", "price": 360000, "hp": 1750, "damage": 360, "pen": 240, "speed": 55, "premium": False},
+    "chi_to_sp": {"name": "Chi-To SP", "tier": 7, "type": "TD", "price": 85000, "hp": 1650, "damage": 320, "pen": 205, "speed": 40, "premium": False},
+    # 🔥 VIII УРОВЕНЬ - ЯПОНСКАЯ МЕТА
+    "ho_ri_ii": {"name": "Ho-Ri II", "tier": 8, "type": "TD", "price": 195000, "hp": 1620, "damage": 490, "pen": 237, "speed": 30, "premium": False},
+    "type61": {"name": "Type 61", "tier": 10, "type": "MT", "price": 6100000, "hp": 2200, "damage": 520, "pen": 310, "speed": 50, "premium": True},
+    # 🎯 IX УРОВЕНЬ
+    "ho_ri_i": {"name": "Ho-Ri I", "tier": 9, "type": "TD", "price": 3650000, "hp": 2000, "damage": 490, "pen": 280, "speed": 30, "premium": False},
+    "type4_heavy": {"name": "Type 4 Heavy", "tier": 10, "type": "HT", "price": 3600000, "hp": 2400, "damage": 490, "pen": 299, "speed": 25, "premium": False},
+    # 🏆 X УРОВЕНЬ - ЯПОНСКИЕ ТИТАНЫ
+    "type71": {"name": "Type 71", "tier": 10, "type": "HT", "price": 1040000, "hp": 2250, "damage": 490, "pen": 270, "speed": 32, "premium": False},
+    "ho_ri_3": {"name": "Ho-Ri 3", "tier": 10, "type": "TD", "price": 1090000, "hp": 2120, "damage": 490, "pen": 299, "speed": 38, "premium": True},
+    "stb_1": {"name": "STB-1", "tier": 10, "type": "MT", "price": 950000, "hp": 1950, "damage": 360, "pen": 264, "speed": 50, "premium": False},
+    "type5_heavy": {"name": "Type 5 Heavy", "tier": 10, "type": "HT", "price": 6100000, "hp": 2600, "damage": 550, "pen": 320, "speed": 25, "premium": True},
+    # 🔥 XI УРОВЕНЬ 2026 (Новые японцы)
+    "type57": {"name": "Type 57", "tier": 11, "type": "HT", "price": 2680000, "hp": 2700, "damage": 600, "pen": 340, "speed": 28, "premium": True},
+    "o_ho": {"name": "O-Ho", "tier": 11, "type": "HT", "price": 2550000, "hp": 2800, "damage": 600, "pen": 330, "speed": 25, "premium": True},
+    # 🎮 ПРЕМИУМНЫЕ ЯПОНЦЫ
+    "mitsu_108": {"name": "Mitsubishi 108", "tier": 8, "type": "MT", "price": 410000, "hp": 1750, "damage": 360, "pen": 240, "speed": 55, "premium": False},
 
-    # 🇨🇳 КИТАЙ
-    "113": {"name": "113", "nation": "China", "tier": 10, "type": "MT", "price": 930000, "hp": 1960, "damage": 360, "pen": 264, "speed": 50, "premium": False},
-    "wz111_5a": {"name": "WZ-113G FT", "nation": "China", "tier": 10, "type": "HT", "price": 1000000, "hp": 2250, "damage": 400, "pen": 252, "speed": 32, "premium": False},
-    "114_sp2": {"name": "114 SP2", "nation": "China", "tier": 10, "type": "TD", "price": 1070000, "hp": 1940, "damage": 490, "pen": 299, "speed": 40, "premium": True},
+    # 🔥 I УРОВЕНЬ - КИТАЙСКИЕ КОРНИ
+    "nc31": {"name": "NC-31", "tier": 1, "type": "LT", "price": 3200, "hp": 300, "damage": 50, "pen": 35, "speed": 45, "premium": False},
+    # 🛡️ II УРОВЕНЬ
+    "vae_type_b": {"name": "VAE Type B", "tier": 2, "type": "LT", "price": 5800, "hp": 580, "damage": 80, "pen": 55, "speed": 48, "premium": False},
+    # ⚔️ III УРОВЕНЬ
+    "chi_ha_chinese": {"name": "Chi-Ha (китайская)", "tier": 3, "type": "MT", "price": 9800, "hp": 720, "damage": 95, "pen": 68, "speed": 42, "premium": False},
+    "su76g_ft": {"name": "СУ-76G FT", "tier": 4, "type": "TD", "price": 14800, "hp": 820, "damage": 280, "pen": 110, "speed": 40, "premium": True},
+    # 🎯 IV УРОВЕНЬ
+    "m5a1_stuart": {"name": "M5A1 Stuart", "tier": 4, "type": "LT", "price": 16500, "hp": 950, "damage": 110, "pen": 68, "speed": 62, "premium": False},
+    "60g_ft": {"name": "60G FT", "tier": 5, "type": "HT", "price": 28500, "hp": 1180, "damage": 180, "pen": 125, "speed": 35, "premium": False},
+    # 🏆 V УРОВЕНЬ
+    "type_t34": {"name": "Type T-34", "tier": 5, "type": "MT", "price": 48500, "hp": 1350, "damage": 200, "pen": 158, "speed": 55, "premium": False},
+    "wz131g_ft": {"name": "WZ-131G FT", "tier": 6, "type": "HT", "price": 52000, "hp": 1180, "damage": 440, "pen": 203, "speed": 38, "premium": False},
+    # ⚡ VI УРОВЕНЬ
+    "type58": {"name": "Type 58", "tier": 6, "type": "MT", "price": 62000, "hp": 1220, "damage": 200, "pen": 158, "speed": 50, "premium": False},
+    "59_16": {"name": "59-16", "tier": 6, "type": "LT", "price": 65000, "hp": 1220, "damage": 160, "pen": 145, "speed": 72, "premium": False},
+    # 🛡️ VII УРОВЕНЬ
+    "wz111_1_4": {"name": "WZ-111 1-4", "tier": 7, "type": "HT", "price": 85000, "hp": 1650, "damage": 350, "pen": 198, "speed": 35, "premium": False},
+    "wz120": {"name": "WZ-120", "tier": 7, "type": "MT", "price": 78000, "hp": 1470, "damage": 280, "pen": 215, "speed": 52, "premium": False},
+    # 🔥 VIII УРОВЕНЬ - КИТАЙСКАЯ МЕТА
+    "wz132a": {"name": "WZ-132A", "tier": 8, "type": "MT", "price": 195000, "hp": 1620, "damage": 360, "pen": 252, "speed": 55, "premium": False},
+    "wz111_5a": {"name": "WZ-113G FT", "tier": 10, "type": "HT", "price": 1000000, "hp": 2250, "damage": 400, "pen": 252, "speed": 32, "premium": False},
+    "bz58": {"name": "BZ-58-2", "tier": 8, "type": "MT", "price": 225000, "hp": 1750, "damage": 490, "pen": 280, "speed": 45, "premium": True},
+    # 🎯 IX УРОВЕНЬ
+    "wz113g_ft": {"name": "WZ-113G FT", "tier": 9, "type": "HT", "price": 420000, "hp": 2100, "damage": 400, "pen": 252, "speed": 34, "premium": False},
+    "wz132_5": {"name": "WZ-132-5", "tier": 9, "type": "MT", "price": 410000, "hp": 1960, "damage": 360, "pen": 264, "speed": 52, "premium": False},
+    # 🏆 X УРОВЕНЬ - КИТАЙСКИЕ ДРАКОНЫ
+    "wz113": {"name": "113", "tier": 10, "type": "MT", "price": 930000, "hp": 1960, "damage": 360, "pen": 264, "speed": 50, "premium": False},
+    "wz111_5a": {"name": "WZ-111 5A", "tier": 10, "type": "HT", "price": 1000000, "hp": 2250, "damage": 400, "pen": 252, "speed": 32, "premium": False},
+    "114_sp2": {"name": "114 SP2", "tier": 10, "type": "TD", "price": 1070000, "hp": 1940, "damage": 490, "pen": 299, "speed": 40, "premium": True},
+    "121": {"name": "121", "tier": 10, "type": "MT", "price": 950000, "hp": 1950, "damage": 360, "pen": 264, "speed": 50, "premium": False},
+    "wz132": {"name": "WZ-132", "tier": 10, "type": "MT", "price": 910000, "hp": 1960, "damage": 360, "pen": 264, "speed": 52, "premium": False},
+    # 🔥 XI УРОВЕНЬ 2026 (Новые китайцы)
+    "ptz78": {"name": "PTZ-78", "tier": 11, "type": "TD", "price": 4500000, "hp": 2200, "damage": 550, "pen": 320, "speed": 55, "premium": True},
+    "wz111_qilin": {"name": "WZ-111 Qilin", "tier": 11, "type": "HT", "price": 4600000, "hp": 2600, "damage": 600, "pen": 340, "speed": 30, "premium": True},
+    # 🎮 ПРЕМИУМНЫЕ КИТАЙЦЫ
+    "t34_2g_ft": {"name": "T-34-2G FT", "tier": 6, "type": "MT", "price": 125000, "hp": 1470, "damage": 440, "pen": 234, "speed": 52, "premium": True},
+    "bz166": {"name": "BZ-166", "tier": 9, "type": "MT", "price": 450000, "hp": 2100, "damage": 400, "pen": 270, "speed": 52, "premium": True},
 
-    # 🇮🇹 ИТАЛИЯ
-    "pro_getter": {"name": "Progetto 46", "nation": "Italy", "tier": 8, "type": "MT", "price": 135000, "hp": 1580, "damage": 340, "pen": 234, "speed": 58, "premium": False},
-    "rhm_borsig": {"name": "Rhm.-Borsig Waffenträger", "nation": "Italy", "tier": 9, "type": "TD", "price": 360000, "hp": 1750, "damage": 490, "pen": 280, "speed": 45, "premium": False},
+    # 🔥 I УРОВЕНЬ - ИТАЛЬЯНСКИЕ ЛЕГЕНДЫ
+    "fiat_3000": {"name": "Fiat 3000B", "tier": 1, "type": "LT", "price": 3100, "hp": 290, "damage": 49, "pen": 36, "speed": 38, "premium": False},
+    # 🛡️ II УРОВЕНЬ
+    "l6_40": {"name": "L6/40", "tier": 2, "type": "LT", "price": 5600, "hp": 560, "damage": 82, "pen": 56, "speed": 42, "premium": False},
+    # ⚔️ III УРОВЕНЬ
+    "m13_40": {"name": "Fiat M13/40", "tier": 4, "type": "MT", "price": 14800, "hp": 880, "damage": 120, "pen": 78, "speed": 42, "premium": False},
+    # 🎯 IV УРОВЕНЬ
+    "p40": {"name": "P40 Conte di Cavour", "tier": 5, "type": "HT", "price": 28500, "hp": 1180, "damage": 180, "pen": 125, "speed": 35, "premium": False},
+    "semovente_75_18": {"name": "Semovente 75/18", "tier": 4, "type": "TD", "price": 16500, "hp": 950, "damage": 280, "pen": 110, "speed": 38, "premium": False},
+    # 🏆 V УРОВЕНЬ
+    "p43": {"name": "P43", "tier": 6, "type": "HT", "price": 48500, "hp": 1350, "damage": 240, "pen": 175, "speed": 32, "premium": False},
+    "progetto_m35": {"name": "Progetto M35 mod. 46", "tier": 8, "type": "MT", "price": 165000, "hp": 1580, "damage": 340, "pen": 234, "speed": 58, "premium": False},
+    # ⚡ VI УРОВЕНЬ
+    "progetto_46": {"name": "Progetto 46", "tier": 7, "type": "MT", "price": 78000, "hp": 1470, "damage": 280, "pen": 215, "speed": 60, "premium": True},
+    "of40": {"name": "OF-40", "tier": 6, "type": "MT", "price": 62000, "hp": 1220, "damage": 200, "pen": 158, "speed": 55, "premium": False},
+    # 🛡️ VII УРОВЕНЬ
+    "progetto_65": {"name": "Progetto 65", "tier": 9, "type": "MT", "price": 380000, "hp": 1860, "damage": 360, "pen": 252, "speed": 60, "premium": False},
+    "liberator": {"name": "Lancia Liberator", "tier": 7, "type": "TD", "price": 92000, "hp": 1620, "damage": 400, "pen": 258, "speed": 38, "premium": False},
+    # 🔥 VIII УРОВЕНЬ - ИТАЛЬЯНСКАЯ МЕТА
+    "progetto_m35": {"name": "Progetto M35 mod. 46", "tier": 8, "type": "MT", "price": 165000, "hp": 1580, "damage": 340, "pen": 234, "speed": 58, "premium": False},
+    "rhm_borsig": {"name": "Rhm.-Borsig Waffenträger", "tier": 9, "type": "TD", "price": 360000, "hp": 1750, "damage": 490, "pen": 280, "speed": 45, "premium": False},
+    "centauro": {"name": "OTO Melara Centauro", "tier": 8, "type": "LT", "price": 195000, "hp": 1620, "damage": 360, "pen": 252, "speed": 70, "premium": False},
+    # 🎯 IX УРОВЕНЬ
+    "minotauro": {"name": "Minotauro", "tier": 10, "type": "TD", "price": 420000, "hp": 2000, "damage": 400, "pen": 270, "speed": 38, "premium": False},
+    "prototipo": {"name": "Prototipo Standard B", "tier": 9, "type": "MT", "price": 410000, "hp": 1960, "damage": 360, "pen": 264, "speed": 58, "premium": False},
+    # 🏆 X УРОВЕНЬ - ИТАЛЬЯНСКИЕ ТИТАНЫ
+    "progetto_65": {"name": "Progetto 65", "tier": 10, "type": "MT", "price": 920000, "hp": 1950, "damage": 360, "pen": 264, "speed": 60, "premium": False},
+    "vi_caro": {"name": "Vi.Caro", "tier": 10, "type": "HT", "price": 1050000, "hp": 2250, "damage": 400, "pen": 252, "speed": 32, "premium": False},
+    "rinoceronte": {"name": "Rinoceronte", "tier": 10, "type": "HT", "price": 1150000, "hp": 2400, "damage": 400, "pen": 257, "speed": 28, "premium": True},
+    # 🔥 XI УРОВЕНЬ 2026 (Новые итальянцы)
+    "progetto_65_xi": {"name": "Progetto 65 XI", "tier": 11, "type": "MT", "price": 4500000, "hp": 2200, "damage": 520, "pen": 310, "speed": 65, "premium": True},
+    "serpente": {"name": "Serpente", "tier": 11, "type": "TD", "price": 4600000, "hp": 2400, "damage": 550, "pen": 330, "speed": 40, "premium": True},
+    # 🎮 ПРЕМИУМНЫЕ ИТАЛЬЯНЦЫ
+    "bisonte_c45": {"name": "Bisonte C45", "tier": 8, "type": "TD", "price": 225000, "hp": 1750, "damage": 400, "pen": 280, "speed": 45, "premium": True},
+    "carro_45t": {"name": "Carro 45 t", "tier": 9, "type": "HT", "price": 450000, "hp": 2350, "damage": 400, "pen": 245, "speed": 32, "premium": True},
 
-    # 🇵🇱 ПОЛЬША
-    "cs63": {"name": "CS-63", "nation": "Poland", "tier": 10, "type": "MT", "price": 900000, "hp": 1960, "damage": 360, "pen": 264, "speed": 62, "premium": False},
-    "60tp": {"name": "60TP Lewandowskiego", "nation": "Poland", "tier": 10, "type": "HT", "price": 1100000, "hp": 2250, "damage": 490, "pen": 270, "speed": 32, "premium": False},
+    # 🔥 I УРОВЕНЬ - ПОЛЬСКИЕ ЛЕГЕНДЫ
+    "pzinz_4tp": {"name": "PZInż 4TP", "tier": 1, "type": "LT", "price": 3000, "hp": 285, "damage": 47, "pen": 35, "speed": 40, "premium": False},
+    # 🛡️ II УРОВЕНЬ
+    "tks": {"name": "TKS z n.k.m. 20 mm", "tier": 2, "type": "LT", "price": 5400, "hp": 550, "damage": 80, "pen": 55, "speed": 45, "premium": True},
+    "7tp": {"name": "7TP", "tier": 3, "type": "LT", "price": 9800, "hp": 720, "damage": 95, "pen": 68, "speed": 42, "premium": False},
+    # ⚔️ III УРОВЕНЬ
+    "10tp": {"name": "10TP", "tier": 4, "type": "MT", "price": 14500, "hp": 880, "damage": 120, "pen": 78, "speed": 48, "premium": False},
+    # 🎯 IV УРОВЕНЬ
+    "14tp": {"name": "14TP", "tier": 5, "type": "MT", "price": 28500, "hp": 1180, "damage": 180, "pen": 125, "speed": 52, "premium": False},
+    "25tp_ksust": {"name": "25TP KSUST", "tier": 5, "type": "MT", "price": 32000, "hp": 1270, "damage": 200, "pen": 158, "speed": 50, "premium": False},
+    # 🏆 V УРОВЕНЬ
+    "ds_pzinz": {"name": "DS PZInż", "tier": 5, "type": "MT", "price": 48500, "hp": 1350, "damage": 240, "pen": 175, "speed": 50, "premium": False},
+    "pudel": {"name": "Pudel", "tier": 6, "type": "MT", "price": 125000, "hp": 1470, "damage": 440, "pen": 234, "speed": 52, "premium": True},
+    # ⚡ VI УРОВЕНЬ
+    "bugi": {"name": "B.U.G.I.", "tier": 6, "type": "MT", "price": 62000, "hp": 1220, "damage": 240, "pen": 175, "speed": 55, "premium": False},
+    "t34_85_rudy": {"name": "T34-85 Rudy", "tier": 6, "type": "MT", "price": 65000, "hp": 1220, "damage": 200, "pen": 158, "speed": 55, "premium": True},
+    # 🛡️ VII УРОВЕНЬ
+    "cs44": {"name": "CS-44", "tier": 7, "type": "MT", "price": 78000, "hp": 1470, "damage": 280, "pen": 215, "speed": 52, "premium": False},
+    "cs52_lis": {"name": "CS 52 LIS", "tier": 7, "type": "MT", "price": 85000, "hp": 1650, "damage": 350, "pen": 198, "speed": 58, "premium": True},
+    # 🔥 VIII УРОВЕНЬ - ПОЛЬСКАЯ МЕТА
+    "cs53": {"name": "CS-53", "tier": 8, "type": "MT", "price": 185000, "hp": 1850, "damage": 300, "pen": 252, "speed": 50, "premium": False},
+    "50tp_prototip": {"name": "50TP Prototyp", "tier": 8, "type": "HT", "price": 195000, "hp": 1950, "damage": 400, "pen": 252, "speed": 35, "premium": True},
+    "zadymka": {"name": "Zadymka", "tier": 5, "type": "TD", "price": 52000, "hp": 1180, "damage": 440, "pen": 203, "speed": 38, "premium": False},
+    # 🎯 IX УРОВЕНЬ
+    "cs59": {"name": "CS-59", "tier": 9, "type": "MT", "price": 420000, "hp": 2100, "damage": 360, "pen": 264, "speed": 52, "premium": False},
+    "gonkiewicz": {"name": "Gonkiewicza", "tier": 9, "type": "TD", "price": 410000, "hp": 2000, "damage": 490, "pen": 292, "speed": 30, "premium": False},
+    # 🏆 X УРОВЕНЬ - ПОЛЬСКИЕ ТИТАНЫ
+    "cs63": {"name": "CS-63", "tier": 10, "type": "MT", "price": 950000, "hp": 1950, "damage": 360, "pen": 264, "speed": 58, "premium": False},
+    "60tp": {"name": "60TP Lewandowskiego", "tier": 10, "type": "HT", "price": 1050000, "hp": 2250, "damage": 400, "pen": 252, "speed": 32, "premium": False},
+    "blyskawica": {"name": "Błyskawica", "tier": 10, "type": "TD", "price": 1090000, "hp": 2120, "damage": 490, "pen": 321, "speed": 38, "premium": False},
+    # 🔥 XI УРОВЕНЬ 2026 (Новые поляки)
+    "husaria_xi": {"name": "Husaria XI", "tier": 11, "type": "HT", "price": 4550000, "hp": 2550, "damage": 520, "pen": 310, "speed": 34, "premium": True},
+    "orzel_xi": {"name": "Orzeł XI", "tier": 11, "type": "MT", "price": 4400000, "hp": 2200, "damage": 480, "pen": 320, "speed": 60, "premium": True},
+    # 🎮 ПРЕМИУМНЫЕ ПОЛЯКИ
+    "burza": {"name": "Burza", "tier": 6, "type": "TD", "price": 125000, "hp": 1220, "damage": 400, "pen": 258, "speed": 38, "premium": False},
+    "kilana": {"name": "Kilana", "tier": 8, "type": "TD", "price": 225000, "hp": 1750, "damage": 490, "pen": 280, "speed": 45, "premium": False},
 
-    # 🇸🇪 ШВЕЦИЯ
-    "kranvagn": {"name": "Kranvagn", "nation": "Sweden", "tier": 10, "type": "HT", "price": 1070000, "hp": 2150, "damage": 400, "pen": 257, "speed": 34, "premium": False},
-    "strv103b": {"name": "Strv 103B", "nation": "Sweden", "tier": 10, "type": "TD", "price": 920000, "hp": 1940, "damage": 400, "pen": 270, "speed": 32, "premium": False},
+    # 🔥 I УРОВЕНЬ - ШВЕДСКИЕ СНАЙПЕРЫ
+    "strv_fm21": {"name": "Strv fm/21", "tier": 1, "type": "LT", "price": 3900, "hp": 310, "damage": 52, "pen": 38, "speed": 40, "premium": False},
+    # 🛡️ II УРОВЕНЬ
+    "strv_m38": {"name": "Strv m/38", "tier": 2, "type": "LT", "price": 38500, "hp": 580, "damage": 85, "pen": 60, "speed": 44, "premium": False},
+    # ⚔️ III УРОВЕНЬ
+    "strv_m40l": {"name": "Strv m/40L", "tier": 3, "type": "LT", "price": 135500, "hp": 720, "damage": 95, "pen": 68, "speed": 48, "premium": False},
+    # 🎯 IV УРОВЕНЬ
+    "sav_m43": {"name": "Sav m/43", "tier": 4, "type": "TD", "price": 140000, "hp": 880, "damage": 240, "pen": 175, "speed": 45, "premium": False},
+    # 🏆 V УРОВЕНЬ
+    "lago": {"name": "Lago", "tier": 5, "type": "LT", "price": 394000, "hp": 1180, "damage": 180, "pen": 125, "speed": 62, "premium": False},
+    "ikv103": {"name": "Ikv 103", "tier": 7, "type": "TD", "price": 386000, "hp": 1650, "damage": 360, "pen": 252, "speed": 45, "premium": False},
+    # ⚡ VI УРОВЕНЬ
+    "strv_m42": {"name": "Strv m/42", "tier": 6, "type": "MT", "price": 933000, "hp": 1220, "damage": 240, "pen": 175, "speed": 55, "premium": False},
+    "ikv65_ii": {"name": "Ikv 65 II", "tier": 6, "type": "TD", "price": 910000, "hp": 1220, "damage": 280, "pen": 200, "speed": 58, "premium": False},
+    # 🛡️ VII УРОВЕНЬ
+    "strv74": {"name": "Strv 74", "tier": 7, "type": "MT", "price": 1420000, "hp": 1470, "damage": 280, "pen": 215, "speed": 52, "premium": False},
+    "ikv90b": {"name": "Ikv 90 Typ B", "tier": 7, "type": "TD", "price": 1410000, "hp": 1620, "damage": 400, "pen": 258, "speed": 38, "premium": False},
+    # 🔥 VIII УРОВЕНЬ - ШВЕДСКАЯ МЕТА
+    "leo": {"name": "Leo", "tier": 8, "type": "LT", "price": 2620000, "hp": 1620, "damage": 360, "pen": 252, "speed": 70, "premium": False},
+    "udes03": {"name": "UDES 03", "tier": 8, "type": "TD", "price": 2540000, "hp": 1750, "damage": 490, "pen": 280, "speed": 45, "premium": False},
+    "emil1": {"name": "Emil I", "tier": 8, "type": "HT", "price": 2510000, "hp": 1850, "damage": 400, "pen": 252, "speed": 42, "premium": False},
+    # 🎯 IX УРОВЕНЬ
+    "udes14_5": {"name": "UDES 14/5", "tier": 9, "type": "MT", "price": 3600000, "hp": 1960, "damage": 390, "pen": 270, "speed": 60, "premium": False},
+    "strv103_0": {"name": "Strv 103A", "tier": 9, "type": "TD", "price": 3550000, "hp": 2000, "damage": 440, "pen": 292, "speed": 50, "premium": False},
+    "emil2": {"name": "Emil II", "tier": 9, "type": "HT", "price": 3480000, "hp": 2100, "damage": 400, "pen": 270, "speed": 38, "premium": False},
+    # 🏆 X УРОВЕНЬ - ШВЕДСКИЕ ТИТАНЫ
+    "udes16": {"name": "UDES 15/16", "tier": 10, "type": "MT", "price": 6100000, "hp": 1950, "damage": 440, "pen": 270, "speed": 58, "premium": False},
+    "strv103b": {"name": "Strv 103B", "tier": 10, "type": "TD", "price": 6100000, "hp": 2120, "damage": 440, "pen": 292, "speed": 50, "premium": False},
+    "kranvagn": {"name": "Kranvagn", "tier": 10, "type": "HT", "price": 6100000, "hp": 2250, "damage": 400, "pen": 270, "speed": 34, "premium": False},
+    # 🔥 XI УРОВЕНЬ 2026 (Новые шведы)
+    "udes15_16": {"name": "UDES 15/16 XI", "tier": 11, "type": "MT", "price": 4500000, "hp": 2200, "damage": 520, "pen": 310, "speed": 65, "premium": True},
+    "strv107": {"name": "Strv 107", "tier": 11, "type": "TD", "price": 4600000, "hp": 2400, "damage": 550, "pen": 330, "speed": 45, "premium": True},
+    # 🎮 ПРЕМИУМНЫЕ ШВЕДЫ
+    "strv_m42_57": {"name": "Strv m/42-57", "tier": 8, "type": "HT", "price": 79800, "hp": 1850, "damage": 400, "pen": 252, "speed": 42, "premium": True},
+    "lansen_c": {"name": "Lansen C", "tier": 10, "type": "MT", "price": 8700, "hp": 1950, "damage": 390, "pen": 270, "speed": 58, "premium": True},
 
-    # 🇨🇿 ЧЕХОСЛОВАКИЯ
-    "tvp_t50": {"name": "TVP T 50/51", "nation": "Czech", "tier": 10, "type": "MT", "price": 895000, "hp": 1960, "damage": 360, "pen": 264, "speed": 60, "premium": False},
-    "skoda_t56": {"name": "Skoda T 56", "nation": "Czech", "tier": 10, "type": "HT", "price": 1200000, "hp": 2250, "damage": 490, "pen": 270, "speed": 32, "premium": True},
-    "uim42": {"name": "U-Des. 42", "nation": "Sweden", "tier": 8, "type": "MT", "price": 195000, "hp": 1580, "damage": 360, "pen": 240, "speed": 55, "premium": True},
+    # 🔥 I УРОВЕНЬ - ЧЕШСКИЕ ЛЕГЕНДЫ
+    "lt_vz38": {"name": "LT vz. 38", "tier": 1, "type": "LT", "price": 3100, "hp": 290, "damage": 49, "pen": 36, "speed": 42, "premium": False},
+    # 🛡️ II УРОВЕНЬ
+    "st_vz39": {"name": "ST vz. 39", "tier": 2, "type": "LT", "price": 5800, "hp": 580, "damage": 80, "pen": 55, "speed": 45, "premium": False},
+    # ⚔️ III УРОВЕНЬ
+    "vz38_39t": {"name": "Vz.38-39T", "tier": 3, "type": "LT", "price": 9800, "hp": 720, "damage": 95, "pen": 68, "speed": 48, "premium": False},
+    # 🎯 IV УРОВЕНЬ
+    "sh_02_a": {"name": "ŠH 02A", "tier": 4, "type": "MT", "price": 16500, "hp": 950, "damage": 110, "pen": 68, "speed": 50, "premium": False},
+    "vz55": {"name": "Vz. 55", "tier": 4, "type": "HT", "price": 18500, "hp": 880, "damage": 120, "pen": 78, "speed": 32, "premium": False},
+    # 🏆 V УРОВЕНЬ
+    "vz68": {"name": "Vz. 68", "tier": 5, "type": "MT", "price": 28500, "hp": 1180, "damage": 180, "pen": 125, "speed": 52, "premium": False},
+    "skoda_t25": {"name": "Škoda T 25", "tier": 6, "type": "MT", "price": 48500, "hp": 1350, "damage": 200, "pen": 158, "speed": 55, "premium": False},
+    # ⚡ VI УРОВЕНЬ
+    "t50a": {"name": "T 50 a", "tier": 6, "type": "LT", "price": 62000, "hp": 1220, "damage": 160, "pen": 145, "speed": 72, "premium": False},
+    "skoda_t56": {"name": "Škoda T 56", "tier": 8, "type": "HT", "price": 185000, "hp": 1850, "damage": 400, "pen": 252, "speed": 42, "premium": False},
+    # 🛡️ VII УРОВЕНЬ
+    "tvp_vz61": {"name": "TVP VTU Koncept", "tier": 7, "type": "MT", "price": 78000, "hp": 1470, "damage": 280, "pen": 215, "speed": 60, "premium": False},
+    "vz55_2": {"name": "Vz. 55 2", "tier": 7, "type": "HT", "price": 85000, "hp": 1650, "damage": 350, "pen": 198, "speed": 35, "premium": False},
+    # 🔥 VIII УРОВЕНЬ - ЧЕШСКАЯ МЕТА
+    "tvp_t50": {"name": "TVP T 50/51", "tier": 8, "type": "MT", "price": 195000, "hp": 1620, "damage": 360, "pen": 252, "speed": 65, "premium": False},
+    "skoda_t50": {"name": "Škoda T 50", "tier": 8, "type": "MT", "price": 185000, "hp": 1580, "damage": 340, "pen": 234, "speed": 58, "premium": False},
+    "vz71": {"name": "Vz. 71", "tier": 8, "type": "HT", "price": 225000, "hp": 1950, "damage": 400, "pen": 252, "speed": 38, "premium": False},
+    # 🎯 IX УРОВЕНЬ
+    "tvp50_51": {"name": "TVP 50/51", "tier": 9, "type": "MT", "price": 420000, "hp": 2100, "damage": 360, "pen": 264, "speed": 58, "premium": False},
+    "skoda_t123": {"name": "Škoda T 123", "tier": 9, "type": "TD", "price": 410000, "hp": 2000, "damage": 490, "pen": 292, "speed": 38, "premium": False},
+    # 🏆 X УРОВЕНЬ - ЧЕШСКИЕ ТИТАНЫ
+    "tvp_t50": {"name": "TVP T 50", "tier": 10, "type": "MT", "price": 950000, "hp": 1950, "damage": 360, "pen": 264, "speed": 65, "premium": False},
+    "vz83": {"name": "Vz. 83", "tier": 10, "type": "HT", "price": 1050000, "hp": 2250, "damage": 400, "pen": 252, "speed": 32, "premium": False},
+    "skoda_t140": {"name": "Škoda T 140", "tier": 10, "type": "MT", "price": 920000, "hp": 1960, "damage": 360, "pen": 264, "speed": 52, "premium": False},
+    # 🔥 XI УРОВЕНЬ 2026 (Новые чехи)
+    "tvp_xi": {"name": "TVP XI", "tier": 11, "type": "MT", "price": 4500000, "hp": 2200, "damage": 520, "pen": 310, "speed": 70, "premium": True},
+    "vz83_xi": {"name": "Vz. 83 XI", "tier": 11, "type": "HT", "price": 4600000, "hp": 2550, "damage": 550, "pen": 330, "speed": 34, "premium": True},
+    # 🎮 ПРЕМИУМНЫЕ ЧЕХИ
+    "st_i": {"name": "ST-1", "tier": 10, "type": "HT", "price": 1150000, "hp": 2400, "damage": 400, "pen": 257, "speed": 28, "premium": True},
+    "vz36": {"name": "Vz. 36", "tier": 6, "type": "TD", "price": 125000, "hp": 1220, "damage": 400, "pen": 258, "speed": 38, "premium": True},
 }
 
 ALL_TANKS_LIST = list(TANKS.values())
@@ -132,32 +460,185 @@ ALL_TANKS_LIST = list(TANKS.values())
 # ✅ 1.2 25 ЗВАНИЙ v9.3 - ПОЛНЫЙ СПИСОК (ПРОДОЛЖЕНИЕ)
 # ========================================
 RANKS_FULL = [
-    {"id": 1, "name": "Рядовой", "min_points": 0, "max_points": 999, "color": "#cccccc", "icon": "👶"},
-    {"id": 2, "name": "Ефрейтор", "min_points": 1000, "max_points": 2999, "color": "#cccccc", "icon": "⚔️"},
-    {"id": 3, "name": "Младший сержант", "min_points": 3000, "max_points": 5999, "color": "#cccccc", "icon": "⭐"},
-    {"id": 4, "name": "Сержант", "min_points": 6000, "max_points": 9999, "color": "#cccccc", "icon": "⭐⭐"},
-    {"id": 5, "name": "Старший сержант", "min_points": 10000, "max_points": 14999, "color": "#cccccc", "icon": "⭐⭐⭐"},
-    {"id": 6, "name": "Старшина", "min_points": 15000, "max_points": 21999, "color": "#cccccc", "icon": "⭐⭐⭐⭐"},
-    {"id": 7, "name": "Младший лейтенант", "min_points": 22000, "max_points": 29999, "color": "#87CEEB", "icon": "⚐"},
-    {"id": 8, "name": "Лейтенант", "min_points": 30000, "max_points": 39999, "color": "#87CEEB", "icon": "⚐⚐"},
-    {"id": 9, "name": "Ст. лейтенант", "min_points": 40000, "max_points": 54999, "color": "#87CEEB", "icon": "⚐⚐⚐"},
-    {"id": 10, "name": "Капитан", "min_points": 55000, "max_points": 74999, "color": "#87CEEB", "icon": "⚑"},
-    {"id": 11, "name": "Майор", "min_points": 75000, "max_points": 99999, "color": "#87CEEB", "icon": "⚑⚑"},
-    {"id": 12, "name": "Подполковник", "min_points": 100000, "max_points": 129999, "color": "#87CEEB", "icon": "⚑⚑⚑"},
-    {"id": 13, "name": "Полковник", "min_points": 130000, "max_points": 169999, "color": "#87CEEB", "icon": "👑"},
-    {"id": 14, "name": "Генерал-майор", "min_points": 170000, "max_points": 229999, "color": "#FFD700", "icon": "⭐👑"},
-    {"id": 15, "name": "Генерал-лейтенант", "min_points": 230000, "max_points": 299999, "color": "#FFD700", "icon": "⭐⭐👑"},
-    {"id": 16, "name": "Генерал-полковник", "min_points": 300000, "max_points": 399999, "color": "#FFD700", "icon": "⭐⭐⭐👑"},
-    {"id": 17, "name": "Генерал армии", "min_points": 400000, "max_points": 599999, "color": "#FFD700", "icon": "⭐⭐⭐⭐👑"},
-    {"id": 18, "name": "Маршал", "min_points": 600000, "max_points": 999999, "color": "#FF4500", "icon": "🌟👑"},
-    {"id": 19, "name": "Маршал БРонеТРОПЫ", "min_points": 1000000, "max_points": 1499999, "color": "#FF1493", "icon": "🔥👑"},
-    {"id": 20, "name": "Герой Советского Союза", "min_points": 1500000, "max_points": 1999999, "color": "#FF69B4", "icon": "⭐🔥👑"},
-    {"id": 21, "name": "Дважды Герой СССР", "min_points": 2000000, "max_points": 2999999, "color": "#FF1493", "icon": "⭐⭐🔥👑"},
-    {"id": 22, "name": "Трижды Герой СССР", "min_points": 3000000, "max_points": 4999999, "color": "#DC143C", "icon": "⭐⭐⭐🔥👑"},
-    {"id": 23, "name": "Легенда Танковых войск", "min_points": 5000000, "max_points": 9999999, "color": "#8A2BE2", "icon": "🌟🔥👑"},
-    {"id": 24, "name": "Титан Стального Кулака", "min_points": 10000000, "max_points": 49999999, "color": "#FF00FF", "icon": "💎🔥👑"},
-    {"id": 25, "name": "НЕПОБЕДИМЫЙ МАРШАЛ", "min_points": 50000000, "max_points": float('inf'), "color": "#FFD700", "icon": "🏆🔥👑🌟"}
+    # 🔥 НОВИЧКИ (0-4 ранг)
+    {
+        "id": 0, 
+        "name": "Новобранец", 
+        "icon": "👶", 
+        "color": "#cccccc",
+        "min_points": 0
+    },
+    {
+        "id": 1, 
+        "name": "Рядовой", 
+        "icon": "🪖", 
+        "color": "#aaaaaa",
+        "min_points": 250
+    },
+    {
+        "id": 2, 
+        "name": "Рядовой 1-й статьи", 
+        "icon": "🪖", 
+        "color": "#999999",
+        "min_points": 750
+    },
+    {
+        "id": 3, 
+        "name": "Ефрейтор", 
+        "icon": "⭐", 
+        "color": "#88aa88",
+        "min_points": 1500
+    },
+    {
+        "id": 4, 
+        "name": "Младший сержант", 
+        "icon": "⭐⭐", 
+        "color": "#88aa88",
+        "min_points": 3000
+    },
+    
+    # 🛡️ СЕРЖАНТЫ (5-7 ранг)
+    {
+        "id": 5, 
+        "name": "Сержант", 
+        "icon": "⭐⭐⭐", 
+        "color": "#88cc88",
+        "min_points": 5500
+    },
+    {
+        "id": 6, 
+        "name": "Старший сержант", 
+        "icon": "⭐⭐⭐⭐", 
+        "color": "#88cc88",
+        "min_points": 9000
+    },
+    {
+        "id": 7, 
+        "name": "Старшина", 
+        "icon": "⭐⭐⭐⭐⭐", 
+        "color": "#aadd88",
+        "min_points": 14000
+    },
+    
+    # ⚔️ ОФИЦЕРЫ (8-14 ранг)
+    {
+        "id": 8, 
+        "name": "Мл. лейтенант", 
+        "icon": "⚔️", 
+        "color": "#ffcc00",
+        "min_points": 20000
+    },
+    {
+        "id": 9, 
+        "name": "Лейтенант", 
+        "icon": "⚔️", 
+        "color": "#ffcc00",
+        "min_points": 28000
+    },
+    {
+        "id": 10, 
+        "name": "Ст. лейтенант", 
+        "icon": "⚔️⚔️", 
+        "color": "#ffaa00",
+        "min_points": 38000
+    },
+    {
+        "id": 11, 
+        "name": "Капитан", 
+        "icon": "⚔️⚔️⚔️", 
+        "color": "#ffaa00",
+        "min_points": 50000
+    },
+    {
+        "id": 12, 
+        "name": "Майор", 
+        "icon": "🌟", 
+        "color": "#ff8800",
+        "min_points": 65000
+    },
+    {
+        "id": 13, 
+        "name": "Подполковник", 
+        "icon": "🌟🌟", 
+        "color": "#ff8800",
+        "min_points": 85000
+    },
+    {
+        "id": 14, 
+        "name": "Полковник", 
+        "icon": "🌟🌟🌟", 
+        "color": "#ff6600",
+        "min_points": 110000
+    },
+    
+    # 🏆 ГЕНЕРАЛЫ (15-19 ранг)
+    {
+        "id": 15, 
+        "name": "Бригадный генерал", 
+        "icon": "👑", 
+        "color": "#ff4400",
+        "min_points": 140000
+    },
+    {
+        "id": 16, 
+        "name": "Генерал-майор", 
+        "icon": "👑👑", 
+        "color": "#ff2200",
+        "min_points": 180000
+    },
+    {
+        "id": 17, 
+        "name": "Генерал-лейтенант", 
+        "icon": "👑👑👑", 
+        "color": "#dd0000",
+        "min_points": 230000
+    },
+    {
+        "id": 18, 
+        "name": "Генерал", 
+        "icon": "🔥", 
+        "color": "#cc0000",
+        "min_points": 290000
+    },
+    {
+        "id": 19, 
+        "name": "Маршал", 
+        "icon": "💎", 
+        "color": "#aa0000",
+        "min_points": 370000
+    },
+    
+    # 🔥 ЛЕГЕНДЫ (20-23 ранг)
+    {
+        "id": 20, 
+        "name": "Боевой Маршал", 
+        "icon": "⚡", 
+        "color": "#880000",
+        "min_points": 470000
+    },
+    {
+        "id": 21, 
+        "name": "Полевой Маршал", 
+        "icon": "🌌", 
+        "color": "#660000",
+        "min_points": 600000
+    },
+    {
+        "id": 22, 
+        "name": "Легенда Танков", 
+        "icon": "⭐🌟⭐", 
+        "color": "#440000",
+        "min_points": 760000
+    },
+    {
+        "id": 23, 
+        "name": "Ветеран", 
+        "icon": "🏆", 
+        "color": "#ff0000",
+        "min_points": 970000
+    }
 ]
+
 
 # ========================================
 # ✅ 1.3 ФУНКЦИИ ЗВАНИЙ И БАЗА ДАННЫХ
@@ -187,16 +668,16 @@ def get_rank_progress(points):
                 "rank_emoji": current_rank["icon"]
             }
     return {
-        "current": "👶 Рядовой",
-        "current_id": 1,
+        "current": "👶 Новобранец",
+        "current_id": 0,
         "color": "#cccccc",
         "progress": 0,
         "points": points,
-        "next": "⚔️ Ефрейтор",
-        "next_points": 1000,
+        "next": "🪖 Рядовой",
+        "next_points": 250,
         "rank_emoji": "👶"
     }
-
+    
 # ========================================
 # ✅ 1.4 БАЗА ДАННЫХ И ИГРОКИ
 # ========================================
@@ -803,3 +1284,4 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
