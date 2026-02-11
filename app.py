@@ -995,12 +995,6 @@ def leaderboard():
     
     return render_template('leaderboard.html', top_players=top_players)
 
-@app.route('/profile/<username>')
-def profile(username):
-    player = get_player(generate_user_id(username))
-    if not player:
-        return render_template('404.html'), 404
-    
     rank_info = get_rank_progress(player['points'])
     owned_tanks = [t for t in ALL_TANKS_LIST if t['id'] in player.get('tanks', [])]
     
@@ -1284,4 +1278,5 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
