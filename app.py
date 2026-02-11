@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 import bcrypt
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import Length, Regexp, EqualTo, DataRequired
 from flask_wtf.csrf import CSRFProtect
 import secrets
@@ -1286,6 +1286,7 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
 
