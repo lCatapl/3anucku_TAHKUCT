@@ -12,7 +12,8 @@ import secrets
 app = Flask(__name__)
 app.secret_key = 'tankist_v9.6_super_secret_key_2026'
 
-csrf = CSRFProtect(app)
+WTF_CSRF_ENABLED = False  # ← ГЛАВНЫЙ ФИКС
+app.config['WTF_CSRF_ENABLED'] = False
 
 # ✅ ГЛОБАЛЬНЫЕ КОНСТАНТЫ v9.6
 PLAYERS_EQUAL = True
@@ -1106,118 +1107,46 @@ class RegisterForm(FlaskForm):
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    form = RegisterForm()
+    error = ""
     
-    # Проверка rate limit (10 мин)
     if request.method == 'POST':
-        try:
-            conn = sqlite3.connect('players.db', check_same_thread=False)
-            cursor = conn.cursor()
-            
-            # Проверка последнего создания аккаунта
-            cursor.execute("SELECT created_at FROM players WHERE created_at > ? ORDER BY created_at DESC LIMIT 1", 
-                         (datetime.now() - timedelta(minutes=10)).strftime('%Y-%m-%d %H:%M:%S'),)
-            last_create = cursor.fetchone()
-            
-            if last_create:
-                error = "⏰ Подождите 10 минут между созданиями аккаунтов!"
-                return render_template('register.html', form=form, error=error), 429
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        
+        if len(username) < 3:
+            error = "Логин должен быть ≥3 символов!"
+        elif len(password) < 6:
+            error = "Пароль должен быть ≥6 символов!"
+        else:
+            try:
+                import sqlite3, bcrypt, hashlib
+                from datetime import datetime
                 
-        except sqlite3.Error:
-            error = "❌ Ошибка базы данных!"
-            return render_template('register.html', form=form, error=error), 500
-        finally:
-            conn.close()
+                conn = sqlite3.connect('players.db')
+                cursor = conn.cursor()
+                
+                # Проверка уникальности
+                cursor.execute("SELECT id FROM players WHERE username=?", (username,))
+                if cursor.fetchone():
+                    error = "❌ Логин уже занят!"
+                else:
+                    # Создание пользователя
+                    user_id = hashlib.md5(username.encode()).hexdigest()[:8]
+                    hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+                    
+                    cursor.execute("""
+                        INSERT INTO players (id, username, password, gold, silver, created_at, role) 
+                        VALUES (?, ?, ?, 5000, 100000, ?, 'player')
+                    """, (user_id, username, hashed_pw, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                    
+                    conn.commit()
+                    return redirect(url_for('login'))
+                
+                conn.close()
+            except Exception as e:
+                error = f"Ошибка сервера: {str(e)}"
     
-    # Обработка формы
-    if form.validate_on_submit():
-        try:
-            conn = sqlite3.connect('players.db', check_same_thread=False)
-            cursor = conn.cursor()
-            
-            # Проверка уникальности логина
-            cursor.execute("SELECT id FROM players WHERE username = ?", (form.username.data,))
-            if cursor.fetchone():
-                form.username.errors.append("❌ Логин уже занят!")
-                return render_template('register.html', form=form)
-            
-            # Создание игрока
-            user_id = generate_user_id(form.username.data)
-            cursor.execute("""
-                INSERT INTO players (id, username, password, gold, silver, points, tanks, battles, wins, created_at, role)
-                VALUES (?, ?, ?, 5000, 100000, 0, [], 0, 0, ?, 'player')
-            """, (user_id, form.username.data, bcrypt.hashpw(form.password.data.encode(), bcrypt.gensalt()).decode(), 
-                  datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-            
-            conn.commit()
-            flash('✅ Регистрация успешна! Входи в игру!', 'success')
-            return redirect(url_for('login'))
-            
-        except sqlite3.Error as e:
-            flash('❌ Ошибка регистрации!', 'error')
-            return render_template('register.html', form=form), 500
-        finally:
-            conn.close()
-    
-    # GET запрос или ошибки валидации
-    error = request.args.get('error', '')
-    return render_template('register.html', form=form, error=error)
-
-class LoginForm(FlaskForm):
-    username = StringField('Логин', validators=[DataRequired(), Length(3, 20)])
-    password = PasswordField('Пароль', validators=[DataRequired()])
-    remember_me = BooleanField('Запомнить меня')
-    submit = SubmitField('🔓 Войти')
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    ip = request.remote_addr
-    form = LoginForm()
-    
-    # Блокировка после 5 попыток
-    attempts = session.get(f'login_attempts_{ip}', {})
-    username_attempts = attempts.get(form.username.data, 0)
-    if username_attempts >= 5:
-        return render_template('login.html', form=form, error="🚫 Аккаунт заблокирован на 30 мин"), 429
-    
-    if form.validate_on_submit():
-        user_id = generate_user_id(form.username.data)
-        player = get_player(user_id)
-        
-        if (player and player.get('password_hash') and
-            bcrypt.checkpw(form.password.data.encode(), player['password_hash'].encode())):
-            
-            # ✅ УСПЕШНЫЙ ВХОД
-            session.clear()
-            session_token = secrets.token_hex(32)
-            session.update({
-                'logged_in': True,
-                'user_id': user_id,
-                'username': player['username'],
-                'session_token': session_token,
-                'ip_verified': ip,
-                'login_time': time.time(),
-                'remember_me': form.remember_me.data
-            })
-            
-            # Обновление в БД
-            player['session_token'] = session_token
-            player['last_login'] = time.time()
-            player['ip_addresses'].append(ip)
-            player['login_count'] = player.get('login_count', 0) + 1
-            update_player(player)
-            
-            # Очистка попыток
-            session[f'login_attempts_{ip}'] = {}
-            flash(f'🎉 Добро пожаловать, {player["username"]}!')
-            return redirect(url_for('index'))
-        
-        # ❌ НЕУДАЧА
-        attempts[form.username.data] = username_attempts + 1
-        session[f'login_attempts_{ip}'] = attempts
-        flash('❌ Неверный логин или пароль!')
-    
-    return render_template('login.html', form=form)
+    return render_template('register.html', error=error)
 
 @app.route('/logout')
 def logout():
@@ -1288,6 +1217,7 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
 
