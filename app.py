@@ -26,7 +26,6 @@ DB_PATH = 'tankist.db'
 ADMIN_USERS = {
     "Назар": {"user_id": "admin_nazar_2026", "role": "superadmin", "permissions": ["all"]},
     "CatNap": {"user_id": "admin_catnap_2026", "role": "superadmin", "permissions": ["all"]},
-    "Модер1": {"user_id": "moder1_2026", "role": "moderator", "permissions": ["mute", "stats"]},
 }
 
 def is_superadmin(username):
@@ -1093,65 +1092,74 @@ def index():
     return render_template('index.html', featured_tanks=ALL_TANKS_LIST[:6])
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, BooleanField
-from wtforms.validators import DataRequired, Length, EqualTo, Regexp, Email
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired, Length, EqualTo
+import sqlite3
+from datetime import datetime, timedelta
 
 class RegisterForm(FlaskForm):
-    username = StringField('Логин', validators=[
-        DataRequired(), Length(3, 20),
-        Regexp(r'^[a-zA-Zа-яёА-ЯЁ0-9_]{3,20}$')
-    ])
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Пароль', validators=[
-        DataRequired(), Length(min=12),
-        Regexp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{12,}$')
-    ])
-    password_confirm = PasswordField('Подтвердить пароль', validators=[DataRequired(), EqualTo('password')])
-    agree_terms = BooleanField('Согласен с правилами', validators=[DataRequired()])
-    submit = SubmitField('🎮 Создать аккаунт')
+    username = StringField('Логин', validators=[DataRequired(), Length(min=3, max=20)])
+    password = PasswordField('Пароль', validators=[DataRequired(), Length(min=6)])
+    submit = SubmitField('Зарегистрироваться')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    # Rate limiting
-    ip = request.remote_addr
-    attempts = session.get(f'register_{ip}', 0)
-    if attempts >= 3:
-        return render_template('register.html', error="⏰ Подождите 10 минут"), 429
-    
     form = RegisterForm()
-    if form.validate_on_submit():
-        # Проверка уникальности
-        if get_player(generate_user_id(form.username.data)):
-            flash('❌ Логин уже занят!')
-            return render_template('register.html', form=form)
-        
-        # Создание суперадмина для Назар/CatNap
-        user_id = generate_user_id(form.username.data)
-        create_player(form.username.data, user_id)
-        player = get_player(user_id)
-        
-        # БЕЗОПАСНЫЕ ДАННЫЕ
-        hashed_pw = bcrypt.hashpw(form.password.data.encode('utf-8'), bcrypt.gensalt(14))
-        player.update({
-            'email': form.email.data,
-            'password_hash': hashed_pw.decode(),
-            'session_token': secrets.token_hex(32),
-            'ip_addresses': [request.remote_addr],
-            'created_at': time.time(),
-            'role': 'superadmin' if form.username.data in ADMIN_USERS else 'player'
-        })
-        
-        # СПЕЦПРАВА ДЛЯ АДМИНОВ
-        if form.username.data in ADMIN_USERS:
-            player.update(ADMIN_USERS[form.username.data])
-        
-        update_player(player)
-        session[f'register_{ip}'] = 0
-        flash('✅ Аккаунт создан! Войдите.')
-        return redirect(url_for('login'))
     
-    session[f'register_{ip}'] = attempts + 1
-    return render_template('register.html', form=form)
+    # Проверка rate limit (10 мин)
+    if request.method == 'POST':
+        try:
+            conn = sqlite3.connect('players.db')
+            cursor = conn.cursor()
+            
+            # Проверка последнего создания аккаунта
+            cursor.execute("SELECT created_at FROM players WHERE created_at > ? ORDER BY created_at DESC LIMIT 1", 
+                         (datetime.now() - timedelta(minutes=10)).strftime('%Y-%m-%d %H:%M:%S'),)
+            last_create = cursor.fetchone()
+            
+            if last_create:
+                error = "⏰ Подождите 10 минут между созданиями аккаунтов!"
+                return render_template('register.html', form=form, error=error), 429
+                
+        except sqlite3.Error:
+            error = "❌ Ошибка базы данных!"
+            return render_template('register.html', form=form, error=error), 500
+        finally:
+            conn.close()
+    
+    # Обработка формы
+    if form.validate_on_submit():
+        try:
+            conn = sqlite3.connect('players.db')
+            cursor = conn.cursor()
+            
+            # Проверка уникальности логина
+            cursor.execute("SELECT id FROM players WHERE username = ?", (form.username.data,))
+            if cursor.fetchone():
+                form.username.errors.append("❌ Логин уже занят!")
+                return render_template('register.html', form=form)
+            
+            # Создание игрока
+            user_id = generate_user_id(form.username.data)
+            cursor.execute("""
+                INSERT INTO players (id, username, password, gold, silver, points, tanks, battles, wins, created_at, role)
+                VALUES (?, ?, ?, 5000, 100000, 0, [], 0, 0, ?, 'player')
+            """, (user_id, form.username.data, bcrypt.hashpw(form.password.data.encode(), bcrypt.gensalt()).decode(), 
+                  datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            
+            conn.commit()
+            flash('✅ Регистрация успешна! Входи в игру!', 'success')
+            return redirect(url_for('login'))
+            
+        except sqlite3.Error as e:
+            flash('❌ Ошибка регистрации!', 'error')
+            return render_template('register.html', form=form), 500
+        finally:
+            conn.close()
+    
+    # GET запрос или ошибки валидации
+    error = request.args.get('error', '')
+    return render_template('register.html', form=form, error=error)
 
 class LoginForm(FlaskForm):
     username = StringField('Логин', validators=[DataRequired(), Length(3, 20)])
@@ -1278,5 +1286,6 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
