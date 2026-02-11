@@ -9,8 +9,6 @@ from wtforms.validators import Length, Regexp, EqualTo, DataRequired
 from flask_wtf.csrf import CSRFProtect
 import secrets
 
-csrf = CSRFProtect(app)
-
 app = Flask(__name__)
 app.secret_key = 'tankist_v9.6_super_secret_key_2026'
 
@@ -738,4 +736,5 @@ init_db()
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
