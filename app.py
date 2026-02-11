@@ -21,6 +21,41 @@ chat_messages = []
 DB_PATH = 'tankist.db'
 
 # ========================================
+# 🔥 АДМИНЫ С ПРАВАМИ БОГА
+# ========================================
+ADMIN_USERS = {
+    "Назар": {"user_id": "admin_nazar_2026", "role": "superadmin", "permissions": ["all"]},
+    "CatNap": {"user_id": "admin_catnap_2026", "role": "superadmin", "permissions": ["all"]},
+    "Модер1": {"user_id": "moder1_2026", "role": "moderator", "permissions": ["mute", "stats"]},
+}
+
+def is_superadmin(username):
+    return username in ["Назар", "CatNap"]
+
+def has_permission(username, permission):
+    player = get_player(session.get('user_id')) if session.get('user_id') else None
+    if player and player.get('username') in ADMIN_USERS:
+        perms = ADMIN_USERS[player['username']].get('permissions', [])
+        return "all" in perms or permission in perms
+    return False
+
+# Глобальная проверка сессии
+def validate_session(admin_required=False):
+    if not session.get('logged_in') or not session.get('user_id'):
+        return False
+    player = get_player(session['user_id'])
+    if not player or player.get('username') != session.get('username'):
+        session.clear()
+        return False
+    # Проверка токена
+    if player.get('session_token') != session.get('session_token'):
+        session.clear()
+        return False
+    if admin_required and not is_superadmin(player.get('username', '')):
+        return False
+    return True
+
+# ========================================
 # ✅ 1.1 ПОЛНЫЙ СПИСОК 60+ ТАНКОВ v9.4
 # ========================================
 TANKS = {
@@ -317,48 +352,58 @@ def claim_daily(username):
 # ========================================
 @app.route('/shop', methods=['GET', 'POST'])
 def shop():
-    if not validate_session():  # Новая функция проверки
+    if not validate_session():
         return redirect(url_for('login'))
     
     player = get_player(session['user_id'])
-    owned_ids = set(t['id'] for t in player.get('tanks', []))
+    owned_ids = set(t for t in player.get('tanks', []))
+    
+    # Фильтры
+    nation_filter = request.args.get('nation', 'all')
+    tier_filter = request.args.get('tier', 'all')
+    type_filter = request.args.get('type', 'all')
+    
+    filtered_tanks = ALL_TANKS_LIST
+    if nation_filter != 'all':
+        filtered_tanks = [t for t in filtered_tanks if t['nation'] == nation_filter]
+    if tier_filter != 'all':
+        filtered_tanks = [t for t in filtered_tanks if t['tier'] == int(tier_filter)]
+    if type_filter != 'all':
+        filtered_tanks = [t for t in filtered_tanks if t['type'] == type_filter]
     
     if request.method == 'POST':
         tank_id = request.form.get('tank_id')
-        payment_method = request.form.get('payment_method')
+        payment = request.form.get('payment_method', 'silver')
         
         tank = next((t for t in ALL_TANKS_LIST if t['id'] == tank_id), None)
         if tank and tank['id'] not in owned_ids:
             price = tank['price']
-            balance = player['gold'] if payment_method == 'gold' else player['silver']
+            balance = player['gold'] if payment == 'gold' else player['silver']
             
             if balance >= price:
                 player['tanks'].append(tank['id'])
-                if payment_method == 'gold':
+                if payment == 'gold':
                     player['gold'] -= price
                 else:
                     player['silver'] -= price
                 player['purchases'] = player.get('purchases', 0) + 1
                 update_player(player)
                 
-                # Webhook для аналитики
-                log_purchase(player['username'], tank['name'], price)
-                return jsonify({'success': True, 'message': f'✅ {tank["name"]} куплен!'})
+                # Админ лог
+                if is_superadmin(player['username']):
+                    log_admin_action(player['username'], f"Купил {tank['name']}")
+                
+                flash(f'✅ Куплен {tank["name"]} за {price:,} {payment}!')
+                return redirect(url_for('shop', nation=nation_filter, tier=tier_filter, type=type_filter))
         
-        return jsonify({'success': False, 'error': 'Недостаточно средств'})
-    
-    # Группировка по нациям
-    nations = {}
-    for tank in ALL_TANKS_LIST:
-        nation = tank['nation']
-        if nation not in nations:
-            nations[nation] = []
-        nations[nation].append(tank)
+        flash('❌ Недостаточно средств или танк уже куплен!')
+        return redirect(url_for('shop'))
     
     return render_template('shop.html', 
                          player=player, 
-                         nations=nations,
-                         owned_ids=owned_ids)
+                         tanks=filtered_tanks,
+                         owned_ids=owned_ids,
+                         filters={'nation': nation_filter, 'tier': tier_filter, 'type': type_filter})
 
 # ========================================
 # ✅ 1.9 БОИ И ТУРНИРЫ (ПРОСТЫЕ)
@@ -366,59 +411,75 @@ def shop():
 @app.route('/battle', methods=['POST'])
 def battle():
     if not validate_session():
-        return jsonify({'error': 'Unauthorized'}), 401
+        return jsonify({'error': 'Unauthorized!'}), 401
     
     player = get_player(session['user_id'])
     if not player.get('tanks'):
-        return jsonify({'error': 'Нет танков!'}), 400
+        return jsonify({'error': 'Нет танков для боя!'}), 400
     
-    # Реальная боевая система
-    player_tank = random.choice([t for t in ALL_TANKS_LIST if t['id'] in player['tanks']])
+    # Выбор танков
+    player_tank_id = request.json.get('tank_id') or random.choice(player['tanks'])
+    player_tank = next(t for t in ALL_TANKS_LIST if t['id'] == player_tank_id)
     enemy_tank = random.choice(ALL_TANKS_LIST)
     
+    # Симуляция боя (15 раундов макс)
     player_hp, enemy_hp = player_tank['hp'], enemy_tank['hp']
     battle_log = []
     
-    for round_num in range(15):  # Макс 15 раундов
+    for round_num in range(15):
         if player_hp <= 0 or enemy_hp <= 0:
             break
-            
-        # Атака игрока
-        player_damage = max(1, player_tank['damage'] - random.randint(0, enemy_tank['hp']//10))
-        enemy_hp -= player_damage
-        battle_log.append(f"Раунд {round_num+1}: Вы нанесли {player_damage} урона")
+        
+        # Атака игрока (учет пробития)
+        penetration_chance = player_tank['pen'] / enemy_tank['hp'] * 100
+        if random.randint(1, 100) <= penetration_chance:
+            damage = random.randint(player_tank['damage']//2, player_tank['damage'])
+            enemy_hp = max(0, enemy_hp - damage)
+            battle_log.append(f"💥 {damage} урона врагу!")
+        else:
+            battle_log.append("🛡️ Рикошет!")
         
         if enemy_hp <= 0:
             break
-            
-        # Атака врага
-        enemy_damage = max(1, enemy_tank['damage'] - random.randint(0, player_tank['hp']//10))
-        player_hp -= enemy_damage
-        battle_log.append(f"Враг нанес {enemy_damage} урона")
+        
+        # Контратака врага
+        enemy_penetration = enemy_tank['pen'] / player_tank['hp'] * 100
+        if random.randint(1, 100) <= enemy_penetration:
+            damage = random.randint(enemy_tank['damage']//2, enemy_tank['damage'])
+            player_hp = max(0, player_hp - damage)
+            battle_log.append(f"💥 Враг нанес {damage} урона!")
+        else:
+            battle_log.append("🛡️ Ваш рикошет!")
     
+    # Награды
     win = player_hp > 0
-    multiplier = 2 if player_tank['tier'] >= enemy_tank['tier'] else 1.5
+    tier_diff = player_tank['tier'] - enemy_tank['tier']
+    multiplier = max(1.0, 1 + tier_diff * 0.2)
     
     rewards = {
-        'gold': int(random.randint(1000, 3000) * multiplier) if win else random.randint(200, 800),
-        'silver': int(random.randint(5000, 15000) * multiplier) if win else random.randint(1000, 4000),
-        'points': int(random.randint(500, 1500) * multiplier) if win else random.randint(100, 300)
+        'gold': int(random.randint(800, 2500) * multiplier) if win else random.randint(150, 600),
+        'silver': int(random.randint(4000, 12000) * multiplier) if win else random.randint(800, 2500),
+        'points': int(random.randint(400, 1200) * multiplier) if win else random.randint(80, 250)
     }
     
+    # Обновление статистики
     player['gold'] += rewards['gold']
     player['silver'] += rewards['silver']
     player['points'] += rewards['points']
     player['battles'] += 1
     if win:
         player['wins'] += 1
+    
     update_player(player)
     
     return jsonify({
         'win': win,
         'player_tank': player_tank['name'],
         'enemy_tank': enemy_tank['name'],
+        'player_hp_left': max(0, player_hp),
+        'enemy_hp_left': max(0, enemy_hp),
         'rewards': rewards,
-        'battle_log': battle_log[-5:],  # Последние 5 событий
+        'battle_log': battle_log[-8:],
         'winrate': round(player['wins']/player['battles']*100, 1) if player['battles'] else 0
     })
 
@@ -426,33 +487,46 @@ def battle():
 # ✅ 1.10 ЛИДЕРБОРДЫ И ПРОФИЛИ
 # ========================================
 @app.route('/leaderboard')
+@app.route('/top')
 def leaderboard():
-    if not validate_session(allow_guest=True):
-        return redirect(url_for('login'))
-    
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    
-    # Топ по очкам, победам, танкам
     c.execute("""
-        SELECT p.username, p.points, p.wins, p.battles, p.tanks,
-               (SELECT COUNT(*) FROM players p2 WHERE p2.points > p.points) + 1 as rank
-        FROM players p ORDER BY p.points DESC LIMIT 100
+        SELECT username, points, wins, battles, tanks,
+        (SELECT COUNT(*) FROM players p2 WHERE p2.points > p.points) + 1 as rank
+        FROM players ORDER BY points DESC LIMIT 50
     """)
+    rows = c.fetchall()
+    conn.close()
     
     top_players = []
-    for row in c.fetchall():
+    for row in rows:
         tanks_count = len(json.loads(row[4])) if row[4] else 0
         top_players.append({
             'rank': row[5],
             'username': row[0],
             'points': row[1],
-            'winrate': round((row[2]/row[3]*100), 1) if row[3] > 0 else 0,
-            'tanks': tanks_count
+            'wins': row[2],
+            'battles': row[3],
+            'winrate': round(row[2]/row[3]*100, 1) if row[3] else 0,
+            'tanks_count': tanks_count
         })
     
-    conn.close()
     return render_template('leaderboard.html', top_players=top_players)
+
+@app.route('/profile/<username>')
+def profile(username):
+    player = get_player(generate_user_id(username))
+    if not player:
+        return render_template('404.html'), 404
+    
+    rank_info = get_rank_progress(player['points'])
+    owned_tanks = [t for t in ALL_TANKS_LIST if t['id'] in player.get('tanks', [])]
+    
+    return render_template('profile.html', 
+                         player=player, 
+                         rank_info=rank_info, 
+                         owned_tanks=owned_tanks)
 
 @app.route('/profile/<user_id>')
 def profile(user_id):
@@ -473,226 +547,189 @@ def profile(user_id):
 # ========================================
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_panel():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    username = session.get('username')
-    if not is_admin(username):
-        flash('Доступ запрещён!')
+    if not validate_session(admin_required=True):
+        flash('🚫 Доступ только для Назар & CatNap!')
         return redirect(url_for('index'))
     
-    if request.method == 'POST':
-        action = request.form.get('action')
-        target_user = request.form.get('target_user')
-        
-        if action == 'give_gold':
-            amount = int(request.form.get('amount', 0))
-            player = get_player(target_user)
-            if player:
-                player['gold'] += amount
-                update_player(player)
-                flash(f'✅ Выдано {amount:,} золота игроку {player["username"]}')
-        
-        elif action == 'mute':
-            duration = float(request.form.get('duration', 0))  # часы
-            player = get_player(target_user)
-            if player:
-                player['is_muted'] = True
-                player['mute_until'] = time.time() + (duration * 3600)
-                update_player(player)
-                flash(f'✅ Игрок {player["username"]} замучен на {duration}ч')
+    player = get_player(session['user_id'])
+    action = request.form.get('action') if request.method == 'POST' else None
     
-    players = []
+    if action == 'give_gold':
+        target = request.form.get('target_username')
+        amount = int(request.form.get('amount', 0))
+        target_player = get_player(generate_user_id(target))
+        if target_player:
+            target_player['gold'] += amount
+            update_player(target_player)
+            log_admin_action(player['username'], f"Выдал {amount} золота {target}")
+            flash(f'✅ {amount} золота выдано {target}!')
+    
+    elif action == 'mute':
+        target = request.form.get('target_username')
+        duration = float(request.form.get('duration', 0))  # часы
+        target_player = get_player(generate_user_id(target))
+        if target_player:
+            target_player['is_muted'] = True
+            target_player['mute_until'] = time.time() + (duration * 3600)
+            update_player(target_player)
+            flash(f'✅ {target} замучен на {duration}ч!')
+    
+    elif action == 'reset_stats':
+        target = request.form.get('target_username')
+        target_player = get_player(generate_user_id(target))
+        if target_player:
+            target_player.update({
+                'gold': 5000, 'silver': 25000, 'points': 0,
+                'wins': 0, 'battles': 0, 'tanks': []
+            })
+            update_player(target_player)
+            flash(f'✅ Статистика {target} сброшена!')
+    
+    # Статистика сервера
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute('SELECT user_id, username, gold, points FROM players ORDER BY points DESC LIMIT 20')
-    players = c.fetchall()
+    c.execute('SELECT COUNT(*), SUM(points), AVG(points) FROM players')
+    server_stats = c.fetchone()
+    c.execute('SELECT username, gold, points FROM players ORDER BY points DESC LIMIT 10')
+    top_players = c.fetchall()
     conn.close()
     
-    return render_template('admin.html', players=players)
+    return render_template('admin.html', 
+                         player=player,
+                         server_stats=server_stats,
+                         top_players=top_players)
 
 # ========================================
 # ✅ 1.12 ГЛАВНЫЕ РОУТЫ
 # ========================================
 @app.route('/')
 def index():
-    # Максимальная проверка сессии
-    if session.get('logged_in') and session.get('user_id'):
-        player = get_player(session.get('user_id'))
-        if player and player.get('username') == session.get('username'):
-            # Генерация токена сессии для доп. безопасности
-            session_token = secrets.token_hex(16)
-            session['session_token'] = session_token
-            player['session_token'] = session_token
-            update_player(player)
-            
-            rank_info = get_rank_progress(player['points'])
-            return render_template('dashboard.html', 
-                                 player=player, 
-                                 rank_info=rank_info,
-                                 all_tanks_count=len(ALL_TANKS_LIST))
+    if validate_session():
+        player = get_player(session['user_id'])
+        rank_info = get_rank_progress(player['points'])
+        is_admin_panel = is_superadmin(player['username'])
+        
+        return render_template('dashboard.html', 
+                             player=player, 
+                             rank_info=rank_info,
+                             admin_panel=is_admin_panel,
+                             online_players=get_online_count())
     
-    # Гость - главная страница с анимацией
-    return render_template('index.html')
+    return render_template('index.html', featured_tanks=ALL_TANKS_LIST[:6])
 
-class RegisterForm(FlaskForm):
-    username = StringField('Username', validators=[
-        DataRequired(),
-        Length(min=3, max=20),
-        Regexp(r'^[a-zA-Z0-9_]+$', message="Только буквы, цифры, _")
-    ])
-    password = PasswordField('Password', validators=[
-        DataRequired(),
-        Length(min=8),
-        Regexp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)', 
-               message="1 заглавная, 1 строчная, 1 цифра")
-    ])
-    password_confirm = PasswordField('Confirm Password', validators=[
-        DataRequired(),
-        EqualTo('password')
-    ])
-    submit = SubmitField('Создать аккаунт')
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField, BooleanField
+from wtforms.validators import DataRequired, Length, EqualTo, Regexp, Email
 
 class RegisterForm(FlaskForm):
     username = StringField('Логин', validators=[
-        DataRequired(message="Логин обязателен"),
-        Length(min=3, max=20, message="3-20 символов"),
-        Regexp(r'^[a-zA-Z0-9а-яА-ЯёЁ_]+$', message="Только буквы, цифры, _")
+        DataRequired(), Length(3, 20),
+        Regexp(r'^[a-zA-Zа-яёА-ЯЁ0-9_]{3,20}$')
     ])
-    email = StringField('Email', validators=[
-        DataRequired(),
-        Email()
-    ])
+    email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Пароль', validators=[
-        DataRequired(),
-        Length(min=12, message="Минимум 12 символов"),
-        Regexp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{12,}$',
-               message="1 Заглавная + 1 строчная + 1 цифра + 1 спецсимвол")
+        DataRequired(), Length(min=12),
+        Regexp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{12,}$')
     ])
-    password_confirm = PasswordField('Подтверждение', validators=[EqualTo('password')])
-    captcha = StringField('Капча', validators=[DataRequired()])
+    password_confirm = PasswordField('Подтвердить пароль', validators=[DataRequired(), EqualTo('password')])
     agree_terms = BooleanField('Согласен с правилами', validators=[DataRequired()])
-    
-    def __init__(self, *args, **kwargs):
-        super(RegisterForm, self).__init__(*args, **kwargs)
-        self.captcha.data = secrets.token_hex(4).upper()
+    submit = SubmitField('🎮 Создать аккаунт')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    form = RegisterForm()
-    
-    # Rate limiting по IP
+    # Rate limiting
     ip = request.remote_addr
-    attempts = session.get(f'register_attempts_{ip}', 0)
+    attempts = session.get(f'register_{ip}', 0)
     if attempts >= 3:
-        return render_template('register.html', form=form, 
-                             error="Слишком много попыток. Подождите 10 минут."), 429
+        return render_template('register.html', error="⏰ Подождите 10 минут"), 429
     
+    form = RegisterForm()
     if form.validate_on_submit():
-        # Двойная проверка капчи
-        if form.captcha.data.lower() != session.get('captcha', '').lower():
-            flash('Неверная капча!')
-            return render_template('register.html', form=form)
-        
         # Проверка уникальности
         if get_player(generate_user_id(form.username.data)):
-            flash('Логин занят!')
+            flash('❌ Логин уже занят!')
             return render_template('register.html', form=form)
         
-        # БЕЗОПАСНОЕ СОЗДАНИЕ
+        # Создание суперадмина для Назар/CatNap
         user_id = generate_user_id(form.username.data)
-        hashed_pw = bcrypt.hashpw(form.password.data.encode(), bcrypt.gensalt(rounds=14))
-        
         create_player(form.username.data, user_id)
         player = get_player(user_id)
+        
+        # БЕЗОПАСНЫЕ ДАННЫЕ
+        hashed_pw = bcrypt.hashpw(form.password.data.encode('utf-8'), bcrypt.gensalt(14))
         player.update({
             'email': form.email.data,
             'password_hash': hashed_pw.decode(),
-            'verified': False,  # Требует email верификации
-            'role': 'player',
-            'created_at': time.time()
+            'session_token': secrets.token_hex(32),
+            'ip_addresses': [request.remote_addr],
+            'created_at': time.time(),
+            'role': 'superadmin' if form.username.data in ADMIN_USERS else 'player'
         })
-        update_player(player)
         
-        session[f'register_attempts_{ip}'] = 0
-        flash('✅ Регистрация успешна! Подтвердите email.')
+        # СПЕЦПРАВА ДЛЯ АДМИНОВ
+        if form.username.data in ADMIN_USERS:
+            player.update(ADMIN_USERS[form.username.data])
+        
+        update_player(player)
+        session[f'register_{ip}'] = 0
+        flash('✅ Аккаунт создан! Войдите.')
         return redirect(url_for('login'))
     
-    session[f'register_attempts_{ip}'] = attempts + 1
+    session[f'register_{ip}'] = attempts + 1
     return render_template('register.html', form=form)
-
-class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[
-        DataRequired(),
-        Length(min=3, max=20)
-    ])
-    password = PasswordField('Password', validators=[
-        DataRequired()
-    ])
-    submit = SubmitField('Войти')
 
 class LoginForm(FlaskForm):
     username = StringField('Логин', validators=[DataRequired(), Length(3, 20)])
     password = PasswordField('Пароль', validators=[DataRequired()])
     remember_me = BooleanField('Запомнить меня')
-    captcha = StringField('Капча', validators=[DataRequired()])
-    
-    def __init__(self, *args, **kwargs):
-        super(LoginForm, self).__init__(*args, **kwargs)
-        self.captcha.data = secrets.token_hex(4).upper()
+    submit = SubmitField('🔓 Войти')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    ip = request.remote_addr
     form = LoginForm()
     
-    ip = request.remote_addr
-    login_attempts = session.get(f'login_attempts_{ip}', {})
-    
-    if login_attempts.get(form.username.data, 0) >= 5:
-        return render_template('login.html', form=form, 
-                             error="Аккаунт временно заблокирован"), 429
+    # Блокировка после 5 попыток
+    attempts = session.get(f'login_attempts_{ip}', {})
+    username_attempts = attempts.get(form.username.data, 0)
+    if username_attempts >= 5:
+        return render_template('login.html', form=form, error="🚫 Аккаунт заблокирован на 30 мин"), 429
     
     if form.validate_on_submit():
-        # Капча проверка
-        if form.captcha.data.lower() != session.get('captcha', '').lower():
-            flash('❌ Неверная капча!')
-            return render_template('login.html', form=form)
-        
         user_id = generate_user_id(form.username.data)
         player = get_player(user_id)
         
-        if (player and player.get('password_hash') and 
+        if (player and player.get('password_hash') and
             bcrypt.checkpw(form.password.data.encode(), player['password_hash'].encode())):
             
-            # 2FA код (опционально)
-            if player.get('2fa_enabled'):
-                session['2fa_required'] = True
-                session['temp_user_id'] = user_id
-                return redirect(url_for('verify_2fa'))
-            
-            # УСПЕШНЫЙ ВХОД
+            # ✅ УСПЕШНЫЙ ВХОД
             session.clear()
+            session_token = secrets.token_hex(32)
             session.update({
                 'logged_in': True,
                 'user_id': user_id,
                 'username': player['username'],
-                'session_token': secrets.token_hex(32),
+                'session_token': session_token,
                 'ip_verified': ip,
-                'login_time': time.time()
+                'login_time': time.time(),
+                'remember_me': form.remember_me.data
             })
             
-            # Обновление токена в БД
-            player['session_token'] = session['session_token']
+            # Обновление в БД
+            player['session_token'] = session_token
             player['last_login'] = time.time()
+            player['ip_addresses'].append(ip)
+            player['login_count'] = player.get('login_count', 0) + 1
             update_player(player)
             
+            # Очистка попыток
             session[f'login_attempts_{ip}'] = {}
-            flash('🎉 Добро пожаловать!')
+            flash(f'🎉 Добро пожаловать, {player["username"]}!')
             return redirect(url_for('index'))
         
-        # НЕУДАЧА
-        login_attempts[form.username.data] = login_attempts.get(form.username.data, 0) + 1
-        session[f'login_attempts_{ip}'] = login_attempts
+        # ❌ НЕУДАЧА
+        attempts[form.username.data] = username_attempts + 1
+        session[f'login_attempts_{ip}'] = attempts
         flash('❌ Неверный логин или пароль!')
     
     return render_template('login.html', form=form)
@@ -713,13 +750,43 @@ def logout():
 def generate_user_id(username):
     return hashlib.md5(username.encode()).hexdigest()
 
-@app.route('/daily')
+@app.route('/daily', methods=['GET'])
 def daily():
-    if not session.get('logged_in'):
-        return jsonify({"error": "Авторизуйтесь!"}), 401
+    if not validate_session():
+        return jsonify({'error': 'Авторизация!'}), 401
     
-    success, message = claim_daily(session.get('username'))
-    return jsonify({"success": success, "message": message})
+    player = get_player(session['user_id'])
+    now = time.time()
+    
+    if now - player.get('last_daily', 0) < 86400:
+        return jsonify({'error': '⏰ Только раз в сутки!'})
+    
+    streak = player.get('daily_streak', 0) + 1
+    if streak > 7: streak = 1
+    
+    rewards = DAILY_REWARDS[str(streak)]
+    player.update({
+        'gold': player['gold'] + rewards['gold'],
+        'silver': player['silver'] + rewards['silver'],
+        'points': player['points'] + rewards['points'],
+        'daily_streak': streak,
+        'last_daily': now
+    })
+    
+    if streak == 7:
+        bonus_tank = random.choice([t for t in ALL_TANKS_LIST if t['tier'] <= 5])
+        player['tanks'].append(bonus_tank['id'])
+        rewards['bonus_tank'] = bonus_tank['name']
+    
+    update_player(player)
+    return jsonify({'success': True, 'rewards': rewards, 'streak': streak})
+
+@app.route('/api/stats')
+def api_stats():
+    if not validate_session():
+        return jsonify({'error': 'Unauthorized'}), 401
+    player = get_player(session['user_id'])
+    return jsonify(player)
 
 @app.errorhandler(404)
 def not_found(error):
@@ -729,12 +796,10 @@ def not_found(error):
     <body><h1>❌ 404 - Страница не найдена</h1><a href="/" style="color:#667eea;">🏠 На главную</a></body></html>
     """, 404
 
-init_db()
 # ========================================
 # ✅ 1.14 ЗАПУСК СЕРВЕРА
 # ========================================
 if __name__ == '__main__':
+    init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
-
-
