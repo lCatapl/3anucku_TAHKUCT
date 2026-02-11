@@ -2,6 +2,14 @@ from flask import Flask, render_template, request, jsonify, session, redirect, u
 import json, sqlite3, hashlib, time, os, random, threading
 from datetime import datetime, timedelta
 from collections import defaultdict
+import bcrypt
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import Length, Regexp, EqualTo, DataRequired
+from flask_wtf.csrf import CSRFProtect
+import secrets
+
+csrf = CSRFProtect(app)
 
 app = Flask(__name__)
 app.secret_key = 'tankist_v9.6_super_secret_key_2026'
@@ -316,46 +324,32 @@ def shop():
     
     player = get_player(session.get('user_id'))
     if not player:
-        return "Профиль не найден!", 404
+        return redirect(url_for('login'))
     
     owned_ids = [t['id'] for t in player['tanks']]
     
     if request.method == 'POST':
+        # CSRF защита уже в форме
         tank_id = request.form.get('tank_id')
         use_gold = 'gold' in request.form
         
         tank = next((t for t in ALL_TANKS_LIST if t['id'] == tank_id), None)
-        if not tank:
-            flash('Танк не найден!')
-            return redirect(url_for('shop'))
+        if tank and tank['id'] not in owned_ids:
+            price = tank['price']
+            currency = player['gold'] if use_gold else player['silver']
+            
+            if currency >= price:
+                player['tanks'].append(tank['id'])
+                if use_gold:
+                    player['gold'] -= price
+                else:
+                    player['silver'] -= price
+                update_player(player)
+                flash(f'✅ Куплен {tank["name"]}!')
         
-        if tank['id'] in owned_ids:
-            flash('Танк уже куплен!')
-            return redirect(url_for('shop'))
-        
-        price = tank['price']
-        currency = player['gold'] if use_gold else player['silver']
-        
-        if currency < price:
-            flash(f'Недостаточно { "золота 💰" if use_gold else "серебра 🪙" }!')
-            return redirect(url_for('shop'))
-        
-        # Покупка
-        player['tanks'].append(tank['id'])
-        if use_gold:
-            player['gold'] -= price
-        else:
-            player['silver'] -= price
-        player['battles'] += 1  # Бонус за покупку
-        
-        update_player(player)
-        flash(f'✅ Куплен {tank["name"]} за {price:,} { "золота 💰" if use_gold else "серебра 🪙" }!')
         return redirect(url_for('shop'))
     
-    return render_template('shop.html', 
-                         player=player, 
-                         tanks=[t for t in ALL_TANKS_LIST if t['id'] not in owned_ids],
-                         owned_ids=owned_ids)
+    return render_template('shop.html', player=player, tanks=ALL_TANKS_LIST, owned_ids=owned_ids)
 
 # ========================================
 # ✅ 1.9 БОИ И ТУРНИРЫ (ПРОСТЫЕ)
@@ -488,54 +482,123 @@ def admin_panel():
 # ========================================
 @app.route('/')
 def index():
+    # Проверка валидности сессии
     if session.get('logged_in'):
         player = get_player(session.get('user_id'))
-        if player:
+        if player and session.get('username') == player.get('username'):
             rank_info = get_rank_progress(player['points'])
             return render_template('dashboard.html', player=player, rank_info=rank_info)
+        else:
+            session.clear()  # Неверная сессия
+    
     return render_template('index.html')
+
+class RegisterForm(FlaskForm):
+    username = StringField('Username', validators=[
+        DataRequired(),
+        Length(min=3, max=20),
+        Regexp(r'^[a-zA-Z0-9_]+$', message="Только буквы, цифры, _")
+    ])
+    password = PasswordField('Password', validators=[
+        DataRequired(),
+        Length(min=8),
+        Regexp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)', 
+               message="1 заглавная, 1 строчная, 1 цифра")
+    ])
+    password_confirm = PasswordField('Confirm Password', validators=[
+        DataRequired(),
+        EqualTo('password')
+    ])
+    submit = SubmitField('Создать аккаунт')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        
-        if len(username) < 3:
-            flash('Имя слишком короткое!')
-            return render_template('register.html')
-        
-        if create_player(username, generate_user_id(username)):
-            flash('✅ Регистрация успешна!')
-            return redirect(url_for('login'))
-        else:
-            flash('Ошибка регистрации!')
+    form = RegisterForm()
     
-    return render_template('register.html')
+    # Rate limiting (простой)
+    if session.get('register_attempts', 0) > 5:
+        return "Слишком много попыток! Подождите 5 минут.", 429
+    
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
+        
+        # Проверка на существующего пользователя
+        user_id = generate_user_id(username)
+        if get_player(user_id):
+            flash('Пользователь уже существует!')
+            return render_template('register.html', form=form)
+        
+        # Хеширование пароля (bcrypt)
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        
+        # Создание игрока
+        create_player(username, user_id)
+        player = get_player(user_id)
+        player['password_hash'] = hashed_password.decode('utf-8')
+        update_player(player)
+        
+        session['register_attempts'] = 0
+        flash('✅ Аккаунт создан! Можете войти.')
+        return redirect(url_for('login'))
+    
+    session['register_attempts'] = session.get('register_attempts', 0) + 1
+    return render_template('register.html', form=form)
+
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[
+        DataRequired(),
+        Length(min=3, max=20)
+    ])
+    password = PasswordField('Password', validators=[
+        DataRequired()
+    ])
+    submit = SubmitField('Войти')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']  # В реальности используй хеширование!
-        
+    form = LoginForm()
+    
+    # Rate limiting по IP + username
+    ip = request.remote_addr
+    attempts = session.get(f'login_attempts_{ip}', {})
+    username_attempts = attempts.get(form.username.data, 0)
+    
+    if username_attempts > 5:
+        time.sleep(300)  # Блокировка 5 минут
+        return "Слишком много попыток! Подождите 5 минут.", 429
+    
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
         user_id = generate_user_id(username)
         player = get_player(user_id)
         
-        if player:  # Простая проверка (в продакшене используй bcrypt!)
-            session['logged_in'] = True
-            session['username'] = username
-            session['user_id'] = user_id
-            flash('✅ Вход выполнен!')
-            return redirect(url_for('index'))
-        else:
-            flash('❌ Неверные данные!')
+        if player and player.get('password_hash'):
+            # Проверка пароля
+            if bcrypt.checkpw(password.encode('utf-8'), player['password_hash'].encode('utf-8')):
+                session['logged_in'] = True
+                session['username'] = username
+                session['user_id'] = user_id
+                session[f'login_attempts_{ip}'] = {}
+                flash('✅ Добро пожаловать!')
+                return redirect(url_for('index'))
+        
+        # Неудачная попытка
+        attempts = session.get(f'login_attempts_{ip}', {})
+        attempts[username] = attempts.get(username, 0) + 1
+        session[f'login_attempts_{ip}'] = attempts
+        flash('❌ Неверный логин или пароль!')
     
-    return render_template('login.html')
+    return render_template('login.html', form=form)
 
 @app.route('/logout')
 def logout():
     session.clear()
+    # Очистка всех попыток входа
+    for key in list(session.keys()):
+        if key.startswith('login_attempts_'):
+            session.pop(key, None)
     flash('👋 До свидания!')
     return redirect(url_for('index'))
 
@@ -561,6 +624,7 @@ def not_found(error):
     <body><h1>❌ 404 - Страница не найдена</h1><a href="/" style="color:#667eea;">🏠 На главную</a></body></html>
     """, 404
 
+init_db()
 # ========================================
 # ✅ 1.14 ЗАПУСК СЕРВЕРА
 # ========================================
