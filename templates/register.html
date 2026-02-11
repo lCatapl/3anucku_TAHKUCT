@@ -31,6 +31,17 @@
             {{ form.hidden_tag() }}
             <div class="space-y-6">
                 <div>
+                    <label class="block text-sm font-semibold text-gray-300 mb-2">Логин</label>
+                    <div class="relative">
+                        <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        {{ form.username(class="w-full pl-12 pr-4 py-4 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-sm transition-all", placeholder="Введи логин") }}
+                    </div>
+                    {% for error in form.username.errors %}
+                        <p class="text-red-400 text-sm mt-1">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                
+                <div>
                     <label class="block text-sm font-semibold text-gray-300 mb-2">Пароль</label>
                     <div class="relative">
                         <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
@@ -38,17 +49,6 @@
                     </div>
                     {% for error in form.password.errors %}
                     <p class="text-red-400 text-sm mt-1">{{ error }}</p>
-                    {% endfor %}
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-300 mb-2">Пароль</label>
-                    <div class="relative">
-                        <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        {{ form.password(class="w-full pl-12 pr-4 py-4 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 backdrop-blur-sm transition-all", placeholder="******", autocomplete="new-password") }}
-                    </div>
-                    {% for error in form.password.errors %}
-                        <p class="text-red-400 text-sm mt-1">{{ error }}</p>
                     {% endfor %}
                 </div>
 
