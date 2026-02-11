@@ -319,105 +319,141 @@ def claim_daily(username):
 # ========================================
 @app.route('/shop', methods=['GET', 'POST'])
 def shop():
-    if not session.get('logged_in'):
+    if not validate_session():  # Новая функция проверки
         return redirect(url_for('login'))
     
-    player = get_player(session.get('user_id'))
-    if not player:
-        return redirect(url_for('login'))
-    
-    owned_ids = [t['id'] for t in player['tanks']]
+    player = get_player(session['user_id'])
+    owned_ids = set(t['id'] for t in player.get('tanks', []))
     
     if request.method == 'POST':
-        # CSRF защита уже в форме
         tank_id = request.form.get('tank_id')
-        use_gold = 'gold' in request.form
+        payment_method = request.form.get('payment_method')
         
         tank = next((t for t in ALL_TANKS_LIST if t['id'] == tank_id), None)
         if tank and tank['id'] not in owned_ids:
             price = tank['price']
-            currency = player['gold'] if use_gold else player['silver']
+            balance = player['gold'] if payment_method == 'gold' else player['silver']
             
-            if currency >= price:
+            if balance >= price:
                 player['tanks'].append(tank['id'])
-                if use_gold:
+                if payment_method == 'gold':
                     player['gold'] -= price
                 else:
                     player['silver'] -= price
+                player['purchases'] = player.get('purchases', 0) + 1
                 update_player(player)
-                flash(f'✅ Куплен {tank["name"]}!')
+                
+                # Webhook для аналитики
+                log_purchase(player['username'], tank['name'], price)
+                return jsonify({'success': True, 'message': f'✅ {tank["name"]} куплен!'})
         
-        return redirect(url_for('shop'))
+        return jsonify({'success': False, 'error': 'Недостаточно средств'})
     
-    return render_template('shop.html', player=player, tanks=ALL_TANKS_LIST, owned_ids=owned_ids)
+    # Группировка по нациям
+    nations = {}
+    for tank in ALL_TANKS_LIST:
+        nation = tank['nation']
+        if nation not in nations:
+            nations[nation] = []
+        nations[nation].append(tank)
+    
+    return render_template('shop.html', 
+                         player=player, 
+                         nations=nations,
+                         owned_ids=owned_ids)
 
 # ========================================
 # ✅ 1.9 БОИ И ТУРНИРЫ (ПРОСТЫЕ)
 # ========================================
 @app.route('/battle', methods=['POST'])
 def battle():
-    if not session.get('logged_in'):
-        return jsonify({"error": "Не авторизован!"}), 401
+    if not validate_session():
+        return jsonify({'error': 'Unauthorized'}), 401
     
-    player = get_player(session.get('user_id'))
-    if not player or not player['tanks']:
-        return jsonify({"error": "Нет танков для боя!"}), 400
+    player = get_player(session['user_id'])
+    if not player.get('tanks'):
+        return jsonify({'error': 'Нет танков!'}), 400
     
-    enemy_tank = random.choice(player['tanks'])
-    player_tank = random.choice(player['tanks'])
+    # Реальная боевая система
+    player_tank = random.choice([t for t in ALL_TANKS_LIST if t['id'] in player['tanks']])
+    enemy_tank = random.choice(ALL_TANKS_LIST)
     
-    # Простая боевая система
-    player_hp = player_tank['hp']
-    enemy_hp = enemy_tank['hp']
+    player_hp, enemy_hp = player_tank['hp'], enemy_tank['hp']
+    battle_log = []
     
-    while player_hp > 0 and enemy_hp > 0:
-        # Урон игрока
-        damage = random.randint(player_tank['damage']//2, player_tank['damage'])
-        enemy_hp -= max(0, damage - random.randint(0, 50))  # Броня врага
+    for round_num in range(15):  # Макс 15 раундов
+        if player_hp <= 0 or enemy_hp <= 0:
+            break
+            
+        # Атака игрока
+        player_damage = max(1, player_tank['damage'] - random.randint(0, enemy_tank['hp']//10))
+        enemy_hp -= player_damage
+        battle_log.append(f"Раунд {round_num+1}: Вы нанесли {player_damage} урона")
         
         if enemy_hp <= 0:
             break
             
-        # Урон врага
-        damage = random.randint(enemy_tank['damage']//2, enemy_tank['damage'])
-        player_hp -= max(0, damage - random.randint(0, 50))
+        # Атака врага
+        enemy_damage = max(1, enemy_tank['damage'] - random.randint(0, player_tank['hp']//10))
+        player_hp -= enemy_damage
+        battle_log.append(f"Враг нанес {enemy_damage} урона")
     
     win = player_hp > 0
-    reward_gold = random.randint(500, 2000) if win else random.randint(100, 500)
-    reward_silver = random.randint(2000, 8000) if win else random.randint(500, 2000)
-    reward_points = random.randint(300, 1000) if win else random.randint(50, 200)
+    multiplier = 2 if player_tank['tier'] >= enemy_tank['tier'] else 1.5
     
-    player['gold'] += reward_gold
-    player['silver'] += reward_silver
-    player['points'] += reward_points
+    rewards = {
+        'gold': int(random.randint(1000, 3000) * multiplier) if win else random.randint(200, 800),
+        'silver': int(random.randint(5000, 15000) * multiplier) if win else random.randint(1000, 4000),
+        'points': int(random.randint(500, 1500) * multiplier) if win else random.randint(100, 300)
+    }
+    
+    player['gold'] += rewards['gold']
+    player['silver'] += rewards['silver']
+    player['points'] += rewards['points']
     player['battles'] += 1
     if win:
         player['wins'] += 1
-    
     update_player(player)
     
     return jsonify({
-        "win": win,
-        "reward_gold": reward_gold,
-        "reward_silver": reward_silver,
-        "reward_points": reward_points,
-        "player_tank": player_tank['name'],
-        "enemy_tank": enemy_tank['name']
+        'win': win,
+        'player_tank': player_tank['name'],
+        'enemy_tank': enemy_tank['name'],
+        'rewards': rewards,
+        'battle_log': battle_log[-5:],  # Последние 5 событий
+        'winrate': round(player['wins']/player['battles']*100, 1) if player['battles'] else 0
     })
+
 # ========================================
 # ✅ 1.10 ЛИДЕРБОРДЫ И ПРОФИЛИ
 # ========================================
 @app.route('/leaderboard')
 def leaderboard():
-    if not session.get('logged_in'):
+    if not validate_session(allow_guest=True):
         return redirect(url_for('login'))
     
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute('SELECT user_id, points, wins, battles FROM leaderboards ORDER BY points DESC LIMIT 50')
-    top_players = c.fetchall()
-    conn.close()
     
+    # Топ по очкам, победам, танкам
+    c.execute("""
+        SELECT p.username, p.points, p.wins, p.battles, p.tanks,
+               (SELECT COUNT(*) FROM players p2 WHERE p2.points > p.points) + 1 as rank
+        FROM players p ORDER BY p.points DESC LIMIT 100
+    """)
+    
+    top_players = []
+    for row in c.fetchall():
+        tanks_count = len(json.loads(row[4])) if row[4] else 0
+        top_players.append({
+            'rank': row[5],
+            'username': row[0],
+            'points': row[1],
+            'winrate': round((row[2]/row[3]*100), 1) if row[3] > 0 else 0,
+            'tanks': tanks_count
+        })
+    
+    conn.close()
     return render_template('leaderboard.html', top_players=top_players)
 
 @app.route('/profile/<user_id>')
@@ -482,15 +518,23 @@ def admin_panel():
 # ========================================
 @app.route('/')
 def index():
-    # Проверка валидности сессии
-    if session.get('logged_in'):
+    # Максимальная проверка сессии
+    if session.get('logged_in') and session.get('user_id'):
         player = get_player(session.get('user_id'))
-        if player and session.get('username') == player.get('username'):
+        if player and player.get('username') == session.get('username'):
+            # Генерация токена сессии для доп. безопасности
+            session_token = secrets.token_hex(16)
+            session['session_token'] = session_token
+            player['session_token'] = session_token
+            update_player(player)
+            
             rank_info = get_rank_progress(player['points'])
-            return render_template('dashboard.html', player=player, rank_info=rank_info)
-        else:
-            session.clear()  # Неверная сессия
+            return render_template('dashboard.html', 
+                                 player=player, 
+                                 rank_info=rank_info,
+                                 all_tanks_count=len(ALL_TANKS_LIST))
     
+    # Гость - главная страница с анимацией
     return render_template('index.html')
 
 class RegisterForm(FlaskForm):
@@ -511,38 +555,72 @@ class RegisterForm(FlaskForm):
     ])
     submit = SubmitField('Создать аккаунт')
 
+class RegisterForm(FlaskForm):
+    username = StringField('Логин', validators=[
+        DataRequired(message="Логин обязателен"),
+        Length(min=3, max=20, message="3-20 символов"),
+        Regexp(r'^[a-zA-Z0-9а-яА-ЯёЁ_]+$', message="Только буквы, цифры, _")
+    ])
+    email = StringField('Email', validators=[
+        DataRequired(),
+        Email()
+    ])
+    password = PasswordField('Пароль', validators=[
+        DataRequired(),
+        Length(min=12, message="Минимум 12 символов"),
+        Regexp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{12,}$',
+               message="1 Заглавная + 1 строчная + 1 цифра + 1 спецсимвол")
+    ])
+    password_confirm = PasswordField('Подтверждение', validators=[EqualTo('password')])
+    captcha = StringField('Капча', validators=[DataRequired()])
+    agree_terms = BooleanField('Согласен с правилами', validators=[DataRequired()])
+    
+    def __init__(self, *args, **kwargs):
+        super(RegisterForm, self).__init__(*args, **kwargs)
+        self.captcha.data = secrets.token_hex(4).upper()
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
     
-    # Rate limiting (простой)
-    if session.get('register_attempts', 0) > 5:
-        return "Слишком много попыток! Подождите 5 минут.", 429
+    # Rate limiting по IP
+    ip = request.remote_addr
+    attempts = session.get(f'register_attempts_{ip}', 0)
+    if attempts >= 3:
+        return render_template('register.html', form=form, 
+                             error="Слишком много попыток. Подождите 10 минут."), 429
     
     if form.validate_on_submit():
-        username = form.username.data
-        password = form.password.data
-        
-        # Проверка на существующего пользователя
-        user_id = generate_user_id(username)
-        if get_player(user_id):
-            flash('Пользователь уже существует!')
+        # Двойная проверка капчи
+        if form.captcha.data.lower() != session.get('captcha', '').lower():
+            flash('Неверная капча!')
             return render_template('register.html', form=form)
         
-        # Хеширование пароля (bcrypt)
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        # Проверка уникальности
+        if get_player(generate_user_id(form.username.data)):
+            flash('Логин занят!')
+            return render_template('register.html', form=form)
         
-        # Создание игрока
-        create_player(username, user_id)
+        # БЕЗОПАСНОЕ СОЗДАНИЕ
+        user_id = generate_user_id(form.username.data)
+        hashed_pw = bcrypt.hashpw(form.password.data.encode(), bcrypt.gensalt(rounds=14))
+        
+        create_player(form.username.data, user_id)
         player = get_player(user_id)
-        player['password_hash'] = hashed_password.decode('utf-8')
+        player.update({
+            'email': form.email.data,
+            'password_hash': hashed_pw.decode(),
+            'verified': False,  # Требует email верификации
+            'role': 'player',
+            'created_at': time.time()
+        })
         update_player(player)
         
-        session['register_attempts'] = 0
-        flash('✅ Аккаунт создан! Можете войти.')
+        session[f'register_attempts_{ip}'] = 0
+        flash('✅ Регистрация успешна! Подтвердите email.')
         return redirect(url_for('login'))
     
-    session['register_attempts'] = session.get('register_attempts', 0) + 1
+    session[f'register_attempts_{ip}'] = attempts + 1
     return render_template('register.html', form=form)
 
 class LoginForm(FlaskForm):
@@ -555,39 +633,68 @@ class LoginForm(FlaskForm):
     ])
     submit = SubmitField('Войти')
 
+class LoginForm(FlaskForm):
+    username = StringField('Логин', validators=[DataRequired(), Length(3, 20)])
+    password = PasswordField('Пароль', validators=[DataRequired()])
+    remember_me = BooleanField('Запомнить меня')
+    captcha = StringField('Капча', validators=[DataRequired()])
+    
+    def __init__(self, *args, **kwargs):
+        super(LoginForm, self).__init__(*args, **kwargs)
+        self.captcha.data = secrets.token_hex(4).upper()
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     
-    # Rate limiting по IP + username
     ip = request.remote_addr
-    attempts = session.get(f'login_attempts_{ip}', {})
-    username_attempts = attempts.get(form.username.data, 0)
+    login_attempts = session.get(f'login_attempts_{ip}', {})
     
-    if username_attempts > 5:
-        time.sleep(300)  # Блокировка 5 минут
-        return "Слишком много попыток! Подождите 5 минут.", 429
+    if login_attempts.get(form.username.data, 0) >= 5:
+        return render_template('login.html', form=form, 
+                             error="Аккаунт временно заблокирован"), 429
     
     if form.validate_on_submit():
-        username = form.username.data
-        password = form.password.data
-        user_id = generate_user_id(username)
+        # Капча проверка
+        if form.captcha.data.lower() != session.get('captcha', '').lower():
+            flash('❌ Неверная капча!')
+            return render_template('login.html', form=form)
+        
+        user_id = generate_user_id(form.username.data)
         player = get_player(user_id)
         
-        if player and player.get('password_hash'):
-            # Проверка пароля
-            if bcrypt.checkpw(password.encode('utf-8'), player['password_hash'].encode('utf-8')):
-                session['logged_in'] = True
-                session['username'] = username
-                session['user_id'] = user_id
-                session[f'login_attempts_{ip}'] = {}
-                flash('✅ Добро пожаловать!')
-                return redirect(url_for('index'))
+        if (player and player.get('password_hash') and 
+            bcrypt.checkpw(form.password.data.encode(), player['password_hash'].encode())):
+            
+            # 2FA код (опционально)
+            if player.get('2fa_enabled'):
+                session['2fa_required'] = True
+                session['temp_user_id'] = user_id
+                return redirect(url_for('verify_2fa'))
+            
+            # УСПЕШНЫЙ ВХОД
+            session.clear()
+            session.update({
+                'logged_in': True,
+                'user_id': user_id,
+                'username': player['username'],
+                'session_token': secrets.token_hex(32),
+                'ip_verified': ip,
+                'login_time': time.time()
+            })
+            
+            # Обновление токена в БД
+            player['session_token'] = session['session_token']
+            player['last_login'] = time.time()
+            update_player(player)
+            
+            session[f'login_attempts_{ip}'] = {}
+            flash('🎉 Добро пожаловать!')
+            return redirect(url_for('index'))
         
-        # Неудачная попытка
-        attempts = session.get(f'login_attempts_{ip}', {})
-        attempts[username] = attempts.get(username, 0) + 1
-        session[f'login_attempts_{ip}'] = attempts
+        # НЕУДАЧА
+        login_attempts[form.username.data] = login_attempts.get(form.username.data, 0) + 1
+        session[f'login_attempts_{ip}'] = login_attempts
         flash('❌ Неверный логин или пароль!')
     
     return render_template('login.html', form=form)
@@ -631,3 +738,4 @@ init_db()
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
