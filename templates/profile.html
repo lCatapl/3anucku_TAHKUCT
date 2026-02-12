@@ -1,69 +1,81 @@
 {% extends "base.html" %}
+{% block title %}Профиль - {{ player.username }}{% endblock %}
 {% block content %}
 <div class="max-w-4xl mx-auto">
-    {% if guest %}
-    <div class="text-center py-20">
-        <i class="fas fa-user-slash text-8xl text-gray-600 mb-8"></i>
-        <h1 class="text-5xl font-black mb-8 text-gray-400">👤 Гость</h1>
-        <p class="text-xl mb-8 text-gray-500 max-w-2xl mx-auto">Войдите в аккаунт чтобы видеть профиль, статистику и играть!</p>
-        <div class="space-x-4">
-            <a href="/auth/login" class="bg-blue-600 hover:bg-blue-500 px-12 py-6 rounded-3xl font-black text-2xl inline-block shadow-2xl">ВОЙТИ</a>
-            <a href="/auth/register" class="bg-green-600 hover:bg-green-500 px-12 py-6 rounded-3xl font-black text-2xl inline-block shadow-2xl">РЕГИСТРАЦИЯ</a>
+    <!-- Заголовок профиля -->
+    <div class="text-center mb-16">
+        <div class="w-32 h-32 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl border-8 border-gray-800">
+            <i class="fas fa-user-circle text-7xl text-white"></i>
+        </div>
+        <h1 class="text-5xl font-black bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent mb-4">
+            {{ player.username }}
+        </h1>
+        <div class="flex justify-center items-center space-x-8 text-2xl font-bold text-gray-300 mb-8">
+            <span>⭐ {{ player.wins|default(0) }}W</span>
+            <span>⚡ {{ player.battles|default(0) }}B</span>
+            <span>🏆 {{ player.points|default(0)|int|comma }}</span>
         </div>
     </div>
-    {% else %}
-    <div class="bg-gradient-to-br from-blue-900/50 to-purple-900/50 backdrop-blur-xl rounded-4xl p-12 border border-white/20 shadow-2xl">
-        <div class="text-center mb-12">
-            <div class="w-32 h-32 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mx-auto mb-8 flex items-center justify-center shadow-2xl">
-                <i class="fas fa-user text-5xl font-bold"></i>
-            </div>
-            <h1 class="text-6xl font-black mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-                {{ stats.username }}
-            </h1>
-            <div class="text-3xl font-bold text-yellow-400 mb-2">{{ stats.rank }}</div>
-        </div>
-        
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-            <div class="bg-black/50 backdrop-blur-xl p-8 rounded-3xl border border-white/20 text-center group hover:border-blue-400/50 transition-all">
-                <i class="fas fa-gamepad text-4xl text-blue-400 mb-4"></i>
-                <div class="text-4xl font-black text-blue-400 mb-2">{{ stats.battles }}</div>
-                <div class="text-lg text-gray-300">Боёв</div>
-            </div>
-            <div class="bg-black/50 backdrop-blur-xl p-8 rounded-3xl border border-white/20 text-center group hover:border-green-400/50 transition-all">
-                <i class="fas fa-trophy text-4xl text-yellow-400 mb-4"></i>
-                <div class="text-4xl font-black text-yellow-400 mb-2">{{ stats.wins }}</div>
-                <div class="text-lg text-gray-300">Побед</div>
-            </div>
-            <div class="bg-black/50 backdrop-blur-xl p-8 rounded-3xl border border-white/20 text-center group hover:border-emerald-400/50 transition-all">
-                <i class="fas fa-coins text-4xl text-emerald-400 mb-4"></i>
-                <div class="text-4xl font-black text-emerald-400 mb-2">{{ stats.points }}</div>
-                <div class="text-lg text-gray-300">Очков</div>
-            </div>
-        </div>
-        
-        <div class="bg-black/50 backdrop-blur-xl p-8 rounded-3xl border border-white/20 mb-8">
-            <h3 class="text-2xl font-bold mb-6 flex items-center">
-                <i class="fas fa-chart-line mr-3 text-blue-400"></i>ПРОГРЕСС ЗВАНИЯ
+
+    <!-- Статистика -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+        <div class="bg-gray-800/50 backdrop-blur-xl p-8 rounded-3xl border border-gray-700/50">
+            <h3 class="text-3xl font-bold text-white mb-8 flex items-center">
+                <i class="fas fa-coins mr-3 text-yellow-400"></i>Экономика
             </h3>
-            <div class="space-y-2">
-                <div class="text-xl">До {{ stats.next_rank }}: {{ stats.points_to_next }} очков</div>
-                <div class="w-full bg-gray-700 rounded-full h-6">
-                    <div class="bg-gradient-to-r from-blue-400 to-purple-500 h-6 rounded-full transition-all" 
-                         style="width: {{ stats.rank_progress }}%"></div>
+            <div class="grid grid-cols-2 gap-6 text-center">
+                <div class="p-6 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-2xl border border-yellow-400/30">
+                    <i class="fas fa-coins text-4xl text-yellow-400 mb-4"></i>
+                    <div class="text-4xl font-black text-yellow-300">{{ player.gold|default(0)|int|comma }}</div>
+                    <div class="text-lg font-semibold text-gray-300">Золото</div>
                 </div>
-                <div class="text-sm text-gray-400">{{ stats.rank_progress }}%</div>
+                <div class="p-6 bg-gradient-to-br from-gray-500/20 to-silver/20 rounded-2xl border border-gray-400/30">
+                    <i class="fas fa-coins text-4xl text-gray-300 mb-4"></i>
+                    <div class="text-4xl font-black text-gray-200">{{ player.silver|default(0)|int|comma }}</div>
+                    <div class="text-lg font-semibold text-gray-300">Серебро</div>
+                </div>
             </div>
         </div>
         
-        <div class="grid md:grid-cols-2 gap-6 text-center">
-            <a href="/garage" class="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 px-8 py-4 rounded-2xl font-black text-xl block shadow-2xl hover:shadow-blue-500/25 transition-all">
-                🏪 ГАРАЖ ({{ stats.garage_count }})
+        <div class="bg-gray-800/50 backdrop-blur-xl p-8 rounded-3xl border border-gray-700/50">
+            <h3 class="text-3xl font-bold text-white mb-8 flex items-center">
+                <i class="fas fa-chart-line mr-3 text-purple-400"></i>Статистика
+            </h3>
+            <div class="grid grid-cols-2 gap-6 text-center">
+                <div class="p-6 bg-gradient-to-br from-purple-500/20 to-violet-500/20 rounded-2xl border border-purple-400/30">
+                    <i class="fas fa-trophy text-4xl text-purple-400 mb-4"></i>
+                    <div class="text-4xl font-black text-purple-300">{{ player.points|default(0)|int|comma }}</div>
+                    <div class="text-lg font-semibold text-gray-300">Очки</div>
+                </div>
+                <div class="p-6 bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-2xl border border-emerald-400/30">
+                    <i class="fas fa-percentage text-4xl text-emerald-400 mb-4"></i>
+                    <div class="text-4xl font-black text-emerald-300">
+                        {{ "%.1f"|format((player.wins|default(0)/player.battles|default(1))*100) }}%
+                    </div>
+                    <div class="text-lg font-semibold text-gray-300">Винрейт</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Количество танков -->
+    <div class="bg-gradient-to-r from-gray-800/50 to-gray-900/50 backdrop-blur-xl p-12 rounded-4xl border border-gray-700/50 mb-12">
+        <h3 class="text-4xl font-bold text-center text-white mb-12 flex items-center justify-center">
+            <i class="fas fa-warehouse mr-4 text-purple-400"></i>
+            Гараж: {{ player.tanks|default('[]')|fromjson|length }} танков
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <a href="/garage" class="group p-6 rounded-3xl bg-gray-700/50 border border-gray-600/50 hover:bg-gray-600/70 hover:border-purple-400/50 transition-all text-center">
+                <i class="fas fa-list text-3xl text-purple-400 mb-4 group-hover:scale-110"></i>
+                <h4 class="font-bold text-xl text-white">Все танки</h4>
+                <p class="text-gray-400">Посмотреть гараж</p>
             </a>
-            <a href="/game" class="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 px-8 py-4 rounded-2xl font-black text-xl block shadow-2xl hover:shadow-emerald-500/25 transition-all">
-                ⚔️ ИГРАТЬ
+            <a href="/shop" class="group p-6 rounded-3xl bg-emerald-500/20 border border-emerald-400/50 hover:bg-emerald-500/40 transition-all text-center">
+                <i class="fas fa-store text-3xl text-emerald-400 mb-4 group-hover:scale-110"></i>
+                <h4 class="font-bold text-xl text-white">Магазин</h4>
+                <p class="text-gray-400">Купить новые</p>
             </a>
         </div>
     </div>
-    {% endif %}
 </div>
 {% endblock %}
