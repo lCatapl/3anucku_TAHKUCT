@@ -15,6 +15,11 @@ app.secret_key = 'tankist_v9.6_super_secret_key_2026'
 WTF_CSRF_ENABLED = False  # ← ГЛАВНЫЙ ФИКС
 app.config['WTF_CSRF_ENABLED'] = False
 
+def comma(value):
+    return "{:,}".format(value).replace(',', ' ')
+
+app.jinja_env.filters['comma'] = comma
+
 # ✅ ГЛОБАЛЬНЫЕ КОНСТАНТЫ v9.6
 PLAYERS_EQUAL = True
 ADMIN_LOGINS = ["Назар", "CatNap"]
@@ -980,17 +985,14 @@ def leaderboard():
     
 @app.route('/profile/<user_id>')
 def profile(user_id):
-    player = get_player(user_id)
-    if not player:
-        return "Игрок не найден!", 404
+    if not validate_session():
+        return redirect(url_for('login'))
     
-    rank_info = get_rank_progress(player['points'])
-    owned_tanks = [t for t in ALL_TANKS_LIST if t['id'] in player['tanks']]
+    player = get_player(session['user_id'])
+    if player['id'] != user_id:
+        return render_template('404.html'), 404
     
-    return render_template('profile.html', 
-                         player=player, 
-                         rank_info=rank_info,
-                         owned_tanks=owned_tanks)
+    return render_template('profile.html', player=player)
 
 # ========================================
 # ✅ 1.11 АДМИН ПАНЕЛЬ
@@ -1058,7 +1060,7 @@ def index():
         return redirect(url_for('login'))
     
     player = get_player(session['user_id'])
-    return render_template('index.html', player=player)
+    return render_template('index.html', player=player, session=session)
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
@@ -1208,6 +1210,7 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
 
