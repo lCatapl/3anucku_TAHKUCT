@@ -824,6 +824,14 @@ def claim_daily(username):
     update_player(player)
     return True, reward['msg']
 
+3. Добавь недостающие маршруты (быстро):
+python
+@app.route('/garage')
+def garage():
+    player = get_player(session['user_id'])
+    owned_tanks = [t for t in ALL_TANKS_LIST if t['id'] in player.get('tanks', [])]
+    return render_template('garage.html', player=player, owned_tanks=owned_tanks)
+
 # ========================================
 # ✅ 1.8 МАГАЗИН ТАНКОВ
 # ========================================
@@ -964,41 +972,14 @@ def battle():
 # ✅ 1.10 ЛИДЕРБОРДЫ И ПРОФИЛИ
 # ========================================
 @app.route('/leaderboard')
-@app.route('/top')
 def leaderboard():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("""
-        SELECT username, points, wins, battles, tanks,
-        (SELECT COUNT(*) FROM players p2 WHERE p2.points > p.points) + 1 as rank
-        FROM players ORDER BY points DESC LIMIT 50
-    """)
-    rows = c.fetchall()
+    conn = sqlite3.connect('players.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT username, points, wins, battles FROM players ORDER BY points DESC LIMIT 50")
+    top_players = cursor.fetchall()
     conn.close()
-    
-    top_players = []
-    for row in rows:
-        tanks_count = len(json.loads(row[4])) if row[4] else 0
-        top_players.append({
-            'rank': row[5],
-            'username': row[0],
-            'points': row[1],
-            'wins': row[2],
-            'battles': row[3],
-            'winrate': round(row[2]/row[3]*100, 1) if row[3] else 0,
-            'tanks_count': tanks_count
-        })
-    
     return render_template('leaderboard.html', top_players=top_players)
-
-    rank_info = get_rank_progress(player['points'])
-    owned_tanks = [t for t in ALL_TANKS_LIST if t['id'] in player.get('tanks', [])]
     
-    return render_template('profile.html', 
-                         player=player, 
-                         rank_info=rank_info, 
-                         owned_tanks=owned_tanks)
-
 @app.route('/profile/<user_id>')
 def profile(user_id):
     player = get_player(user_id)
@@ -1075,18 +1056,11 @@ def admin_panel():
 # ========================================
 @app.route('/')
 def index():
-    if validate_session():
-        player = get_player(session['user_id'])
-        rank_info = get_rank_progress(player['points'])
-        is_admin_panel = is_superadmin(player['username'])
-        
-        return render_template('dashboard.html', 
-                             player=player, 
-                             rank_info=rank_info,
-                             admin_panel=is_admin_panel,
-                             online_players=get_online_count())
+    if not validate_session():
+        return redirect(url_for('login'))
     
-    return render_template('index.html', featured_tanks=ALL_TANKS_LIST[:6])
+    player = get_player(session['user_id'])
+    return render_template('index.html', player=player)
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
@@ -1236,6 +1210,7 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
 
