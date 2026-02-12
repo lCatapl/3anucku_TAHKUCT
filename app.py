@@ -824,8 +824,6 @@ def claim_daily(username):
     update_player(player)
     return True, reward['msg']
 
-3. Добавь недостающие маршруты (быстро):
-python
 @app.route('/garage')
 def garage():
     player = get_player(session['user_id'])
@@ -1210,6 +1208,7 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
 
