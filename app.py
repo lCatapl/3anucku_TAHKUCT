@@ -684,34 +684,28 @@ def get_rank_progress(points):
 # ✅ 1.4 БАЗА ДАННЫХ И ИГРОКИ
 # ========================================
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS players (
-        user_id TEXT PRIMARY KEY,
-        username TEXT,
-        gold INTEGER DEFAULT 5000,
-        silver INTEGER DEFAULT 25000,
-        points INTEGER DEFAULT 0,
-        rank_id INTEGER DEFAULT 1,
-        tanks TEXT DEFAULT '[]',
-        wins INTEGER DEFAULT 0,
-        battles INTEGER DEFAULT 0,
-        daily_streak INTEGER DEFAULT 0,
-        last_daily REAL DEFAULT 0,
-        is_muted INTEGER DEFAULT 0,
-        mute_until REAL DEFAULT 0,
-        role TEXT DEFAULT 'player',
-        join_date REAL DEFAULT 0
-    )''')
-    c.execute('''CREATE TABLE IF NOT EXISTS leaderboards (
-        user_id TEXT PRIMARY KEY,
-        points INTEGER,
-        wins INTEGER,
-        battles INTEGER,
-        updated REAL
-    )''')
+    conn = sqlite3.connect('players.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS players (
+            id TEXT PRIMARY KEY,
+            username TEXT UNIQUE,
+            password TEXT,
+            gold INTEGER DEFAULT 5000,
+            silver INTEGER DEFAULT 100000,
+            points INTEGER DEFAULT 0,
+            tanks TEXT DEFAULT '[]',
+            battles INTEGER DEFAULT 0,
+            wins INTEGER DEFAULT 0,
+            created_at TEXT,
+            role TEXT DEFAULT 'player'
+        )
+    ''')
     conn.commit()
     conn.close()
+
+# Вызвать при запуске
+init_db()
 
 def create_player(username, user_id):
     """Все игроки с НУЛЯ - равенство!"""
@@ -1113,10 +1107,8 @@ def register():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
         
-        if len(username) < 3:
-            error = "Логин должен быть ≥3 символов!"
-        elif len(password) < 6:
-            error = "Пароль должен быть ≥6 символов!"
+        if len(username) < 3 or len(password) < 6:
+            error = "Логин ≥3, пароль ≥6 символов!"
         else:
             try:
                 import sqlite3, bcrypt, hashlib
@@ -1125,12 +1117,10 @@ def register():
                 conn = sqlite3.connect('players.db')
                 cursor = conn.cursor()
                 
-                # Проверка уникальности
                 cursor.execute("SELECT id FROM players WHERE username=?", (username,))
                 if cursor.fetchone():
-                    error = "❌ Логин уже занят!"
+                    error = "❌ Логин занят!"
                 else:
-                    # Создание пользователя
                     user_id = hashlib.md5(username.encode()).hexdigest()[:8]
                     hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
                     
@@ -1140,13 +1130,42 @@ def register():
                     """, (user_id, username, hashed_pw, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
                     
                     conn.commit()
+                    conn.close()
                     return redirect(url_for('login'))
                 
                 conn.close()
             except Exception as e:
-                error = f"Ошибка сервера: {str(e)}"
+                error = f"Ошибка: {str(e)}"
     
     return render_template('register.html', error=error)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = ""
+    
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        
+        try:
+            import sqlite3, bcrypt
+            conn = sqlite3.connect('players.db')
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, password FROM players WHERE username=?", (username,))
+            player = cursor.fetchone()
+            conn.close()
+            
+            if player and bcrypt.checkpw(password.encode(), player[1].encode()):
+                session['user_id'] = player[0]
+                session['username'] = username
+                return redirect(url_for('index'))  # или 'shop'
+            else:
+                error = "❌ Неверный логин/пароль!"
+                
+        except:
+            error = "❌ Ошибка сервера!"
+    
+    return render_template('login.html', error=error)
 
 @app.route('/logout')
 def logout():
@@ -1217,6 +1236,7 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
 
