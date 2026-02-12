@@ -1,108 +1,115 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Записки Танкиста</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body class="bg-gradient-to-br from-gray-900 via-indigo-900 to-gray-900 min-h-screen">
-    <!-- Шапка -->
-    <nav class="bg-gray-800/80 backdrop-blur-xl border-b border-gray-700/50">
-        <div class="max-w-6xl mx-auto px-4">
-            <div class="flex justify-between items-center py-4">
-                <h1 class="text-3xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-                    <i class="fas fa-tank-rumble mr-3"></i>Записки Танкиста
-                </h1>
-                <div class="flex space-x-4">
-                    <a href="/profile/{{ session.user_id }}" class="text-gray-300 hover:text-white flex items-center">
-                        <i class="fas fa-user mr-1"></i>Профиль
-                    </a>
-                    <a href="/logout" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl transition-all">
-                        <i class="fas fa-sign-out-alt mr-1"></i>Выход
-                    </a>
-                </div>
-            </div>
+{% extends "base.html" %}
+{% block title %}Главная - Записки Танкиста{% endblock %}
+{% block content %}
+<div class="text-center mb-20">
+    <div class="w-32 h-32 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl animate-pulse">
+        <i class="fas fa-tank-rumble text-5xl text-gray-900"></i>
+    </div>
+    <h1 class="text-5xl md:text-7xl font-black bg-gradient-to-r from-gray-100 via-yellow-300 to-orange-400 bg-clip-text text-transparent mb-6">
+        Добро пожаловать в ангар!
+    </h1>
+    <p class="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
+        Сражайся на арене, собирай легендарные танки, поднимайся в топ игроков!
+    </p>
+</div>
+
+<!-- Статистика -->
+<section class="mb-20">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="group bg-gradient-to-br from-emerald-500/90 to-green-600 text-white p-8 rounded-3xl shadow-2xl backdrop-blur-xl border border-emerald-400/30 hover:shadow-emerald-500/25 transition-all cursor-pointer">
+            <i class="fas fa-coins text-4xl mb-4 group-hover:scale-110 transition-transform"></i>
+            <div class="text-4xl lg:text-5xl font-black mb-2">{{ player.gold|default(0)|int }}</div>
+            <div class="text-lg font-semibold opacity-90">Золото</div>
         </div>
-    </nav>
-
-    <!-- Статистика -->
-    <div class="max-w-6xl mx-auto px-4 py-12">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            <div class="bg-gradient-to-r from-emerald-500 to-green-600 text-white p-8 rounded-3xl shadow-2xl text-center">
-                <i class="fas fa-coins text-4xl mb-4"></i>
-                <div class="text-3xl font-bold">{{ player.gold|default(0) }}</div>
-                <div class="text-lg opacity-90">Золото</div>
-            </div>
-            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-8 rounded-3xl shadow-2xl text-center">
-                <i class="fas fa-coins text-4xl mb-4" style="color: #c0c0c0;"></i>
-                <div class="text-3xl font-bold">{{ player.silver|default(0)|int }}</div>
-                <div class="text-lg opacity-90">Серебро</div>
-            </div>
-            <div class="bg-gradient-to-r from-purple-500 to-violet-600 text-white p-8 rounded-3xl shadow-2xl text-center">
-                <i class="fas fa-trophy text-4xl mb-4"></i>
-                <div class="text-3xl font-bold">{{ player.points|default(0) }}</div>
-                <div class="text-lg opacity-90">Очки</div>
-            </div>
-            <div class="bg-gradient-to-r from-orange-500 to-red-600 text-white p-8 rounded-3xl shadow-2xl text-center">
-                <i class="fas fa-fire text-4xl mb-4"></i>
-                <div class="text-3xl font-bold">{{ player.wins|default(0) }}/{{ player.battles|default(0) }}</div>
-                <div class="text-lg opacity-90">Победы/Бои</div>
-            </div>
+        <div class="group bg-gradient-to-br from-blue-500/90 to-indigo-600 text-white p-8 rounded-3xl shadow-2xl backdrop-blur-xl border border-blue-400/30 hover:shadow-blue-500/25 transition-all cursor-pointer">
+            <i class="fas fa-coins text-4xl mb-4" style="color: #c0c0c0;" class="group-hover:scale-110 transition-transform"></i>
+            <div class="text-4xl lg:text-5xl font-black mb-2">{{ player.silver|default(0)|int|comma }}</div>
+            <div class="text-lg font-semibold opacity-90">Серебро</div>
         </div>
-
-        <!-- ОСНОВНЫЕ КНОПКИ -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- АРЕНА -->
-            <a href="/battle" class="group bg-gradient-to-br from-red-600 via-red-500 to-orange-600 hover:from-red-500 hover:via-orange-500 hover:to-yellow-500 text-white p-10 rounded-3xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-2 transition-all duration-500 text-center">
-                <i class="fas fa-fire text-6xl mb-6 group-hover:rotate-12 transition-transform"></i>
-                <h2 class="text-3xl font-bold mb-4">⚔️ АРЕНА</h2>
-                <p class="text-xl opacity-90 mb-6">Сразись с врагом! Получи золото и серебро</p>
-                <div class="text-2xl font-black bg-black/30 px-6 py-3 rounded-2xl">НАЧАТЬ БОЙ</div>
-            </a>
-
-            <!-- МАГАЗИН -->
-            <a href="/shop" class="group bg-gradient-to-br from-emerald-600 via-green-500 to-teal-600 hover:from-emerald-500 hover:via-teal-500 hover:to-blue-500 text-white p-10 rounded-3xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-2 transition-all duration-500 text-center">
-                <i class="fas fa-store text-6xl mb-6 group-hover:scale-110 transition-transform"></i>
-                <h2 class="text-3xl font-bold mb-4">🛒 МАГАЗИН</h2>
-                <p class="text-xl opacity-90 mb-6">150+ танков СССР, Германия, США и др.</p>
-                <div class="text-2xl font-black bg-black/30 px-6 py-3 rounded-2xl">КУПИТЬ ТАНКИ</div>
-            </a>
-
-            <!-- ГАРАЖ -->
-            <a href="/garage" class="group bg-gradient-to-br from-purple-600 via-violet-500 to-indigo-600 hover:from-purple-500 hover:via-indigo-500 hover:to-blue-500 text-white p-10 rounded-3xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-2 transition-all duration-500 text-center">
-                <i class="fas fa-warehouse text-6xl mb-6 group-hover:rotate-[-5deg] transition-transform"></i>
-                <h2 class="text-3xl font-bold mb-4">🏪 ГАРАЖ</h2>
-                <p class="text-xl opacity-90 mb-6">Твои танки + характеристики + выбор для боя</p>
-                <div class="text-2xl font-black bg-black/30 px-6 py-3 rounded-2xl">МОИ ТАНКИ</div>
-            </a>
+        <div class="group bg-gradient-to-br from-purple-500/90 to-violet-600 text-white p-8 rounded-3xl shadow-2xl backdrop-blur-xl border border-purple-400/30 hover:shadow-purple-500/25 transition-all cursor-pointer">
+            <i class="fas fa-trophy text-4xl mb-4 group-hover:scale-110 transition-transform"></i>
+            <div class="text-4xl lg:text-5xl font-black mb-2">{{ player.points|default(0)|int|comma }}</div>
+            <div class="text-lg font-semibold opacity-90">Очки опыта</div>
         </div>
-
-        <!-- ДОПОЛНИТЕЛЬНЫЕ КНОПКИ -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
-            <a href="/profile/{{ session.user_id }}" class="group bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all">
-                <i class="fas fa-user-circle text-3xl mr-4"></i>
-                <div>
-                    <h3 class="font-bold text-xl">📊 Профиль</h3>
-                    <p class="text-gray-300">Статистика, винрейт, награды</p>
-                </div>
-            </a>
-            <a href="/leaderboard" class="group bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all">
-                <i class="fas fa-trophy text-3xl mr-4"></i>
-                <div>
-                    <h3 class="font-bold text-xl">🏆 Топ игроков</h3>
-                    <p class="text-gray-300">Лидерборд по очкам</p>
-                </div>
-            </a>
-            <a href="/chat" class="group bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all">
-                <i class="fas fa-comments text-3xl mr-4"></i>
-                <div>
-                    <h3 class="font-bold text-xl">💬 Чат</h3>
-                    <p class="text-gray-300">Танковый чат игроков</p>
-                </div>
-            </a>
+        <div class="group bg-gradient-to-br from-orange-500/90 to-red-600 text-white p-8 rounded-3xl shadow-2xl backdrop-blur-xl border border-orange-400/30 hover:shadow-orange-500/25 transition-all cursor-pointer">
+            <i class="fas fa-fire text-4xl mb-4 group-hover:scale-110 transition-transform"></i>
+            <div class="text-4xl lg:text-5xl font-black mb-2">{{ player.wins|default(0) }}/{{ player.battles|default(0) }}</div>
+            <div class="text-lg font-semibold opacity-90">Винрейт</div>
         </div>
     </div>
-</body>
-</html>
+</section>
 
+<!-- ГЛАВНЫЕ КНОПКИ (огромные!) -->
+<section class="mb-20">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- АРЕНА -->
+        <a href="/battle" class="group relative overflow-hidden bg-gradient-to-br from-red-600 via-red-500/90 to-orange-600 hover:from-red-500 hover:via-orange-500 hover:to-yellow-500 text-white p-12 lg:p-16 rounded-3xl shadow-2xl hover:shadow-3xl hover:-translate-y-4 transition-all duration-700 text-center transform-gpu backdrop-blur-xl border border-red-400/30">
+            <div class="absolute inset-0 bg-gradient-to-r from-red-400/20 to-orange-400/20 blur-xl animate-pulse"></div>
+            <i class="fas fa-fire text-7xl mb-8 relative z-10 group-hover:text-yellow-300 group-hover:scale-110 transition-all duration-500"></i>
+            <h2 class="text-4xl lg:text-5xl font-black mb-6 relative z-10 drop-shadow-2xl">⚔️ АРЕНА</h2>
+            <p class="text-2xl opacity-90 mb-10 relative z-10 leading-relaxed">Симуляция боя 1v1<br>15 раундов • Награды ×2</p>
+            <div class="text-3xl font-black bg-black/40 backdrop-blur-sm px-10 py-6 rounded-3xl relative z-10 shadow-2xl border-4 border-white/20 group-hover:border-yellow-300/50 transition-all">НАЧАТЬ БОЙ!</div>
+        </a>
+
+        <!-- МАГАЗИН -->
+        <a href="/shop" class="group relative overflow-hidden bg-gradient-to-br from-emerald-600 via-green-500/90 to-teal-600 hover:from-emerald-500 hover:via-teal-500 hover:to-blue-500 text-white p-12 lg:p-16 rounded-3xl shadow-2xl hover:shadow-3xl hover:-translate-y-4 transition-all duration-700 text-center transform-gpu backdrop-blur-xl border border-emerald-400/30">
+            <div class="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-teal-400/20 blur-xl animate-pulse delay-1000"></div>
+            <i class="fas fa-store text-7xl mb-8 relative z-10 group-hover:scale-110 transition-all duration-500"></i>
+            <h2 class="text-4xl lg:text-5xl font-black mb-6 relative z-10 drop-shadow-2xl">🛒 МАГАЗИН</h2>
+            <p class="text-2xl opacity-90 mb-10 relative z-10 leading-relaxed">150+ танков<br>10 наций • Премиум</p>
+            <div class="text-3xl font-black bg-black/40 backdrop-blur-sm px-10 py-6 rounded-3xl relative z-10 shadow-2xl border-4 border-white/20 group-hover:border-emerald-300/50 transition-all">КУПИТЬ ТАНКИ</div>
+        </a>
+
+        <!-- ГАРАЖ -->
+        <a href="/garage" class="group relative overflow-hidden bg-gradient-to-br from-purple-600 via-violet-500/90 to-indigo-600 hover:from-purple-500 hover:via-indigo-500 hover:to-blue-500 text-white p-12 lg:p-16 rounded-3xl shadow-2xl hover:shadow-3xl hover:-translate-y-4 transition-all duration-700 text-center transform-gpu backdrop-blur-xl border border-purple-400/30">
+            <div class="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-indigo-400/20 blur-xl animate-pulse delay-2000"></div>
+            <i class="fas fa-warehouse text-7xl mb-8 relative z-10 group-hover:rotate-[-5deg] transition-all duration-500"></i>
+            <h2 class="text-4xl lg:text-5xl font-black mb-6 relative z-10 drop-shadow-2xl">🏪 ГАРАЖ</h2>
+            <p class="text-2xl opacity-90 mb-10 relative z-10 leading-relaxed">Твои танки<br>Характеристики + выбор</p>
+            <div class="text-3xl font-black bg-black/40 backdrop-blur-sm px-10 py-6 rounded-3xl relative z-10 shadow-2xl border-4 border-white/20 group-hover:border-purple-300/50 transition-all">МОИ ТАНКИ</div>
+        </a>
+    </div>
+</section>
+
+<!-- Быстрые ссылки -->
+<section>
+    <h3 class="text-4xl font-black text-center text-white mb-12 bg-gradient-to-r from-gray-300 to-gray-100 bg-clip-text">Быстрый доступ</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 max-w-6xl mx-auto">
+        <a href="/profile/{{ session.user_id }}" class="group p-8 rounded-2xl bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 hover:bg-gray-700/70 hover:border-blue-400/50 transition-all flex items-center space-x-4 hover:-translate-y-2">
+            <i class="fas fa-user-circle text-3xl text-blue-400 group-hover:scale-110 transition-transform"></i>
+            <div>
+                <h4 class="font-bold text-xl text-white">📊 Профиль</h4>
+                <p class="text-gray-400">Статистика и награды</p>
+            </div>
+        </a>
+        <a href="/leaderboard" class="group p-8 rounded-2xl bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 hover:bg-gray-700/70 hover:border-yellow-400/50 transition-all flex items-center space-x-4 hover:-translate-y-2">
+            <i class="fas fa-crown text-3xl text-yellow-400 group-hover:scale-110 transition-transform"></i>
+            <div>
+                <h4 class="font-bold text-xl text-white">🏆 Лидерборд</h4>
+                <p class="text-gray-400">Топ игроков</p>
+            </div>
+        </a>
+        <a href="/achievements" class="group p-8 rounded-2xl bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 hover:bg-gray-700/70 hover:border-purple-400/50 transition-all flex items-center space-x-4 hover:-translate-y-2">
+            <i class="fas fa-medal text-3xl text-purple-400 group-hover:scale-110 transition-transform"></i>
+            <div>
+                <h4 class="font-bold text-xl text-white">🎖️ Достижения</h4>
+                <p class="text-gray-400">Награды и титулы</p>
+            </div>
+        </a>
+        <a href="/chat" class="group p-8 rounded-2xl bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 hover:bg-gray-700/70 hover:border-pink-400/50 transition-all flex items-center space-x-4 hover:-translate-y-2">
+            <i class="fas fa-comments text-3xl text-pink-400 group-hover:scale-110 transition-transform"></i>
+            <div>
+                <h4 class="font-bold text-xl text-white">💬 Чат</h4>
+                <p class="text-gray-400">Общайся с игроками</p>
+            </div>
+        </a>
+        <a href="/tournaments" class="group p-8 rounded-2xl bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 hover:bg-gray-700/70 hover:border-emerald-400/50 transition-all flex items-center space-x-4 hover:-translate-y-2">
+            <i class="fas fa-trophy text-3xl text-emerald-400 group-hover:scale-110 transition-transform"></i>
+            <div>
+                <h4 class="font-bold text-xl text-white">⚡ Турниры</h4>
+                <p class="text-gray-400">Соревнования игроков</p>
+            </div>
+        </a>
+    </div>
+</section>
+{% endblock %}
