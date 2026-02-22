@@ -17,7 +17,7 @@ app = Flask(__name__)
 app.secret_key = '3anucku-tankuct-2026-super-secret-key-alexin-kaluga'
 logging.basicConfig(level=logging.DEBUG)
 
-# 2️⃣ ТЕПЕРЬ errorhandler (ПОСЛЕ app!)
+# Error handlers
 @app.errorhandler(500)
 def internal_error(error):
     return "🚫 Серверная ошибка! Проверь логи Render.", 500
@@ -26,15 +26,18 @@ def internal_error(error):
 def not_found_error(error):
     return render_template('404.html'), 404
 
+# ✅ Функция comma ПЕРЕД фильтром!
+def comma(value):
+    try:
+        return "{:,}".format(int(value)).replace(',', ' ')
+    except:
+        return value
+
 app.jinja_env.filters['comma'] = comma
 
-# ✅ ГЛОБАЛЬНЫЕ КОНСТАНТЫ v9.6
+# Глобальные константы
 PLAYERS_EQUAL = True
 ADMIN_LOGINS = ["Назар", "CatNap"]
-MODERATORS = set()
-MUTED_PLAYERS_TIME = {}
-chat_messages = []
-DB_PATH = 'tankist.db'
 
 # ========================================
 # 🔥 АДМИНЫ С ПРАВАМИ БОГА
@@ -727,7 +730,7 @@ init_db()
 
 def create_player(username, user_id):
     """Все игроки с НУЛЯ - равенство!"""
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect('players.db')
     c = conn.cursor()
     c.execute('''INSERT OR REPLACE INTO players 
                  (user_id, username, gold, silver, points, rank_id, tanks, wins, battles, daily_streak, last_daily, role, join_date)
@@ -759,7 +762,7 @@ def get_player(user_id):
         return None
 
 def update_player(player_data):
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect('players.db')
     c = conn.cursor()
     c.execute('''UPDATE players SET 
                  gold=?, silver=?, points=?, rank_id=?, tanks=?, wins=?, battles=?, 
@@ -1053,7 +1056,7 @@ def admin_panel():
             flash(f'✅ Статистика {target} сброшена!')
     
     # Статистика сервера
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect('players.db')
     c = conn.cursor()
     c.execute('SELECT COUNT(*), SUM(points), AVG(points) FROM players')
     server_stats = c.fetchone()
@@ -1225,14 +1228,6 @@ def api_stats():
     player = get_player(session['user_id'])
     return jsonify(player)
 
-@app.errorhandler(404)
-def not_found(error):
-    return """
-    <!DOCTYPE html>
-    <html><head><title>404</title><style>body{font-family:Arial;background:#1a1a2e;color:white;text-align:center;padding:100px;}</style></head>
-    <body><h1>❌ 404 - Страница не найдена</h1><a href="/" style="color:#667eea;">🏠 На главную</a></body></html>
-    """, 404
-
 # ========================================
 # ✅ 1.14 ЗАПУСК СЕРВЕРА
 # ========================================
@@ -1240,6 +1235,3 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
-
-
-
