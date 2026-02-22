@@ -1,115 +1,162 @@
 {% extends "base.html" %}
-{% block title %}Главная - Записки Танкиста{% endblock %}
+{% block title %}Ангар - {{ player.username }}{% endblock %}
 {% block content %}
-<div class="text-center mb-20">
-    <div class="w-32 h-32 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl animate-pulse">
-        <i class="fas fa-tank-rumble text-5xl text-gray-900"></i>
-    </div>
-    <h1 class="text-5xl md:text-7xl font-black bg-gradient-to-r from-gray-100 via-yellow-300 to-orange-400 bg-clip-text text-transparent mb-6">
-        Добро пожаловать в ангар!
+<div class="text-center py-20">
+    <!-- Геройский заголовок -->
+    <h1 class="hero-title mb-12">
+        <i class="fas fa-fire"></i>
+        Добро пожаловать в ангар,
+        <span style="background: var(--accent-gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+            {{ player.username }}
+        </span>
     </h1>
-    <p class="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
-        Сражайся на арене, собирай легендарные танки, поднимайся в топ игроков!
-    </p>
+
+    <!-- Статистика игрока -->
+    <div class="stats-grid">
+        <!-- Золото -->
+        <div class="stat-card">
+            <i class="fas fa-coins stat-icon" style="color: #facc15;"></i>
+            <div class="stat-value">{{ player.gold|comma }}</div>
+            <div class="stat-label">Золото 🪙</div>
+        </div>
+
+        <!-- Серебро -->
+        <div class="stat-card">
+            <i class="fas fa-coins stat-icon" style="color: #c0c0c0;"></i>
+            <div class="stat-value">{{ player.silver|comma }}</div>
+            <div class="stat-label">Серебро 💰</div>
+        </div>
+
+        <!-- Танки -->
+        <div class="stat-card">
+            <i class="fas fa-warehouse stat-icon" style="color: #10b981;"></i>
+            <div class="stat-value">{{ player.tanks|length }}</div>
+            <div class="stat-label">Танков в гараже</div>
+        </div>
+
+        <!-- Победы/Бои -->
+        <div class="stat-card">
+            <i class="fas fa-trophy stat-icon" style="color: #fbbf24;"></i>
+            <div class="stat-value">
+                {{ player.wins|default(0) }}<span style="font-size: 1.5rem;">W</span>
+            </div>
+            <div class="stat-label">
+                Победы / {{ player.battles|default(0) }} боёв
+                {% if player.battles|default(0) > 0 %}
+                    <span style="color: #10b981; font-weight: 600;">
+                        ({{ (player.wins|default(0) / player.battles|default(1) * 100)|round(1) }}%)
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Быстрые действия -->
+    <div class="action-grid">
+        <!-- Магазин -->
+        <a href="/shop" class="action-card">
+            <i class="fas fa-store action-icon" style="color: #10b981;"></i>
+            <h2 class="action-title">🛒 Магазин</h2>
+            <p class="action-desc">Купить новые танки из СССР и Германии. 60+ моделей от 1 до 11 уровня!</p>
+        </a>
+
+        <!-- Гараж -->
+        <a href="/garage" class="action-card">
+            <i class="fas fa-warehouse action-icon" style="color: #3b82f6;"></i>
+            <h2 class="action-title">🏪 Гараж</h2>
+            <p class="action-desc">Посмотреть все ваши танки. Оснастить экипаж и подготовиться к бою.</p>
+        </a>
+
+        <!-- Арена -->
+        <a href="/battle" class="action-card">
+            <i class="fas fa-fire action-icon" style="color: #ef4444;"></i>
+            <h2 class="action-title">⚔️ Арена</h2>
+            <p class="action-desc">Заточить пушку и в бой! Сражайтесь за золото и серебро.</p>
+        </a>
+
+        <!-- Профиль -->
+        <a href="/profile" class="action-card">
+            <i class="fas fa-user-circle action-icon" style="color: #8b5cf6;"></i>
+            <h2 class="action-title">👤 Профиль</h2>
+            <p class="action-desc">Ваша статистика, достижения и прогресс в боях.</p>
+        </a>
+
+        <!-- Лидерборд -->
+        <a href="/leaderboard" class="action-card">
+            <i class="fas fa-trophy action-icon" style="color: #fbbf24;"></i>
+            <h2 class="action-title">🏆 Топ игроков</h2>
+            <p class="action-desc">Лучшие танкисты мира. Займите своё место в таблице!</p>
+        </a>
+
+        <!-- Турниры (скоро) -->
+        <div class="action-card" onclick="alert('🏆 Турниры появятся в Q2 2026!'); return false;">
+            <i class="fas fa-crown action-icon" style="color: #f59e0b;"></i>
+            <h2 class="action-title">👑 Турниры</h2>
+            <p class="action-desc">Грандиозные соревнования. Скоро!</p>
+        </div>
+    </div>
+
+    <!-- Информация о проекте -->
+    <div class="glass-panel max-w-4xl mx-auto mt-20 p-12 text-center">
+        <h2 class="text-4xl font-bold mb-8" style="background: var(--accent-purple); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            🚀 Что нового в ТанкУстик v9.9
+        </h2>
+        <div class="grid md:grid-cols-3 gap-8 text-left">
+            <div>
+                <h3 class="text-2xl font-bold mb-4 flex items-center gap-3">
+                    <i class="fas fa-fire text-red-400"></i>60+ танков
+                </h3>
+                <p>Полная линейка СССР и Германии. От МС-1 до Объекта 279. Точные характеристики из World of Tanks.</p>
+            </div>
+            <div>
+                <h3 class="text-2xl font-bold mb-4 flex items-center gap-3">
+                    <i class="fas fa-coins text-yellow-400"></i>Баланс экономики
+                </h3>
+                <p>1500 золота на старте. Тяжёлые танки стоят 400k+. Выигрывайте бои чтобы разбогатеть!</p>
+            </div>
+            <div>
+                <h3 class="text-2xl font-bold mb-4 flex items-center gap-3">
+                    <i class="fas fa-brain text-purple-400"></i>AI противники
+                </h3>
+                <p>Скоро появится полноценная боевая система с ИИ. Тактические бои 1v1!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Быстрые ссылки снизу -->
+    <div class="flex flex-wrap justify-center gap-6 mt-20 pt-12 border-t border-white/10">
+        <a href="/shop" class="px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white font-bold rounded-2xl hover:from-emerald-500 hover:to-green-500 transition-all duration-300 transform hover:-translate-y-2 shadow-2xl">
+            🛒 В магазин
+        </a>
+        <a href="/garage" class="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-2xl hover:from-blue-500 hover:to-indigo-500 transition-all duration-300 transform hover:-translate-y-2 shadow-2xl">
+            🏪 В гараж
+        </a>
+        <a href="/battle" class="px-8 py-4 bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold rounded-2xl hover:from-red-500 hover:to-orange-500 transition-all duration-300 transform hover:-translate-y-2 shadow-2xl">
+            ⚔️ На арену!
+        </a>
+    </div>
 </div>
 
-<!-- Статистика -->
-<section class="mb-20">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="group bg-gradient-to-br from-emerald-500/90 to-green-600 text-white p-8 rounded-3xl shadow-2xl backdrop-blur-xl border border-emerald-400/30 hover:shadow-emerald-500/25 transition-all cursor-pointer">
-            <i class="fas fa-coins text-4xl mb-4 group-hover:scale-110 transition-transform"></i>
-            <div class="text-4xl lg:text-5xl font-black mb-2">{{ player.gold|default(0)|int }}</div>
-            <div class="text-lg font-semibold opacity-90">Золото</div>
-        </div>
-        <div class="group bg-gradient-to-br from-blue-500/90 to-indigo-600 text-white p-8 rounded-3xl shadow-2xl backdrop-blur-xl border border-blue-400/30 hover:shadow-blue-500/25 transition-all cursor-pointer">
-            <i class="fas fa-coins text-4xl mb-4" style="color: #c0c0c0;" class="group-hover:scale-110 transition-transform"></i>
-            <div class="text-4xl lg:text-5xl font-black mb-2">{{ player.silver|default(0)|int|comma }}</div>
-            <div class="text-lg font-semibold opacity-90">Серебро</div>
-        </div>
-        <div class="group bg-gradient-to-br from-purple-500/90 to-violet-600 text-white p-8 rounded-3xl shadow-2xl backdrop-blur-xl border border-purple-400/30 hover:shadow-purple-500/25 transition-all cursor-pointer">
-            <i class="fas fa-trophy text-4xl mb-4 group-hover:scale-110 transition-transform"></i>
-            <div class="text-4xl lg:text-5xl font-black mb-2">{{ player.points|default(0)|int|comma }}</div>
-            <div class="text-lg font-semibold opacity-90">Очки опыта</div>
-        </div>
-        <div class="group bg-gradient-to-br from-orange-500/90 to-red-600 text-white p-8 rounded-3xl shadow-2xl backdrop-blur-xl border border-orange-400/30 hover:shadow-orange-500/25 transition-all cursor-pointer">
-            <i class="fas fa-fire text-4xl mb-4 group-hover:scale-110 transition-transform"></i>
-            <div class="text-4xl lg:text-5xl font-black mb-2">{{ player.wins|default(0) }}/{{ player.battles|default(0) }}</div>
-            <div class="text-lg font-semibold opacity-90">Винрейт</div>
-        </div>
-    </div>
-</section>
-
-<!-- ГЛАВНЫЕ КНОПКИ (огромные!) -->
-<section class="mb-20">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- АРЕНА -->
-        <a href="/battle" class="group relative overflow-hidden bg-gradient-to-br from-red-600 via-red-500/90 to-orange-600 hover:from-red-500 hover:via-orange-500 hover:to-yellow-500 text-white p-12 lg:p-16 rounded-3xl shadow-2xl hover:shadow-3xl hover:-translate-y-4 transition-all duration-700 text-center transform-gpu backdrop-blur-xl border border-red-400/30">
-            <div class="absolute inset-0 bg-gradient-to-r from-red-400/20 to-orange-400/20 blur-xl animate-pulse"></div>
-            <i class="fas fa-fire text-7xl mb-8 relative z-10 group-hover:text-yellow-300 group-hover:scale-110 transition-all duration-500"></i>
-            <h2 class="text-4xl lg:text-5xl font-black mb-6 relative z-10 drop-shadow-2xl">⚔️ АРЕНА</h2>
-            <p class="text-2xl opacity-90 mb-10 relative z-10 leading-relaxed">Симуляция боя 1v1<br>15 раундов • Награды ×2</p>
-            <div class="text-3xl font-black bg-black/40 backdrop-blur-sm px-10 py-6 rounded-3xl relative z-10 shadow-2xl border-4 border-white/20 group-hover:border-yellow-300/50 transition-all">НАЧАТЬ БОЙ!</div>
-        </a>
-
-        <!-- МАГАЗИН -->
-        <a href="/shop" class="group relative overflow-hidden bg-gradient-to-br from-emerald-600 via-green-500/90 to-teal-600 hover:from-emerald-500 hover:via-teal-500 hover:to-blue-500 text-white p-12 lg:p-16 rounded-3xl shadow-2xl hover:shadow-3xl hover:-translate-y-4 transition-all duration-700 text-center transform-gpu backdrop-blur-xl border border-emerald-400/30">
-            <div class="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-teal-400/20 blur-xl animate-pulse delay-1000"></div>
-            <i class="fas fa-store text-7xl mb-8 relative z-10 group-hover:scale-110 transition-all duration-500"></i>
-            <h2 class="text-4xl lg:text-5xl font-black mb-6 relative z-10 drop-shadow-2xl">🛒 МАГАЗИН</h2>
-            <p class="text-2xl opacity-90 mb-10 relative z-10 leading-relaxed">150+ танков<br>10 наций • Премиум</p>
-            <div class="text-3xl font-black bg-black/40 backdrop-blur-sm px-10 py-6 rounded-3xl relative z-10 shadow-2xl border-4 border-white/20 group-hover:border-emerald-300/50 transition-all">КУПИТЬ ТАНКИ</div>
-        </a>
-
-        <!-- ГАРАЖ -->
-        <a href="/garage" class="group relative overflow-hidden bg-gradient-to-br from-purple-600 via-violet-500/90 to-indigo-600 hover:from-purple-500 hover:via-indigo-500 hover:to-blue-500 text-white p-12 lg:p-16 rounded-3xl shadow-2xl hover:shadow-3xl hover:-translate-y-4 transition-all duration-700 text-center transform-gpu backdrop-blur-xl border border-purple-400/30">
-            <div class="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-indigo-400/20 blur-xl animate-pulse delay-2000"></div>
-            <i class="fas fa-warehouse text-7xl mb-8 relative z-10 group-hover:rotate-[-5deg] transition-all duration-500"></i>
-            <h2 class="text-4xl lg:text-5xl font-black mb-6 relative z-10 drop-shadow-2xl">🏪 ГАРАЖ</h2>
-            <p class="text-2xl opacity-90 mb-10 relative z-10 leading-relaxed">Твои танки<br>Характеристики + выбор</p>
-            <div class="text-3xl font-black bg-black/40 backdrop-blur-sm px-10 py-6 rounded-3xl relative z-10 shadow-2xl border-4 border-white/20 group-hover:border-purple-300/50 transition-all">МОИ ТАНКИ</div>
-        </a>
-    </div>
-</section>
-
-<!-- Быстрые ссылки -->
-<section>
-    <h3 class="text-4xl font-black text-center text-white mb-12 bg-gradient-to-r from-gray-300 to-gray-100 bg-clip-text">Быстрый доступ</h3>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 max-w-6xl mx-auto">
-        <a href="/profile/{{ session.user_id }}" class="group p-8 rounded-2xl bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 hover:bg-gray-700/70 hover:border-blue-400/50 transition-all flex items-center space-x-4 hover:-translate-y-2">
-            <i class="fas fa-user-circle text-3xl text-blue-400 group-hover:scale-110 transition-transform"></i>
-            <div>
-                <h4 class="font-bold text-xl text-white">📊 Профиль</h4>
-                <p class="text-gray-400">Статистика и награды</p>
-            </div>
-        </a>
-        <a href="/leaderboard" class="group p-8 rounded-2xl bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 hover:bg-gray-700/70 hover:border-yellow-400/50 transition-all flex items-center space-x-4 hover:-translate-y-2">
-            <i class="fas fa-crown text-3xl text-yellow-400 group-hover:scale-110 transition-transform"></i>
-            <div>
-                <h4 class="font-bold text-xl text-white">🏆 Лидерборд</h4>
-                <p class="text-gray-400">Топ игроков</p>
-            </div>
-        </a>
-        <a href="/achievements" class="group p-8 rounded-2xl bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 hover:bg-gray-700/70 hover:border-purple-400/50 transition-all flex items-center space-x-4 hover:-translate-y-2">
-            <i class="fas fa-medal text-3xl text-purple-400 group-hover:scale-110 transition-transform"></i>
-            <div>
-                <h4 class="font-bold text-xl text-white">🎖️ Достижения</h4>
-                <p class="text-gray-400">Награды и титулы</p>
-            </div>
-        </a>
-        <a href="/chat" class="group p-8 rounded-2xl bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 hover:bg-gray-700/70 hover:border-pink-400/50 transition-all flex items-center space-x-4 hover:-translate-y-2">
-            <i class="fas fa-comments text-3xl text-pink-400 group-hover:scale-110 transition-transform"></i>
-            <div>
-                <h4 class="font-bold text-xl text-white">💬 Чат</h4>
-                <p class="text-gray-400">Общайся с игроками</p>
-            </div>
-        </a>
-        <a href="/tournaments" class="group p-8 rounded-2xl bg-gray-800/50 backdrop-blur-xl border border-gray-700/50 hover:bg-gray-700/70 hover:border-emerald-400/50 transition-all flex items-center space-x-4 hover:-translate-y-2">
-            <i class="fas fa-trophy text-3xl text-emerald-400 group-hover:scale-110 transition-transform"></i>
-            <div>
-                <h4 class="font-bold text-xl text-white">⚡ Турниры</h4>
-                <p class="text-gray-400">Соревнования игроков</p>
-            </div>
-        </a>
-    </div>
-</section>
+<style>
+.hero-title {
+    text-shadow: 
+        0 0 20px rgba(16, 185, 129, 0.5),
+        0 0 40px rgba(16, 185, 129, 0.3);
+}
+.action-card:hover .action-icon {
+    animation: bounce 0.6s ease infinite;
+}
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+@media (max-width: 768px) {
+    .stats-grid, .action-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+    .action-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
 {% endblock %}
