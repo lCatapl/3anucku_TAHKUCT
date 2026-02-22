@@ -3,37 +3,75 @@
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-12">
     <h1 class="text-5xl font-black text-center mb-16 bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent">
-        🛒 Танковый Магазин
+        🛒 Магазин ({{ player.gold|comma }} 🪙)
     </h1>
     
-    <!-- Фильтры -->
+    <!-- ФИЛЬТРЫ (JavaScript) -->
     <div class="bg-gray-800/50 backdrop-blur-xl p-6 rounded-3xl mb-12 border border-gray-700/50">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <select class="bg-gray-700/50 border border-gray-600 rounded-2xl p-3 text-white">
-                <option>Все нации</option>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <select id="nationFilter" class="filter-select bg-gray-700/50 border border-gray-600 rounded-2xl p-3 text-white">
+                <option value="">Все нации</option>
+                <option value="ussr">СССР</option>
+                <option value="germany">Германия</option>
             </select>
-            <select class="bg-gray-700/50 border border-gray-600 rounded-2xl p-3 text-white">
-                <option>Все уровни</option>
+            <select id="tierFilter" class="filter-select bg-gray-700/50 border border-gray-600 rounded-2xl p-3 text-white">
+                <option value="">Все уровни</option>
+                <option value="10">X</option>
+                <option value="11">XI</option>
             </select>
-            <select class="bg-gray-700/50 border border-gray-600 rounded-2xl p-3 text-white">
-                <option>Все классы</option>
+            <select id="typeFilter" class="filter-select bg-gray-700/50 border border-gray-600 rounded-2xl p-3 text-white">
+                <option value="">Все классы</option>
+                <option value="HT">ТТ</option>
+                <option value="MT">СТ</option>
             </select>
+            <button onclick="clearFilters()" class="bg-gray-600 hover:bg-gray-500 text-white py-3 px-6 rounded-2xl font-bold">Очистить</button>
         </div>
     </div>
-    
-    <!-- Танки -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {% for tank in tanks %}
-        <div class="group">
+
+    <!-- ТАНКИ -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 tank-grid">
+        {% for tank_id, tank in tanks.items() %}
+        <div class="tank-card group" data-nation="{{ tank.nation|default('ussr') }}" 
+             data-tier="{{ tank.tier }}" data-type="{{ tank.type }}">
             <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl p-8 rounded-3xl border border-gray-700/50 hover:border-emerald-400/50 hover:shadow-2xl transition-all">
-                <div class="text-4xl mb-4 text-center">{{ tank.name }}</div>
-                <div class="text-2xl font-bold text-emerald-400 mb-4 text-center">{{ tank.price|comma }} 🪙</div>
-                <button class="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white py-3 px-6 rounded-2xl font-bold shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all">
-                    Купить
-                </button>
+                <div class="text-2xl font-bold text-white mb-4 text-center">{{ tank.name }}</div>
+                <div class="text-xl mb-2">Ур. {{ tank.tier }} {{ tank.type }}</div>
+                <div class="text-3xl font-black text-emerald-400 mb-6">{{ tank.price|comma }} 🪙</div>
+                <form method="POST" action="/buy/{{ tank_id }}">
+                    <button type="submit" class="buy-btn w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white py-3 px-6 rounded-2xl font-bold shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all
+                        {% if tank_id in owned_ids %}bg-gray-600 cursor-not-allowed{% endif %}">
+                        {% if tank_id in owned_ids %}✅ Есть{% else %}🛒 Купить{% endif %}
+                    </button>
+                </form>
             </div>
         </div>
         {% endfor %}
     </div>
 </div>
+
+<script>
+function filterTanks() {
+    const nation = document.getElementById('nationFilter').value;
+    const tier = document.getElementById('tierFilter').value;
+    const type = document.getElementById('typeFilter').value;
+    
+    document.querySelectorAll('.tank-card').forEach(card => {
+        const show = (!nation || card.dataset.nation === nation) &&
+                    (!tier || card.dataset.tier === tier) &&
+                    (!type || card.dataset.type === type);
+        card.style.display = show ? 'block' : 'none';
+    });
+}
+
+document.querySelectorAll('.filter-select').forEach(select => {
+    select.addEventListener('change', filterTanks);
+});
+
+function clearFilters() {
+    document.getElementById('nationFilter').value = '';
+    document.getElementById('tierFilter').value = '';
+    document.getElementById('typeFilter').value = '';
+    filterTanks();
+}
+</script>
 {% endblock %}
