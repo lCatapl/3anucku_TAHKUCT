@@ -12,7 +12,12 @@ import secrets
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Глобальный обработчик ошибок
+# 1️⃣ ПЕРВЫЙ - Flask app
+app = Flask(__name__)
+app.secret_key = '3anucku-tankuct-2026-super-secret-key-alexin-kaluga'
+logging.basicConfig(level=logging.DEBUG)
+
+# 2️⃣ ТЕПЕРЬ errorhandler (ПОСЛЕ app!)
 @app.errorhandler(500)
 def internal_error(error):
     return "🚫 Серверная ошибка! Проверь логи Render.", 500
@@ -20,9 +25,6 @@ def internal_error(error):
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('404.html'), 404
-
-def comma(value):
-    return "{:,}".format(value).replace(',', ' ')
 
 app.jinja_env.filters['comma'] = comma
 
@@ -1238,5 +1240,6 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
