@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
 import json, sqlite3, hashlib, time, os, random, threading
 from datetime import datetime, timedelta
 from collections import defaultdict
@@ -11,9 +11,6 @@ import secrets
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
-
-app = Flask(__name__)
-app.secret_key = '3anucku-tankuct-2026-super-secret-key-alexin-kaluga'
 
 # Глобальный обработчик ошибок
 @app.errorhandler(500)
@@ -696,25 +693,34 @@ def get_rank_progress(points):
 import json  # ← ДОБАВЬ!
 
 def init_db():
-    try:
-        conn = sqlite3.connect('players.db')
-        cursor = conn.cursor()
+    conn = sqlite3.connect('players.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS players (
+            id TEXT PRIMARY KEY, username TEXT UNIQUE, password TEXT,
+            gold INTEGER DEFAULT 5000, silver INTEGER DEFAULT 100000,
+            points INTEGER DEFAULT 0, tanks TEXT DEFAULT '[]',
+            battles INTEGER DEFAULT 0, wins INTEGER DEFAULT 0,
+            created_at TEXT, role TEXT DEFAULT 'player'
+        )
+    ''')
+    
+    # ✅ ТЕСТОВЫЙ АДМИН (если база пустая)
+    cursor.execute("SELECT COUNT(*) FROM players")
+    if cursor.fetchone()[0] == 0:
+        admin_id = 'admin0001'
+        admin_pw = bcrypt.hashpw('admin123'.encode(), bcrypt.gensalt()).decode()
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS players (
-                id TEXT PRIMARY KEY, username TEXT UNIQUE, password TEXT,
-                gold INTEGER DEFAULT 5000, silver INTEGER DEFAULT 100000,
-                points INTEGER DEFAULT 0, tanks TEXT DEFAULT '[]',
-                battles INTEGER DEFAULT 0, wins INTEGER DEFAULT 0,
-                created_at TEXT, role TEXT DEFAULT 'player'
-            )
-        ''')
-        conn.commit()
-        conn.close()
-        print("✅ База данных готова!")
-    except Exception as e:
-        print(f"DB INIT ERROR: {e}")
+            INSERT INTO players (id, username, password, role, created_at)
+            VALUES (?, 'Admin', ?, 'admin', ?)
+        ''', (admin_id, admin_pw, datetime.now().isoformat()))
+        print("✅ Тестовый Admin создан: Admin/admin123")
+    
+    conn.commit()
+    conn.close()
+    print("✅ База данных готова!")
 
-# ВЫЗВАТЬ при запуске
+# ВЫЗОВ
 init_db()
 
 def create_player(username, user_id):
@@ -1092,43 +1098,45 @@ class RegisterForm(FlaskForm):
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    error = ""
-    
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
         
         if len(username) < 3 or len(password) < 6:
-            error = "Логин ≥3, пароль ≥6 символов!"
-        else:
-            try:
-                import sqlite3, bcrypt, hashlib
-                from datetime import datetime
-                
-                conn = sqlite3.connect('players.db')
-                cursor = conn.cursor()
-                
-                cursor.execute("SELECT id FROM players WHERE username=?", (username,))
-                if cursor.fetchone():
-                    error = "❌ Логин занят!"
-                else:
-                    user_id = hashlib.md5(username.encode()).hexdigest()[:8]
-                    hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-                    
-                    cursor.execute("""
-                        INSERT INTO players (id, username, password, gold, silver, created_at, role) 
-                        VALUES (?, ?, ?, 5000, 100000, ?, 'player')
-                    """, (user_id, username, hashed_pw, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-                    
-                    conn.commit()
-                    conn.close()
-                    return redirect(url_for('login'))
-                
-                conn.close()
-            except Exception as e:
-                error = f"Ошибка: {str(e)}"
+            flash('❌ Имя >3 символов, пароль >6!')
+            return render_template('register.html')
+        
+        try:
+            conn = sqlite3.connect('players.db')
+            cursor = conn.cursor()
+            
+            # ✅ АВТО-АДМИН для первых 3 пользователей!
+            cursor.execute("SELECT COUNT(*) FROM players")
+            total_users = cursor.fetchone()[0]
+            role = 'admin' if total_users < 3 else 'player'
+            
+            player_id = bcrypt.hashpw(username.encode(), bcrypt.gensalt()).decode()[:16]
+            hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+            
+            cursor.execute('''
+                INSERT INTO players (id, username, password, gold, silver, 
+                                  points, tanks, battles, wins, created_at, role)
+                VALUES (?, ?, ?, 5000, 100000, 0, '[]', 0, 0, ?, ?)
+            ''', (player_id, username, hashed_pw, datetime.now().isoformat(), role))
+            
+            conn.commit()
+            flash(f'✅ {username} зарегистрирован! Роль: {role}')
+            return redirect(url_for('login'))
+            
+        except sqlite3.IntegrityError:
+            flash('❌ Имя уже занято!')
+        except Exception as e:
+            logging.error(f"REGISTER ERROR: {e}")
+            flash('❌ Ошибка регистрации!')
+        finally:
+            conn.close()
     
-    return render_template('register.html', error=error)
+    return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -1136,33 +1144,34 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
         
-        print(f"DEBUG LOGIN: username={username}")  # ← ПРОВЕРКА
+        print(f"DEBUG LOGIN: username={username}")
         
         try:
             conn = sqlite3.connect('players.db')
             cursor = conn.cursor()
-            cursor.execute("SELECT id, username, password FROM players WHERE username=?", (username,))
+            cursor.execute("SELECT id, username, password, role FROM players WHERE username=?", (username,))
             player = cursor.fetchone()
             
             if player and bcrypt.checkpw(password.encode(), player[2].encode()):
-                # ✅ ПРАВИЛЬНОЕ СОЗДАНИЕ SESSION
                 session['user_id'] = player[0]
                 session['username'] = player[1]
-                session.modified = True  # ← ФОРСИРУЕТ СОХРАНЕНИЕ
+                session['role'] = player[3] or 'player'
+                session.modified = True
                 
-                print(f"✅ SESSION СОЗДАН: {session}")  # DEBUG
+                print(f"✅ SESSION: {session}")
                 flash('✅ Добро пожаловать в ангар!')
                 return redirect(url_for('index'))
             else:
-                flash('❌ Неверный логин или пароль!')
+                flash('❌ Неверный логин/пароль!')
                 
         except Exception as e:
             print(f"LOGIN ERROR: {e}")
             flash('❌ Ошибка входа!')
         finally:
-            conn.close()
+            if 'conn' in locals():
+                conn.close()
     
-    return render_template('login.html', error="")
+    return render_template('login.html')
 
 @app.route('/logout')
 def logout():
@@ -1229,4 +1238,5 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
