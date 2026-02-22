@@ -1,69 +1,206 @@
 {% extends "base.html" %}
-{% block title %}Магазин{% endblock %}
+{% block title %}Магазин танков - 3anucku ТанкУстик{% endblock %}
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 py-12">
-    <h1 class="text-5xl font-black text-center mb-16 bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent">
-        🛒 Магазин ({{ player.gold|comma }} 🪙)
-    </h1>
-    
-    <!-- ФИЛЬТРЫ (JavaScript) -->
-    <div class="bg-gray-800/50 backdrop-blur-xl p-6 rounded-3xl mb-12 border border-gray-700/50">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <select id="nationFilter" class="filter-select bg-gray-700/50 border border-gray-600 rounded-2xl p-3 text-white">
-                <option value="">Все нации</option>
-                <option value="ussr">СССР</option>
-                <option value="germany">Германия</option>
-            </select>
-            <select id="tierFilter" class="filter-select bg-gray-700/50 border border-gray-600 rounded-2xl p-3 text-white">
-                <option value="">Все уровни</option>
-                <option value="10">X</option>
-                <option value="11">XI</option>
-            </select>
-            <select id="typeFilter" class="filter-select bg-gray-700/50 border border-gray-600 rounded-2xl p-3 text-white">
-                <option value="">Все классы</option>
-                <option value="HT">ТТ</option>
-                <option value="MT">СТ</option>
-            </select>
-            <button onclick="clearFilters()" class="bg-gray-600 hover:bg-gray-500 text-white py-3 px-6 rounded-2xl font-bold">Очистить</button>
+<div class="max-w-7xl mx-auto px-4 py-20">
+    <!-- Заголовок -->
+    <div class="text-center mb-20">
+        <h1 class="hero-title mb-8">
+            <i class="fas fa-store"></i>
+            Танковый Магазин
+        </h1>
+        <div class="text-3xl font-bold mb-8 flex items-center justify-center gap-4 flex-wrap">
+            <span>Ваше золото:</span>
+            <span class="text-4xl" style="background: linear-gradient(135deg, #facc15, #eab308); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                {{ player.gold|comma }} 🪙
+            </span>
+        </div>
+    </div>
+
+    <!-- ФИЛЬТРЫ -->
+    <div class="glass-panel p-8 mb-12">
+        <h2 class="text-3xl font-bold mb-8 flex items-center gap-3">
+            <i class="fas fa-filter"></i> Фильтры
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div>
+                <label class="block text-lg font-semibold mb-3 flex items-center gap-2">
+                    <i class="fas fa-globe text-yellow-400"></i> Нация
+                </label>
+                <select id="nationFilter" class="w-full bg-white/10 border border-white/20 rounded-2xl p-4 text-white text-lg backdrop-blur-sm focus:outline-none focus:ring-4 ring-emerald-500/30 transition-all">
+                    <option value="">🎯 Все нации</option>
+                    <option value="ussr">🇷🇺 СССР</option>
+                    <option value="germany">🇩🇪 Германия</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-lg font-semibold mb-3 flex items-center gap-2">
+                    <i class="fas fa-layer-group text-blue-400"></i> Уровень
+                </label>
+                <select id="tierFilter" class="w-full bg-white/10 border border-white/20 rounded-2xl p-4 text-white text-lg backdrop-blur-sm focus:outline-none focus:ring-4 ring-emerald-500/30 transition-all">
+                    <option value="">🎯 Все уровни</option>
+                    <option value="1">I</option>
+                    <option value="2">II</option>
+                    <option value="3">III</option>
+                    <option value="4">IV</option>
+                    <option value="5">V</option>
+                    <option value="6">VI</option>
+                    <option value="7">VII</option>
+                    <option value="8">VIII</option>
+                    <option value="9">IX</option>
+                    <option value="10">X</option>
+                    <option value="11">XI</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-lg font-semibold mb-3 flex items-center gap-2">
+                    <i class="fas fa-road text-purple-400"></i> Класс
+                </label>
+                <select id="typeFilter" class="w-full bg-white/10 border border-white/20 rounded-2xl p-4 text-white text-lg backdrop-blur-sm focus:outline-none focus:ring-4 ring-emerald-500/30 transition-all">
+                    <option value="">🎯 Все классы</option>
+                    <option value="LT">Лёгкие Танки (ЛТ)</option>
+                    <option value="MT">Средние Танки (СТ)</option>
+                    <option value="HT">Тяжёлые Танки (ТТ)</option>
+                    <option value="TD">ПротивоТанковая Самоходная Артиллерийская Установка (ПТ-САУ)</option>
+                    <option value="SPG">Самоходная Артиллерийская Установка (САУ)</option>
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button onclick="clearFilters()" class="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white py-4 px-6 rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3">
+                    <i class="fas fa-times"></i> Очистить
+                </button>
+            </div>
+        </div>
+        <div class="mt-6 text-center">
+            <span class="text-xl font-semibold" id="tankCount">60+ танков</span>
+            <span class="text-gray-400 ml-2">Найдено: <span id="foundCount">60+</span></span>
         </div>
     </div>
 
     <!-- ТАНКИ -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 tank-grid">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 tank-grid" id="tankGrid">
         {% for tank in tanks %}
-        <div class="tank-card group" data-nation="{{ tank.nation|default('ussr') }}" 
-            data-tier="{{ tank.tier }}" data-type="{{ tank.type }}">
-            <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl p-8 rounded-3xl border border-gray-700/50 hover:border-emerald-400/50 hover:shadow-2xl transition-all">
-                <div class="text-2xl font-bold text-white mb-4 text-center">{{ tank.name }}</div>
-                <div class="text-xl mb-2">Ур. {{ tank.tier }} {{ tank.type }}</div>
-                <div class="text-3xl font-black text-emerald-400 mb-6">{{ tank.price|comma }} 🪙</div>
-                <form method="POST" action="/buy/{{ tank.id }}">
-                <button type="submit" class="{% if tank.id in owned_ids %}bg-gray-600{% else %}bg-gradient-to-r from-emerald-600 to-green-600{% endif %}">
-                {% if tank.id in owned_ids %}✅ Есть{% else %}🛒 Купить{% endif %}
-                </button>
-            </form>
+        <div class="tank-card group relative overflow-hidden" 
+             data-nation="{{ tank.nation|default('ussr') }}" 
+             data-tier="{{ tank.tier }}" 
+             data-type="{{ tank.type }}"
+             data-price="{{ tank.price }}">
+            
+            <div class="glass-panel p-8 h-full transition-all duration-500 group-hover:scale-[1.02] relative z-10">
+                <!-- ПРЕМИУМ ЗНАК -->
+                {% if tank.premium %}
+                <div class="absolute top-4 right-4 bg-gradient-to-br from-yellow-400 to-orange-500 text-black text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                    ⭐ ПРЕМИУМ
+                </div>
+                {% endif %}
+
+                <!-- ИКОНКА НАЦИИ -->
+                <div class="flex justify-between items-start mb-6">
+                    <div class="text-2xl font-bold">
+                        {% if tank.nation == 'ussr' %}
+                            🇷🇺
+                        {% elif tank.nation == 'germany' %}
+                            🇩🇪
+                        {% else %}
+                            🛠️
+                        {% endif %}
+                    </div>
+                    <div class="text-3xl">
+                        Ур. {{ tank.tier }}
+                    </div>
+                </div>
+
+                <!-- НАЗВАНИЕ -->
+                <h3 class="text-2xl font-black mb-4 text-center leading-tight group-hover:text-emerald-400 transition-colors">
+                    {{ tank.name }}
+                </h3>
+
+                <!-- ХАРАКТЕРИСТИКИ -->
+                <div class="grid grid-cols-3 gap-3 mb-8 text-center">
+                    <div class="p-3 bg-white/5 rounded-xl">
+                        <div class="text-2xl font-bold text-red-400">{{ tank.hp }}</div>
+                        <div class="text-xs uppercase tracking-wider text-gray-400">HP</div>
+                    </div>
+                    <div class="p-3 bg-white/5 rounded-xl">
+                        <div class="text-2xl font-bold text-yellow-400">{{ tank.damage }}</div>
+                        <div class="text-xs uppercase tracking-wider text-gray-400">Урон</div>
+                    </div>
+                    <div class="p-3 bg-white/5 rounded-xl">
+                        <div class="text-2xl font-bold text-blue-400">{{ tank.speed }}</div>
+                        <div class="text-xs uppercase tracking-wider text-gray-400">Скорость</div>
+                    </div>
+                </div>
+
+                <!-- ЦЕНА -->
+                <div class="text-4xl font-black mb-8 text-center" 
+                     style="{% if tank.price > (player.gold|default(0)) %}color: #ef4444;{% else %}background: linear-gradient(135deg, #facc15, #eab308); -webkit-background-clip: text; -webkit-text-fill-color: transparent;{% endif %}">
+                    {{ tank.price|comma }} <i class="fas fa-coins"></i>
+                </div>
+
+                <!-- КНОПКА ПОКУПКИ -->
+                <form method="POST" action="/buy/{{ tank.id }}" class="tank-buy-form">
+                    {% if tank.id in owned_ids %}
+                        <button type="button" disabled 
+                                class="w-full bg-gradient-to-r from-gray-600 to-gray-700 text-white py-4 px-6 rounded-2xl font-black text-xl shadow-xl cursor-not-allowed relative overflow-hidden">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            ✅ В гараже
+                            <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-green-500/20 animate-pulse"></div>
+                        </button>
+                    {% else %}
+                        {% if tank.price > (player.gold|default(0)) %}
+                            <button type="button" disabled 
+                                    class="w-full bg-gradient-to-r from-gray-600 to-gray-700 text-white py-4 px-6 rounded-2xl font-black text-xl shadow-xl cursor-not-allowed relative">
+                                <i class="fas fa-coins mr-2"></i>
+                                Недостаточно золота
+                                <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-24 h-2 bg-red-400 rounded-full animate-pulse"></div>
+                            </button>
+                        {% else %}
+                            <button type="submit" 
+                                    class="buy-btn w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white py-4 px-6 rounded-2xl font-black text-xl shadow-2xl hover:shadow-3xl hover:-translate-y-2 transition-all duration-300 transform flex items-center justify-center gap-3 relative overflow-hidden group-hover:ring-4 ring-emerald-500/30">
+                                <i class="fas fa-shopping-cart"></i>
+                                Купить за {{ tank.price|comma }} 🪙
+                                <div class="absolute inset-0 bg-white/20 skew-x-12 -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                            </button>
+                        {% endif %}
+                    {% endif %}
+                </form>
+            </div>
+
+            <!-- Hover эффект фона -->
+            <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
         </div>
-    {% endfor %}
+        {% endfor %}
     </div>
 </div>
 
 <script>
+let allTanks = document.querySelectorAll('.tank-card');
+let tankCount = allTanks.length;
+
 function filterTanks() {
     const nation = document.getElementById('nationFilter').value;
     const tier = document.getElementById('tierFilter').value;
     const type = document.getElementById('typeFilter').value;
     
-    document.querySelectorAll('.tank-card').forEach(card => {
-        const show = (!nation || card.dataset.nation === nation) &&
-                    (!tier || card.dataset.tier === tier) &&
-                    (!type || card.dataset.type === type);
+    let visibleCount = 0;
+    
+    allTanks.forEach(card => {
+        const matchesNation = !nation || card.dataset.nation === nation;
+        const matchesTier = !tier || card.dataset.tier === tier;
+        const matchesType = !type || card.dataset.type === type;
+        
+        const show = matchesNation && matchesTier && matchesType;
+        
         card.style.display = show ? 'block' : 'none';
+        
+        if (show) {
+            visibleCount++;
+            card.style.animation = 'slideInUp 0.6s ease-out forwards';
+        }
     });
+    
+    document.getElementById('foundCount').textContent = visibleCount;
+    document.getElementById('tankCount').textContent = visibleCount > 0 ? `${visibleCount} танков` : 'Ничего не найдено';
 }
-
-document.querySelectorAll('.filter-select').forEach(select => {
-    select.addEventListener('change', filterTanks);
-});
 
 function clearFilters() {
     document.getElementById('nationFilter').value = '';
@@ -71,5 +208,50 @@ function clearFilters() {
     document.getElementById('typeFilter').value = '';
     filterTanks();
 }
+
+// Инициализация
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('tankCount').textContent = `${tankCount} танков`;
+    document.getElementById('foundCount').textContent = tankCount;
+    
+    // Слушатели фильтров
+    document.getElementById('nationFilter').addEventListener('change', filterTanks);
+    document.getElementById('tierFilter').addEventListener('change', filterTanks);
+    document.getElementById('typeFilter').addEventListener('change', filterTanks);
+});
+
+// Анимация появления
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+        }
+    });
+});
 </script>
+
+<style>
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.tank-card {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.group:hover .glass-panel {
+    box-shadow: 0 35px 80px -20px rgba(16, 185, 129, 0.4);
+}
+@media (max-width: 768px) {
+    .tank-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+}
+</style>
 {% endblock %}
