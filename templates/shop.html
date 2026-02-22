@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Магазин{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-12">
+    <h1 class="text-5xl font-black text-center mb-16 bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent">
+        🛒 Танковый Магазин
+    </h1>
+    
+    <!-- Фильтры -->
+    <div class="bg-gray-800/50 backdrop-blur-xl p-6 rounded-3xl mb-12 border border-gray-700/50">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <select class="bg-gray-700/50 border border-gray-600 rounded-2xl p-3 text-white">
+                <option>Все нации</option>
+            </select>
+            <select class="bg-gray-700/50 border border-gray-600 rounded-2xl p-3 text-white">
+                <option>Все уровни</option>
+            </select>
+            <select class="bg-gray-700/50 border border-gray-600 rounded-2xl p-3 text-white">
+                <option>Все классы</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Танки -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for tank in tanks %}
+        <div class="group">
+            <div class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl p-8 rounded-3xl border border-gray-700/50 hover:border-emerald-400/50 hover:shadow-2xl transition-all">
+                <div class="text-4xl mb-4 text-center">{{ tank.name }}</div>
+                <div class="text-2xl font-bold text-emerald-400 mb-4 text-center">{{ tank.price|comma }} 🪙</div>
+                <button class="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white py-3 px-6 rounded-2xl font-bold shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all">
+                    Купить
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
