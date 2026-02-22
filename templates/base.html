@@ -3,121 +3,318 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Записки Танкиста{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: { extend: { animation: { 'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite' } } }
-        }
-    </script>
+    <title>{% block title %}3anucku ТAHKУCТ{% endblock %}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        :root {
+            --bg-primary: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            --glass: rgba(30, 30, 46, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --accent-gold: linear-gradient(135deg, #facc15, #eab308);
+            --accent-emerald: linear-gradient(135deg, #10b981, #059669);
+            --accent-purple: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1rem 2rem;
+            background: rgba(15, 15, 35, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+                .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 2rem;
+            font-weight: 900;
+            background: var(--accent-gold);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .nav-link:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        .resources {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .resource {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .main-content {
+            margin-top: 100px;
+            padding: 2rem;
+            min-height: calc(100vh - 100px);
+        }
+        .hero-title {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 900;
+            background: var(--accent-emerald);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 2rem;
+            line-height: 1.1;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto 4rem;
+        }
+        .stat-card {
+            background: var(--glass);
+            padding: 2.5rem;
+            border-radius: 24px;
+            text-align: center;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent-gold);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.6);
+        }
+        .stat-card:hover::before {
+            transform: scaleX(1);
+        }
+        .stat-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: var(--accent-gold);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-label {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .action-card {
+            background: var(--glass);
+            padding: 3rem 2.5rem;
+            border-radius: 24px;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        .action-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.6s;
+        }
+        .action-card:hover::before {
+            left: 100%;
+        }
+        .action-card:hover {
+            transform: translateY(-16px) scale(1.02);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.7);
+        }
+        .action-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+        .action-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+        .action-desc {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        @media (max-width: 768px) {
+            .navbar { padding: 1rem; }
+            .nav-links { gap: 1rem; }
+            .main-content { margin-top: 80px; padding: 1rem; }
+            .stats-grid, .action-grid { grid-template-columns: 1fr; }
+        }
+        .flash-messages {
+            position: fixed;
+            top: 120px;
+            right: 2rem;
+            z-index: 2000;
+            max-width: 400px;
+        }
+        .flash-message {
+            background: var(--glass);
+            padding: 1.5rem 2rem;
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #10b981;
+            animation: slideInRight 0.4s ease-out;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
     </style>
-    {% block head %}{% endblock %}
 </head>
-<body class="bg-gradient-to-br from-gray-900 via-indigo-900/30 to-gray-900 min-h-screen">
-    <!-- Шапка -->
-    <nav class="bg-gray-800/95 backdrop-blur-xl border-b border-gray-700/50 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <a href="/" class="flex items-center space-x-3 group">
-                    <div class="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-xl group-hover:scale-110 transition-all">
-                        <i class="fas fa-tank-rumble text-2xl text-gray-900"></i>
+<body>
+    <!-- Flash сообщения -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for message in messages %}
+                    <div class="flash-message">
+                        {{ message }}
                     </div>
-                    <h1 class="text-2xl md:text-3xl font-black bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
-                        Записки Танкиста
-                    </h1>
-                </a>
-                
-                <div class="flex items-center space-x-4">
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Навигация -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <i class="fas fa-tank-rumble"></i>
+                3anucku ТAHKУCТ
+            </a>
+            <div class="nav-links">
+                <a href="/" class="nav-link"><i class="fas fa-home"></i> Ангар</a>
+                <a href="/shop" class="nav-link"><i class="fas fa-store"></i> Магазин</a>
+                <a href="/garage" class="nav-link"><i class="fas fa-warehouse"></i> Гараж</a>
+                <a href="/battle" class="nav-link"><i class="fas fa-fire"></i> Арена</a>
+                <a href="/leaderboard" class="nav-link"><i class="fas fa-trophy"></i> Топ</a>
+                <div class="resources">
                     {% if session.user_id %}
-                        <!-- Статистика в шапке -->
-                        <div class="hidden md:flex items-center space-x-4 bg-gray-700/50 backdrop-blur-sm px-4 py-2 rounded-2xl border border-gray-600/50">
-                            <div class="text-yellow-400 font-bold text-sm">
-                                <i class="fas fa-coins mr-1" style="color: #c0c0c0;"></i>{{ (player.silver if player else 0)|default(0)|int|comma }}
-                            </div>
-                            <div class="text-gray-300 font-bold text-sm">
-                                <i class="fas fa-coins mr-1" style="color: #c0c0c0;"></i>{{ (player.gold if player else 0)|default(0)|int|comma }}
-                            </div>
-                            <div class="text-purple-400 font-bold text-sm">
-                                <i class="fas fa-fire mr-1"></i>{{ player.wins|default(0) }}/{{ player.battles|default(0) }}
-                            </div>
+                        {% set player = get_player(session.user_id) if session.user_id else none %}
+                        <div class="resource">
+                            <i class="fas fa-coins" style="color: #facc15;"></i>
+                            {{ (player.gold if player else 0)|default(0)|comma }}
                         </div>
-                        
-                        <!-- Навигация -->
-                        <div class="hidden lg:flex space-x-2">
-                            <a href="/" class="px-4 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all flex items-center">
-                                <i class="fas fa-home mr-2"></i>Главная
-                            </a>
-                            <a href="/shop" class="px-4 py-2 rounded-xl text-gray-300 hover:text-emerald-400 hover:bg-gray-700/50 transition-all flex items-center">
-                                <i class="fas fa-store mr-2"></i>Магазин
-                            </a>
-                            <a href="/garage" class="px-4 py-2 rounded-xl text-gray-300 hover:text-purple-400 hover:bg-gray-700/50 transition-all flex items-center">
-                                <i class="fas fa-warehouse mr-2"></i>Гараж
-                            </a>
-                            <a href="/battle" class="px-4 py-2 rounded-xl text-gray-300 hover:text-red-400 hover:bg-gray-700/50 transition-all flex items-center">
-                                <i class="fas fa-fire mr-2"></i>Арена
-                            </a>
-                            <a href="/profile/{{ session.user_id }}" class="px-4 py-2 rounded-xl text-gray-300 hover:text-blue-400 hover:bg-gray-700/50 transition-all flex items-center">
-                                <i class="fas fa-user mr-2"></i>Профиль
-                            </a>
+                        <div class="resource">
+                            <i class="fas fa-coins" style="color: #c0c0c0;"></i>
+                            {{ (player.silver if player else 0)|default(0)|comma }}
                         </div>
-                        
-                        <a href="/logout" class="bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded-2xl font-semibold transition-all flex items-center shadow-lg hover:shadow-xl">
-                            <i class="fas fa-sign-out-alt mr-2"></i>Выход
-                        </a>
-                    {% else %}
-                        <a href="/login" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-2xl font-semibold transition-all flex items-center shadow-lg hover:shadow-xl">
-                            <i class="fas fa-sign-in-alt mr-2"></i>Войти
-                        </a>
                     {% endif %}
                 </div>
+                <a href="/profile" class="nav-link">
+                    <i class="fas fa-user-circle"></i>
+                    {{ session.username if session.username else 'Гость' }}
+                </a>
+                <a href="/logout" class="nav-link">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
             </div>
         </div>
     </nav>
 
-    <!-- Flash сообщения -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="max-w-7xl mx-auto px-4 mb-8">
-                    <div class="bg-gradient-to-r {% if category == 'success' %}from-emerald-500 to-green-600{% else %}from-red-500 to-rose-600{% endif %} text-white p-4 rounded-2xl shadow-xl backdrop-blur-sm border border-white/20 max-w-2xl mx-auto animate-pulse-fast">
-                        <div class="flex items-center">
-                            <i class="fas fa-{% if category == 'success' %}check-circle{% else %}exclamation-triangle{% endif %} mr-3 text-xl"></i>
-                            <span class="font-semibold">{{ message }}</span>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
     <!-- Основной контент -->
-    <main class="max-w-7xl mx-auto px-4 py-12 lg:py-20">
+    <main class="main-content">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Подвал -->
-    <footer class="mt-20 bg-gray-900/50 border-t border-gray-800/50">
-        <div class="max-w-7xl mx-auto px-4 py-12 text-center text-gray-400">
-            <p>© 2026 Записки Танкиста. Создано с <i class="fas fa-heart text-red-500"></i> для танкистов!</p>
-        </div>
-    </footer>
-
     <script>
-        // Анимации hover эффектов
-        document.querySelectorAll('a').forEach(link => {
-            link.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-2px)';
+        // Авто-скрытие flash сообщений
+        setTimeout(() => {
+            const flashes = document.querySelectorAll('.flash-message');
+            flashes.forEach((flash, index) => {
+                setTimeout(() => {
+                    flash.style.animation = 'slideInRight 0.4s ease-out reverse';
+                    setTimeout(() => flash.remove(), 400);
+                }, (index + 1) * 3000);
             });
-            link.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0)';
-            });
-        });
+        }, 5000);
     </script>
 </body>
 </html>
-
-
