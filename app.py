@@ -8,25 +8,23 @@ from wtforms import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import Length, Regexp, EqualTo, DataRequired
 from flask_wtf.csrf import CSRFProtect
 import secrets
-
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-# 1️⃣ ПЕРВЫЙ - Flask app
+# 1️⃣ FLASK APP
 app = Flask(__name__)
-app.secret_key = '3anucku-tankuct-2026-super-secret-key-alexin-kaluga'
-logging.basicConfig(level=logging.DEBUG)
+app.secret_key = '3anucku-tankuct-2026-super-secret-key-alexin-kaluga-secure-v9.9'
 
-# Error handlers
+# 2️⃣ ERROR HANDLERS (ПЕРЕД ФИЛЬТРАМИ!)
 @app.errorhandler(500)
 def internal_error(error):
     return "🚫 Серверная ошибка! Проверь логи Render.", 500
 
 @app.errorhandler(404)
 def not_found_error(error):
-    return render_template('404.html'), 404
+    return render_template('404.html', player=None), 404  # ← player=None!
 
-# ✅ Функция comma ПЕРЕД фильтром!
+# 3️⃣ Jinja2 ФИЛЬТР ДЛЯ ЧИСЕЛ (ОБЯЗАТЕЛЬНО!)
 def comma(value):
     try:
         return "{:,}".format(int(value)).replace(',', ' ')
@@ -35,43 +33,21 @@ def comma(value):
 
 app.jinja_env.filters['comma'] = comma
 
-# Глобальные константы
+# 4️⃣ ГЛОБАЛЬНЫЕ КОНСТАНТЫ v9.9
 PLAYERS_EQUAL = True
-ADMIN_LOGINS = ["Назар", "CatNap"]
+ADMIN_LOGINS = ["Назар", "CatNap", "Admin"]
+DB_PATH = 'players.db'  # ЕДИНАЯ БД!
 
-# ========================================
 # 🔥 АДМИНЫ С ПРАВАМИ БОГА
-# ========================================
 ADMIN_USERS = {
     "Назар": {"user_id": "admin_nazar_2026", "role": "superadmin", "permissions": ["all"]},
     "CatNap": {"user_id": "admin_catnap_2026", "role": "superadmin", "permissions": ["all"]},
+    "Admin": {"user_id": "admin0001", "role": "superadmin", "permissions": ["all"]},
 }
 
-def is_superadmin(username):
-    return username in ["Назар", "CatNap"]
-
-def has_permission(username, permission):
-    player = get_player(session.get('user_id')) if session.get('user_id') else None
-    if player and player.get('username') in ADMIN_USERS:
-        perms = ADMIN_USERS[player['username']].get('permissions', [])
-        return "all" in perms or permission in perms
-    return False
-
-# Глобальная проверка сессии
-def validate_session():
-    if 'user_id' not in session:
-        return False
-    
-    try:
-        player = get_player(session['user_id'])
-        return bool(player)
-    except:
-        session.clear()
-        return False
-
-# ========================================
-# ✅ 1.1 ПОЛНЫЙ СПИСОК 60+ ТАНКОВ v9.4
-# ========================================
+# =================================
+# ✅ ПОЛНЫЙ СПИСОК 60+ ТАНКОВ v9.9
+# =================================
 TANKS = {
     # 🔥 I УРОВЕНЬ - ЛЕГЕНДЫ ВОЙНЫ
     "ms1": {"name": "МС-1 (Т-18)", "tier": 1, "type": "LT", "price": 2500, "hp": 240, "damage": 40, "pen": 28, "speed": 30, "premium": False},
@@ -467,279 +443,47 @@ TANKS = {
     "st_i": {"name": "ST-1", "tier": 10, "type": "HT", "price": 1150000, "hp": 2400, "damage": 400, "pen": 257, "speed": 28, "premium": True},
     "vz36": {"name": "Vz. 36", "tier": 6, "type": "TD", "price": 125000, "hp": 1220, "damage": 400, "pen": 258, "speed": 38, "premium": True},
 }
-
-ALL_TANKS_LIST = list(TANKS.values())
-
 # ========================================
-# ✅ 1.2 25 ЗВАНИЙ v9.3 - ПОЛНЫЙ СПИСОК (ПРОДОЛЖЕНИЕ)
+# ✅ БАЗА ДАННЫХ - ИНИЦИАЛИЗАЦИЯ v9.9
 # ========================================
-RANKS_FULL = [
-    # 🔥 НОВИЧКИ (0-4 ранг)
-    {
-        "id": 0, 
-        "name": "Новобранец", 
-        "icon": "👶", 
-        "color": "#cccccc",
-        "min_points": 0
-    },
-    {
-        "id": 1, 
-        "name": "Рядовой", 
-        "icon": "🪖", 
-        "color": "#aaaaaa",
-        "min_points": 250
-    },
-    {
-        "id": 2, 
-        "name": "Рядовой 1-й статьи", 
-        "icon": "🪖", 
-        "color": "#999999",
-        "min_points": 750
-    },
-    {
-        "id": 3, 
-        "name": "Ефрейтор", 
-        "icon": "⭐", 
-        "color": "#88aa88",
-        "min_points": 1500
-    },
-    {
-        "id": 4, 
-        "name": "Младший сержант", 
-        "icon": "⭐⭐", 
-        "color": "#88aa88",
-        "min_points": 3000
-    },
-    
-    # 🛡️ СЕРЖАНТЫ (5-7 ранг)
-    {
-        "id": 5, 
-        "name": "Сержант", 
-        "icon": "⭐⭐⭐", 
-        "color": "#88cc88",
-        "min_points": 5500
-    },
-    {
-        "id": 6, 
-        "name": "Старший сержант", 
-        "icon": "⭐⭐⭐⭐", 
-        "color": "#88cc88",
-        "min_points": 9000
-    },
-    {
-        "id": 7, 
-        "name": "Старшина", 
-        "icon": "⭐⭐⭐⭐⭐", 
-        "color": "#aadd88",
-        "min_points": 14000
-    },
-    
-    # ⚔️ ОФИЦЕРЫ (8-14 ранг)
-    {
-        "id": 8, 
-        "name": "Мл. лейтенант", 
-        "icon": "⚔️", 
-        "color": "#ffcc00",
-        "min_points": 20000
-    },
-    {
-        "id": 9, 
-        "name": "Лейтенант", 
-        "icon": "⚔️", 
-        "color": "#ffcc00",
-        "min_points": 28000
-    },
-    {
-        "id": 10, 
-        "name": "Ст. лейтенант", 
-        "icon": "⚔️⚔️", 
-        "color": "#ffaa00",
-        "min_points": 38000
-    },
-    {
-        "id": 11, 
-        "name": "Капитан", 
-        "icon": "⚔️⚔️⚔️", 
-        "color": "#ffaa00",
-        "min_points": 50000
-    },
-    {
-        "id": 12, 
-        "name": "Майор", 
-        "icon": "🌟", 
-        "color": "#ff8800",
-        "min_points": 65000
-    },
-    {
-        "id": 13, 
-        "name": "Подполковник", 
-        "icon": "🌟🌟", 
-        "color": "#ff8800",
-        "min_points": 85000
-    },
-    {
-        "id": 14, 
-        "name": "Полковник", 
-        "icon": "🌟🌟🌟", 
-        "color": "#ff6600",
-        "min_points": 110000
-    },
-    
-    # 🏆 ГЕНЕРАЛЫ (15-19 ранг)
-    {
-        "id": 15, 
-        "name": "Бригадный генерал", 
-        "icon": "👑", 
-        "color": "#ff4400",
-        "min_points": 140000
-    },
-    {
-        "id": 16, 
-        "name": "Генерал-майор", 
-        "icon": "👑👑", 
-        "color": "#ff2200",
-        "min_points": 180000
-    },
-    {
-        "id": 17, 
-        "name": "Генерал-лейтенант", 
-        "icon": "👑👑👑", 
-        "color": "#dd0000",
-        "min_points": 230000
-    },
-    {
-        "id": 18, 
-        "name": "Генерал", 
-        "icon": "🔥", 
-        "color": "#cc0000",
-        "min_points": 290000
-    },
-    {
-        "id": 19, 
-        "name": "Маршал", 
-        "icon": "💎", 
-        "color": "#aa0000",
-        "min_points": 370000
-    },
-    
-    # 🔥 ЛЕГЕНДЫ (20-23 ранг)
-    {
-        "id": 20, 
-        "name": "Боевой Маршал", 
-        "icon": "⚡", 
-        "color": "#880000",
-        "min_points": 470000
-    },
-    {
-        "id": 21, 
-        "name": "Полевой Маршал", 
-        "icon": "🌌", 
-        "color": "#660000",
-        "min_points": 600000
-    },
-    {
-        "id": 22, 
-        "name": "Легенда Танков", 
-        "icon": "⭐🌟⭐", 
-        "color": "#440000",
-        "min_points": 760000
-    },
-    {
-        "id": 23, 
-        "name": "Ветеран", 
-        "icon": "🏆", 
-        "color": "#ff0000",
-        "min_points": 970000
-    }
-]
-
-
-# ========================================
-# ✅ 1.3 ФУНКЦИИ ЗВАНИЙ И БАЗА ДАННЫХ
-# ========================================
-def get_rank_progress(points):
-    """Возвращает текущее звание + прогресс до следующего"""
-    for rank in RANKS_FULL:
-        if points >= rank["min_points"]:
-            current_rank = rank
-            
-            next_rank_idx = RANKS_FULL.index(rank) + 1
-            if next_rank_idx < len(RANKS_FULL):
-                next_rank = RANKS_FULL[next_rank_idx]
-                progress = min(100, ((points - rank["min_points"]) / (next_rank["min_points"] - rank["min_points"])) * 100)
-            else:
-                progress = 100
-                next_rank = {"name": "⚔️ ЛЕГЕНДА ⚔️", "min_points": float('inf')}
-            
-            return {
-                "current": f'{current_rank["icon"]} {current_rank["name"]}',
-                "current_id": current_rank["id"],
-                "color": current_rank["color"],
-                "progress": progress,
-                "points": points,
-                "next": next_rank["name"],
-                "next_points": next_rank["min_points"],
-                "rank_emoji": current_rank["icon"]
-            }
-    return {
-        "current": "👶 Новобранец",
-        "current_id": 0,
-        "color": "#cccccc",
-        "progress": 0,
-        "points": points,
-        "next": "🪖 Рядовой",
-        "next_points": 250,
-        "rank_emoji": "👶"
-    }
-    
-# ========================================
-# ✅ 1.4 БАЗА ДАННЫХ И ИГРОКИ
-# ========================================
-import json  # ← ДОБАВЬ!
-
 def init_db():
     conn = sqlite3.connect('players.db')
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS players (
-            id TEXT PRIMARY KEY, username TEXT UNIQUE, password TEXT,
-            gold INTEGER DEFAULT 5000, silver INTEGER DEFAULT 100000,
-            points INTEGER DEFAULT 0, tanks TEXT DEFAULT '[]',
-            battles INTEGER DEFAULT 0, wins INTEGER DEFAULT 0,
-            created_at TEXT, role TEXT DEFAULT 'player'
+            id TEXT PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            gold INTEGER DEFAULT 1500,
+            silver INTEGER DEFAULT 25000,
+            points INTEGER DEFAULT 0,
+            tanks TEXT DEFAULT '[]',
+            battles INTEGER DEFAULT 0,
+            wins INTEGER DEFAULT 0,
+            created_at TEXT,
+            role TEXT DEFAULT 'player',
+            rank TEXT DEFAULT 'Солдат'
         )
     ''')
     
-    # ✅ ТЕСТОВЫЙ АДМИН (если база пустая)
+    # ✅ ТЕСТОВЫЙ АДМИН
     cursor.execute("SELECT COUNT(*) FROM players")
     if cursor.fetchone()[0] == 0:
         admin_id = 'admin0001'
         admin_pw = bcrypt.hashpw('admin123'.encode(), bcrypt.gensalt()).decode()
         cursor.execute('''
-            INSERT INTO players (id, username, password, role, created_at)
-            VALUES (?, 'Admin', ?, 'admin', ?)
+            INSERT INTO players (id, username, password, role, created_at, gold)
+            VALUES (?, 'Admin', ?, 'superadmin', ?, 100000)
         ''', (admin_id, admin_pw, datetime.now().isoformat()))
-        print("✅ Тестовый Admin создан: Admin/admin123")
+        print("✅ Тестовый Admin: Admin/admin123")
     
     conn.commit()
     conn.close()
     print("✅ База данных готова!")
 
-# ВЫЗОВ
-init_db()
-
-def create_player(username, user_id):
-    """Все игроки с НУЛЯ - равенство!"""
-    conn = sqlite3.connect('players.db')
-    c = conn.cursor()
-    c.execute('''INSERT OR REPLACE INTO players 
-                 (user_id, username, gold, silver, points, rank_id, tanks, wins, battles, daily_streak, last_daily, role, join_date)
-                 VALUES (?, ?, 5000, 25000, 0, 1, '[]', 0, 0, 0, 0, 'player', ?)''',
-              (user_id, username, time.time()))
-    conn.commit()
-    conn.close()
-    return True
-
+# ========================================
+# ✅ ОСНОВНЫЕ ФУНКЦИИ ИГРОКА
+# ========================================
 def get_player(user_id):
     try:
         conn = sqlite3.connect('players.db')
@@ -751,9 +495,9 @@ def get_player(user_id):
         if row:
             player = {
                 'id': row[0], 'username': row[1], 'password': row[2],
-                'gold': row[3] or 0, 'silver': row[4] or 0, 
-                'points': row[5] or 0, 'tanks': json.loads(row[6] or '[]'),
-                'battles': row[7] or 0, 'wins': row[8] or 0
+                'gold': row[3] or 0, 'silver': row[4] or 0, 'points': row[5] or 0,
+                'tanks': json.loads(row[6] or '[]'), 'battles': row[7] or 0, 'wins': row[8] or 0,
+                'created_at': row[9], 'role': row[10] or 'player', 'rank': row[11] or 'Солдат'
             }
             return player
         return None
@@ -761,284 +505,37 @@ def get_player(user_id):
         print(f"GET_PLAYER ERROR: {e}")
         return None
 
-def update_player(player_data):
-    conn = sqlite3.connect('players.db')
-    c = conn.cursor()
-    c.execute('''UPDATE players SET 
-                 gold=?, silver=?, points=?, rank_id=?, tanks=?, wins=?, battles=?, 
-                 daily_streak=?, last_daily=?, is_muted=?, mute_until=?, role=?
-                 WHERE user_id=?''',
-              (player_data['gold'], player_data['silver'], player_data['points'], player_data['rank_id'],
-               json.dumps(player_data['tanks']), player_data['wins'], player_data['battles'],
-               player_data['daily_streak'], player_data['last_daily'], 
-               1 if player_data['is_muted'] else 0, player_data['mute_until'], player_data['role'],
-               player_data['user_id']))
-    conn.commit()
-    conn.close()
+def update_player(player):
+    try:
+        conn = sqlite3.connect('players.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            UPDATE players SET gold=?, silver=?, points=?, tanks=?, battles=?, wins=?, rank=?
+            WHERE id=?
+        ''', (
+            player['gold'], player['silver'], player['points'],
+            json.dumps(player['tanks']), player['battles'], player['wins'],
+            player.get('rank', 'Солдат'), player['id']
+        ))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"UPDATE_PLAYER ERROR: {e}")
+        return False
 
-# ========================================
-# ✅ 1.5 АДМИН/МОДЕР ПРОВЕРКИ
-# ========================================
-def is_admin(username):
+def validate_session():
+    if 'user_id' not in session:
+        return False
+    player = get_player(session['user_id'])
+    return bool(player)
+
+def is_superadmin(username):
     return username in ADMIN_LOGINS
 
-def is_moderator(username):
-    return username in MODERATORS or is_admin(username)
-
-def is_muted(username):
-    player = get_player(session.get('user_id'))
-    if player and player['is_muted'] and time.time() < player['mute_until']:
-        return True
-    return False
-
 # ========================================
-# ✅ 1.6 НАГРАДЫ - ПОЛНЫЙ СПИСОК
+# ✅ МАРШРУТЫ - АВТОРИЗАЦИЯ
 # ========================================
-DAILY_REWARDS = {
-    "1": {"gold": 2500, "silver": 5000, "points": 500, "msg": "🎁 Ежедневная награда (1 день)"},
-    "2": {"gold": 3500, "silver": 7500, "points": 750, "msg": "🎁 Ежедневная награда (2 дня)"},
-    "3": {"gold": 5000, "silver": 10000, "points": 1000, "msg": "🎁 Ежедневная награда (3 дня)"},
-    "4": {"gold": 7500, "silver": 15000, "points": 1250, "msg": "🎁 Ежедневная награда (4 дня)"},
-    "5": {"gold": 10000, "silver": 20000, "points": 1500, "msg": "🎁 🔥 Серия 5 дней! 🔥"},
-    "6": {"gold": 12500, "silver": 25000, "points": 1750, "msg": "🎁 Ежедневная награда (6 дней)"},
-    "7": {"gold": 15000, "silver": 30000, "points": 2000, "msg": "🏆 НЕДЕЛЬНАЯ НАГРАДА! + Бонусный танк!"}
-}
-
-# ========================================
-# ✅ 1.7 ЕЖЕДНЕВНЫЕ НАГРАДЫ
-# ========================================
-def claim_daily(username):
-    player = get_player(session.get('user_id'))
-    if not player:
-        return False, "❌ Профиль не найден!"
-    
-    now = time.time()
-    if now - player['last_daily'] < 86400:  # 24 часа
-        return False, "⏰ Подожди 24 часа до следующей награды!"
-    
-    streak = player['daily_streak']
-    if streak >= 7:
-        streak = 0  # Сброс после 7 дней
-    
-    reward = DAILY_REWARDS[str(streak + 1)]
-    
-    # Награда
-    player['gold'] += reward['gold']
-    player['silver'] += reward['silver']
-    player['points'] += reward['points']
-    player['daily_streak'] = streak + 1
-    player['last_daily'] = now
-    
-    # Бонусный танк на 7-й день
-    if streak + 1 == 7:
-        bonus_tank = random.choice([t for t in ALL_TANKS_LIST if t['tier'] <= 5 and not t['premium']])
-        player['tanks'].append(bonus_tank['id'])
-        update_player(player)
-        return True, f"{reward['msg']}\n🎁 +1 {bonus_tank['name']} (ID: {bonus_tank['id']})"
-    
-    update_player(player)
-    return True, reward['msg']
-
-@app.route('/garage')
-def garage():
-    if not validate_session():
-        return redirect(url_for('login'))
-    
-    player = get_player(session['user_id'])
-    if not player:
-        return redirect(url_for('login'))
-    
-    # ✅ ИСПРАВЛЕНИЕ: player['tanks'] это JSON список ID строк
-    owned_ids = set(player.get('tanks', []))
-    
-    # ✅ ФИЛЬТРУЕМ ТАНКИ ПО ID (строки!)
-    owned_tanks = []
-    for tank_id in owned_ids:
-        for tank in TANKS.values():  # TANKS это словарь {id: данные}
-            if tank_id == tank_id:  # Совпадение ID
-                owned_tanks.append(tank)
-                break
-    
-    return render_template('garage.html', player=player, owned_tanks=owned_tanks)
-
-# ========================================
-# ✅ 1.8 МАГАЗИН ТАНКОВ
-# ========================================
-@app.route('/shop')
-def shop():
-    if not validate_session():
-        return redirect(url_for('login'))
-    
-    player = get_player(session['user_id'])
-    owned_ids = set(player.get('tanks', []))
-    
-    # ✅ tanks = СПИСОК, не словарь!
-    tanks_list = []
-    for tank_id, tank_data in TANKS.items():
-        tank_data['id'] = tank_id  # Добавляем ID для шаблона
-        tanks_list.append(tank_data)
-    
-    return render_template('shop.html', player=player, tanks=tanks_list, owned_ids=owned_ids)
-
-
-
-# 🆕 ПОКУПКА ТАНКА
-@app.route('/buy/<tank_id>', methods=['POST'])
-def buy_tank(tank_id):
-    if not validate_session():
-        return redirect(url_for('login'))
-    
-    player = get_player(session['user_id'])
-    tank = TANKS.get(tank_id)
-    
-    if not tank or player['gold'] < tank['price']:
-        flash('❌ Недостаточно золота!')
-        return redirect(url_for('shop'))
-    
-    # Покупка
-    player['gold'] -= tank['price']
-    if tank_id not in player['tanks']:
-        player['tanks'].append(tank_id)
-    
-    update_player(player)
-    flash(f'✅ Куплен {tank["name"]} за {tank["price"]:,}!')
-    return redirect(url_for('shop'))
-
-# ✅ ПРОФИЛЬ (2 ВАРИАНТА)
-@app.route('/profile')
-@app.route('/profile/<user_id>') 
-def profile(user_id=None):
-    if not validate_session():
-        return redirect(url_for('login'))
-    player = get_player(session['user_id'])
-    return render_template('profile.html', player=player)
-
-# ✅ АРЕНА (GET+POST)
-@app.route('/battle', methods=['GET', 'POST'])
-def battle():
-    if not validate_session(): return redirect(url_for('login'))
-    player = get_player(session['user_id'])
-    return render_template('battle.html', player=player)
-
-# ✅ ЛИДЕРБОРД (заглушка)
-@app.route('/leaderboard')
-def leaderboard():
-    if not validate_session(): return redirect(url_for('login'))
-    return render_template('leaderboard.html', top_players=[])
-
-# 🆕 ЗАГЛУШКИ
-@app.route('/chat')
-def chat():
-    if not validate_session(): return redirect(url_for('login'))
-    return "<h1>💬 Чат в разработке</h1><a href='/'>← Ангар</a>"
-
-@app.route('/tournaments')
-def tournaments():
-    if not validate_session(): return redirect(url_for('login'))
-    return "<h1>🏆 Турниры в разработке</h1><a href='/'>← Ангар</a>"
-
-@app.route('/achievements')
-def achievements():
-    if not validate_session(): return redirect(url_for('login'))
-    return "<h1>🏅 Достижения в разработке</h1><a href='/'>← Ангар</a>"
-
-@app.route('/test')
-def test():
-    return f"""
-    <h1>✅ Сервер работает!</h1>
-    <p>Session: {session}</p>
-    <a href="/login">→ Логин</a> | <a href="/">→ Главная</a>
-    """
-
-# ========================================
-# ✅ 1.11 АДМИН ПАНЕЛЬ
-# ========================================
-@app.route('/admin', methods=['GET', 'POST'])
-def admin_panel():
-    if not validate_session(admin_required=True):
-        flash('🚫 Доступ только для Назар & CatNap!')
-        return redirect(url_for('index'))
-    
-    player = get_player(session['user_id'])
-    action = request.form.get('action') if request.method == 'POST' else None
-    
-    if action == 'give_gold':
-        target = request.form.get('target_username')
-        amount = int(request.form.get('amount', 0))
-        target_player = get_player(generate_user_id(target))
-        if target_player:
-            target_player['gold'] += amount
-            update_player(target_player)
-            log_admin_action(player['username'], f"Выдал {amount} золота {target}")
-            flash(f'✅ {amount} золота выдано {target}!')
-    
-    elif action == 'mute':
-        target = request.form.get('target_username')
-        duration = float(request.form.get('duration', 0))  # часы
-        target_player = get_player(generate_user_id(target))
-        if target_player:
-            target_player['is_muted'] = True
-            target_player['mute_until'] = time.time() + (duration * 3600)
-            update_player(target_player)
-            flash(f'✅ {target} замучен на {duration}ч!')
-    
-    elif action == 'reset_stats':
-        target = request.form.get('target_username')
-        target_player = get_player(generate_user_id(target))
-        if target_player:
-            target_player.update({
-                'gold': 5000, 'silver': 25000, 'points': 0,
-                'wins': 0, 'battles': 0, 'tanks': []
-            })
-            update_player(target_player)
-            flash(f'✅ Статистика {target} сброшена!')
-    
-    # Статистика сервера
-    conn = sqlite3.connect('players.db')
-    c = conn.cursor()
-    c.execute('SELECT COUNT(*), SUM(points), AVG(points) FROM players')
-    server_stats = c.fetchone()
-    c.execute('SELECT username, gold, points FROM players ORDER BY points DESC LIMIT 10')
-    top_players = c.fetchall()
-    conn.close()
-    
-    return render_template('admin.html', 
-                         player=player,
-                         server_stats=server_stats,
-                         top_players=top_players)
-
-# ========================================
-# ✅ 1.12 ГЛАВНЫЕ РОУТЫ
-# ========================================
-@app.route('/')
-def index():
-    try:
-        # Безопасная проверка сессии
-        if 'user_id' not in session:
-            return redirect(url_for('login'))
-        
-        # Безопасная загрузка игрока
-        player = get_player(session['user_id'])
-        if not player:
-            session.clear()
-            return redirect(url_for('login'))
-        
-        return render_template('index.html', player=player)
-    except Exception as e:
-        print(f"INDEX ERROR: {e}")
-        return redirect(url_for('login'))
-
-from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Length, EqualTo
-import sqlite3
-from datetime import datetime, timedelta
-
-class RegisterForm(FlaskForm):
-    username = StringField('Логин', validators=[DataRequired(), Length(min=3, max=20)])
-    password = PasswordField('Пароль', validators=[DataRequired(), Length(min=6)])
-    submit = SubmitField('Зарегистрироваться')
-
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -1052,8 +549,6 @@ def register():
         try:
             conn = sqlite3.connect('players.db')
             cursor = conn.cursor()
-            
-            # ✅ АВТО-АДМИН для первых 3 пользователей!
             cursor.execute("SELECT COUNT(*) FROM players")
             total_users = cursor.fetchone()[0]
             role = 'admin' if total_users < 3 else 'player'
@@ -1062,9 +557,8 @@ def register():
             hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
             
             cursor.execute('''
-                INSERT INTO players (id, username, password, gold, silver, 
-                                  points, tanks, battles, wins, created_at, role)
-                VALUES (?, ?, ?, 5000, 100000, 0, '[]', 0, 0, ?, ?)
+                INSERT INTO players (id, username, password, gold, silver, created_at, role)
+                VALUES (?, ?, ?, 1500, 25000, ?, ?)
             ''', (player_id, username, hashed_pw, datetime.now().isoformat(), role))
             
             conn.commit()
@@ -1118,58 +612,180 @@ def login():
 
 @app.route('/logout')
 def logout():
-    session.clear()  # ← ОЧИЩАЕТ ВСЕ СЕССИИ
+    session.clear()
     flash('👋 До новых боев!')
     return redirect(url_for('login'))
 
 # ========================================
-# ✅ 1.13 УТИЛЬНЫЕ ФУНКЦИИ
+# ✅ ОСНОВНЫЕ МАРШРУТЫ ИГРЫ
 # ========================================
-def generate_user_id(username):
-    return hashlib.md5(username.encode()).hexdigest()
-
-@app.route('/daily', methods=['GET'])
-def daily():
+@app.route('/')
+def index():
     if not validate_session():
-        return jsonify({'error': 'Авторизация!'}), 401
+        return redirect(url_for('login'))
     
     player = get_player(session['user_id'])
-    now = time.time()
+    return render_template('index.html', player=player)
+
+@app.route('/shop')
+def shop():
+    if not validate_session():
+        return redirect(url_for('login'))
     
-    if now - player.get('last_daily', 0) < 86400:
-        return jsonify({'error': '⏰ Только раз в сутки!'})
+    player = get_player(session['user_id'])
+    owned_ids = set(player.get('tanks', []))
     
-    streak = player.get('daily_streak', 0) + 1
-    if streak > 7: streak = 1
+    # ✅ СПИСОК ТАНКОВ С ID
+    tanks_list = []
+    for tank_id, tank_data in TANKS.items():
+        tank_data_copy = tank_data.copy()
+        tank_data_copy['id'] = tank_id
+        tanks_list.append(tank_data_copy)
     
-    rewards = DAILY_REWARDS[str(streak)]
-    player.update({
-        'gold': player['gold'] + rewards['gold'],
-        'silver': player['silver'] + rewards['silver'],
-        'points': player['points'] + rewards['points'],
-        'daily_streak': streak,
-        'last_daily': now
-    })
+    return render_template('shop.html', player=player, tanks=tanks_list, owned_ids=owned_ids)
+
+@app.route('/garage')
+def garage():
+    if not validate_session():
+        return redirect(url_for('login'))
     
-    if streak == 7:
-        bonus_tank = random.choice([t for t in ALL_TANKS_LIST if t['tier'] <= 5])
-        player['tanks'].append(bonus_tank['id'])
-        rewards['bonus_tank'] = bonus_tank['name']
+    player = get_player(session['user_id'])
+    owned_ids = player.get('tanks', [])
+    
+    # ✅ ТАНКИ ИЗ ГАРАЖА
+    owned_tanks = []
+    for tank_id in owned_ids:
+        if tank_id in TANKS:
+            tank_data = TANKS[tank_id].copy()
+            tank_data['id'] = tank_id
+            owned_tanks.append(tank_data)
+    
+    return render_template('garage.html', player=player, owned_tanks=owned_tanks)
+
+@app.route('/battle', methods=['GET', 'POST'])
+def battle():
+    if not validate_session():
+        return redirect(url_for('login'))
+    
+    player = get_player(session['user_id'])
+    return render_template('battle.html', player=player)
+
+@app.route('/profile')
+@app.route('/profile/<user_id>')
+def profile(user_id=None):
+    if not validate_session():
+        return redirect(url_for('login'))
+    
+    player = get_player(session['user_id'])
+    return render_template('profile.html', player=player)
+
+@app.route('/buy/<tank_id>', methods=['POST'])
+def buy_tank(tank_id):
+    if not validate_session():
+        return redirect(url_for('login'))
+    
+    player = get_player(session['user_id'])
+    tank = TANKS.get(tank_id)
+    
+    if not tank:
+        flash('❌ Танк не найден!')
+        return redirect(url_for('shop'))
+    
+    if player['gold'] < tank['price']:
+        flash(f'❌ Нужно {tank["price"]:,} 🪙 (у вас {player["gold"]:,})')
+        return redirect(url_for('shop'))
+    
+    # ✅ ПОКУПКА
+    player['gold'] -= tank['price']
+    if tank_id not in player['tanks']:
+        player['tanks'].append(tank_id)
     
     update_player(player)
-    return jsonify({'success': True, 'rewards': rewards, 'streak': streak})
-
-@app.route('/api/stats')
-def api_stats():
-    if not validate_session():
-        return jsonify({'error': 'Unauthorized'}), 401
-    player = get_player(session['user_id'])
-    return jsonify(player)
+    flash(f'✅ Куплен "{tank["name"]}" за {tank["price"]:,} 🪙!')
+    return redirect(url_for('shop'))
 
 # ========================================
-# ✅ 1.14 ЗАПУСК СЕРВЕРА
+# ✅ ДОПОЛНИТЕЛЬНЫЕ СТРАНИЦЫ
+# ========================================
+@app.route('/leaderboard')
+def leaderboard():
+    if not validate_session():
+        return redirect(url_for('login'))
+    
+    return render_template('leaderboard.html', top_players=[])
+
+@app.route('/chat')
+def chat():
+    if not validate_session():
+        return redirect(url_for('login'))
+    return '''
+    <!DOCTYPE html>
+    <html><head><title>Чат</title>
+    <meta charset="UTF-8">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>body{background:linear-gradient(135deg,#1e1e2e 0%,#2a2a3e 100%);color:white;font-family:'Segoe UI',sans-serif;padding:40px;text-align:center;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+    .chat-container{max-width:600px;width:100%;background:rgba(30,30,46,0.9);backdrop-filter:blur(20px);border-radius:24px;border:1px solid rgba(255,255,255,0.1);padding:40px;box-shadow:0 20px 40px rgba(0,0,0,0.3);}
+    h1{font-size:3rem;font-weight:900;background:linear-gradient(135deg,#00d4ff,#7b42f6);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:2rem;}
+    .status{font-size:1.2rem;color:#a0a0a0;margin-bottom:2rem;}
+    .btn-home{display:inline-flex;items:center;gap:12px;background:linear-gradient(135deg,#16a34a,#15803d);color:white;padding:16px 32px;border-radius:16px;font-weight:700;font-size:1.1rem;text-decoration:none;transition:all 0.3s ease;box-shadow:0 8px 24px rgba(22,163,74,0.3);}
+    .btn-home:hover{background:linear-gradient(135deg,#15803d,#166534);transform:translateY(-2px);box-shadow:0 12px 32px rgba(22,163,74,0.4);}
+    </style></head>
+    <body>
+    <div class="chat-container">
+        <h1><i class="fas fa-comments"></i> Глобальный Чат</h1>
+        <div class="status">🔨 В разработке (Q1 2026)</div>
+        <a href="/" class="btn-home"><i class="fas fa-home"></i> ← Вернуться в ангар</a>
+    </div>
+    </body></html>
+    '''
+
+@app.route('/tournaments')
+def tournaments():
+    if not validate_session():
+        return redirect(url_for('login'))
+    return '''
+    <!DOCTYPE html>
+    <html><head><title>Турниры</title>
+    <meta charset="UTF-8">
+    <style>body{background:linear-gradient(135deg,#1e1e2e 0%,#2a2a3e 100%);color:white;font-family:'Segoe UI',sans-serif;padding:40px;text-align:center;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+    .tour-container{max-width:600px;width:100%;background:rgba(30,30,46,0.9);backdrop-filter:blur(20px);border-radius:24px;border:1px solid rgba(255,255,255,0.1);padding:40px;box-shadow:0 20px 40px rgba(0,0,0,0.3);}
+    h1{font-size:3rem;font-weight:900;background:linear-gradient(135deg,#fbbf24,#f59e0b);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:2rem;}
+    </style></head>
+    <body>
+    <div class="tour-container">
+        <h1><i class="fas fa-trophy"></i> Турниры</h1>
+        <div style="font-size:1.2rem;color:#a0a0a0;margin-bottom:2rem;">🔨 В разработке (Q2 2026)</div>
+        <a href="/" style="display:inline-flex;items:center;gap:12px;background:linear-gradient(135deg,#16a34a,#15803d);color:white;padding:16px 32px;border-radius:16px;font-weight:700;font-size:1.1rem;text-decoration:none;"><i class="fas fa-home"></i> ← Ангар</a>
+    </div>
+    </body></html>
+    '''
+
+@app.route('/achievements')
+def achievements():
+    if not validate_session():
+        return redirect(url_for('login'))
+    return '''
+    <!DOCTYPE html>
+    <html><head><title>Достижения</title>
+    <meta charset="UTF-8">
+    <style>body{background:linear-gradient(135deg,#1e1e2e 0%,#2a2a3e 100%);color:white;font-family:'Segoe UI',sans-serif;padding:40px;text-align:center;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+    .ach-container{max-width:600px;width:100%;background:rgba(30,30,46,0.9);backdrop-filter:blur(20px);border-radius:24px;border:1px solid rgba(255,255,255,0.1);padding:40px;box-shadow:0 20px 40px rgba(0,0,0,0.3);}
+    h1{font-size:3rem;font-weight:900;background:linear-gradient(135deg,#8b5cf6,#7c3aed);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:2rem;}
+    </style></head>
+    <body>
+    <div class="ach-container">
+        <h1><i class="fas fa-medal"></i> Достижения</h1>
+        <div style="font-size:1.2rem;color:#a0a0a0;margin-bottom:2rem;">🔨 В разработке</div>
+        <a href="/" style="display:inline-flex;items:center;gap:12px;background:linear-gradient(135deg,#16a34a,#15803d);color:white;padding:16px 32px;border-radius:16px;font-weight:700;font-size:1.1rem;text-decoration:none;"><i class="fas fa-home"></i> ← Ангар</a>
+    </div>
+    </body></html>
+    '''
+
+# ========================================
+# ✅ ИНИЦИАЛИЗАЦИЯ
 # ========================================
 if __name__ == '__main__':
-    init_db()  # Обязательно!
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    init_db()
+    app.run(debug=True, port=5000)
+else:
+    init_db()
