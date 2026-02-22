@@ -841,8 +841,24 @@ def claim_daily(username):
 
 @app.route('/garage')
 def garage():
+    if not validate_session():
+        return redirect(url_for('login'))
+    
     player = get_player(session['user_id'])
-    owned_tanks = [t for t in ALL_TANKS_LIST if t['id'] in player.get('tanks', [])]
+    if not player:
+        return redirect(url_for('login'))
+    
+    # ✅ ИСПРАВЛЕНИЕ: player['tanks'] это JSON список ID строк
+    owned_ids = set(player.get('tanks', []))
+    
+    # ✅ ФИЛЬТРУЕМ ТАНКИ ПО ID (строки!)
+    owned_tanks = []
+    for tank_id in owned_ids:
+        for tank in TANKS.values():  # TANKS это словарь {id: данные}
+            if tank_id == tank_id:  # Совпадение ID
+                owned_tanks.append(tank)
+                break
+    
     return render_template('garage.html', player=player, owned_tanks=owned_tanks)
 
 # ========================================
@@ -1007,7 +1023,7 @@ def profile(user_id):
         return redirect(url_for('login'))
     
     player = get_player(session['user_id'])
-    if player['id'] != user_id:
+    if not player or player['id'] != user_id:
         return render_template('404.html'), 404
     
     return render_template('profile.html', player=player)
@@ -1235,3 +1251,4 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
