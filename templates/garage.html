@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Гараж{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-12">
+    <h1 class="text-5xl font-black text-center mb-16 bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
+        🏪 Мой Гараж ({{ owned_tanks|length }})
+    </h1>
+    
+    {% if owned_tanks %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for tank in owned_tanks %}
+        <div class="bg-gray-800/50 backdrop-blur-xl p-8 rounded-3xl border border-gray-700/50 hover:border-blue-400/50 hover:shadow-2xl">
+            <div class="text-3xl font-bold text-white mb-4 text-center">{{ tank.name }}</div>
+            <div class="text-xl text-gray-300 mb-6">Ур. {{ tank.tier }} {{ tank.type }}</div>
+            <div class="space-y-2 text-center">
+                <div>❤️ {{ tank.hp }}</div>
+                <div>💥 {{ tank.damage }}</div>
+                <div>📏 {{ tank.pen }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-32">
+        <div class="text-8xl mb-8">🚫</div>
+        <h2 class="text-4xl font-bold text-gray-300 mb-8">Гараж пуст</h2>
+        <a href="/shop" class="inline-flex items-center bg-gradient-to-r from-emerald-600 to-green-600 text-white px-12 py-4 rounded-3xl font-bold text-xl">
+            → Купить первый танк
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
