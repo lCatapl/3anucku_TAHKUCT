@@ -1,24 +1,50 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Вход - Танковый Бот</title>
-    <meta charset="UTF-8">
-    <style>
-        body { font-family: Arial; background: #1a1a2e; color: white; padding: 50px; }
-        .form-container { max-width: 400px; margin: 0 auto; background: rgba(0,0,0,0.5); padding: 30px; border-radius: 15px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 8px; font-size: 16px; }
-        .btn { width: 100%; padding: 15px; font-size: 18px; background: #667eea; color: white; border: none; border-radius: 10px; cursor: pointer; }
-    </style>
-</head>
-<body>
-    <div class="form-container">
-        <h2>🔐 Вход</h2>
-        <form method="POST">
-            <input type="text" name="username" placeholder="Имя пользователя" required>
-            <input type="password" name="password" placeholder="Пароль" required>
-            <button type="submit" class="btn">✅ Войти</button>
+{% extends "base.html" %}
+{% block title %}Вход - ТанкУстик{% endblock %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full glass-panel p-12 space-y-8">
+        <div>
+            <div class="mx-auto h-24 w-24 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center shadow-2xl mb-8">
+                <i class="fas fa-tank-rumble text-4xl text-white"></i>
+            </div>
+            <h2 class="mt-6 text-center text-4xl font-black text-white tracking-tight">
+                Вход в ангар
+            </h2>
+        </div>
+        <form class="mt-8 space-y-6" method="POST" action="/login">
+            <div class="rounded-md shadow-sm -space-y-px">
+                <div>
+                    <label for="username" class="sr-only">Имя пользователя</label>
+                    <input id="username" name="username" type="text" required 
+                           class="w-full px-6 py-5 border border-transparent rounded-2xl appearance-none bg-white/10 backdrop-blur-sm placeholder-gray-400 text-white placeholder-white/50 text-xl font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/50 focus:border-transparent transition-all" 
+                           placeholder="Назар / Admin">
+                </div>
+                <div>
+                    <label for="password" class="sr-only">Пароль</label>
+                    <input id="password" name="password" type="password" required 
+                           class="w-full px-6 py-5 border border-transparent rounded-2xl appearance-none bg-white/10 backdrop-blur-sm placeholder-gray-400 text-white placeholder-white/50 text-xl font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/50 focus:border-transparent transition-all mt-px" 
+                           placeholder="admin123">
+                </div>
+            </div>
+            <div>
+                <button type="submit" 
+                        class="group relative w-full flex justify-center py-5 px-8 border border-transparent text-xl font-bold rounded-2xl text-white bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-emerald-500 shadow-2xl hover:shadow-3xl hover:-translate-y-1 transition-all duration-300 transform">
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-4">
+                        <i class="fas fa-sign-in-alt group-hover:rotate-180 transition-transform duration-300"></i>
+                    </span>
+                    <span class="ml-4">🚀 Войти в ангар</span>
+                </button>
+            </div>
         </form>
-        <p style="margin-top: 20px;"><a href="/register" style="color: #667eea;">Создать аккаунт</a></p>
+        <div class="text-center">
+            <a href="/register" class="text-lg font-semibold text-emerald-400 hover:text-emerald-300 transition-colors">
+                Нет аккаунта? <span class="font-black">Регистрация</span>
+            </a>
+        </div>
+        <div class="text-center text-gray-400 text-sm pt-8 border-t border-white/20">
+            <div>👑 Админ: Admin</div>
+            <div>🎮 Назар: Назар</div>
+        </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}
