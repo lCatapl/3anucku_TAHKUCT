@@ -10,7 +10,10 @@ from flask_wtf.csrf import CSRFProtect
 import secrets
 
 app = Flask(__name__)
-app.secret_key = 'tankist_v9.6_super_secret_key_2026'
+app.secret_key = '3anucku-tankuct-super-secret-2026-kaluga-alexin'  # ← ОБЯЗАТЕЛЬНО!
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 час
 
 WTF_CSRF_ENABLED = False  # ← ГЛАВНЫЙ ФИКС
 app.config['WTF_CSRF_ENABLED'] = False
@@ -47,20 +50,16 @@ def has_permission(username, permission):
     return False
 
 # Глобальная проверка сессии
-def validate_session(admin_required=False):
-    if not session.get('logged_in') or not session.get('user_id'):
+def validate_session():
+    if 'user_id' not in session:
         return False
-    player = get_player(session['user_id'])
-    if not player or player.get('username') != session.get('username'):
+    
+    try:
+        player = get_player(session['user_id'])
+        return bool(player)
+    except:
         session.clear()
         return False
-    # Проверка токена
-    if player.get('session_token') != session.get('session_token'):
-        session.clear()
-        return False
-    if admin_required and not is_superadmin(player.get('username', '')):
-        return False
-    return True
 
 # ========================================
 # ✅ 1.1 ПОЛНЫЙ СПИСОК 60+ ТАНКОВ v9.4
@@ -1056,11 +1055,16 @@ def admin_panel():
 # ========================================
 @app.route('/')
 def index():
+    print(f"INDEX SESSION: {session}")  # DEBUG
+    
     if not validate_session():
+        print("❌ NO SESSION - redirect to login")
         return redirect(url_for('login'))
     
     player = get_player(session['user_id'])
-    return render_template('index.html', player=player, session=session)
+    print(f"✅ PLAYER LOADED: {player['username']}")
+    
+    return render_template('index.html', player=player)
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
@@ -1115,41 +1119,43 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    error = ""
-    
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
         
+        print(f"DEBUG LOGIN: username={username}")  # ← ПРОВЕРКА
+        
         try:
-            import sqlite3, bcrypt
             conn = sqlite3.connect('players.db')
             cursor = conn.cursor()
-            cursor.execute("SELECT id, password FROM players WHERE username=?", (username,))
+            cursor.execute("SELECT id, username, password FROM players WHERE username=?", (username,))
             player = cursor.fetchone()
-            conn.close()
             
-            if player and bcrypt.checkpw(password.encode(), player[1].encode()):
+            if player and bcrypt.checkpw(password.encode(), player[2].encode()):
+                # ✅ ПРАВИЛЬНОЕ СОЗДАНИЕ SESSION
                 session['user_id'] = player[0]
-                session['username'] = username
-                return redirect(url_for('index'))  # или 'shop'
-            else:
-                error = "❌ Неверный логин/пароль!"
+                session['username'] = player[1]
+                session.modified = True  # ← ФОРСИРУЕТ СОХРАНЕНИЕ
                 
-        except:
-            error = "❌ Ошибка сервера!"
+                print(f"✅ SESSION СОЗДАН: {session}")  # DEBUG
+                flash('✅ Добро пожаловать в ангар!')
+                return redirect(url_for('index'))
+            else:
+                flash('❌ Неверный логин или пароль!')
+                
+        except Exception as e:
+            print(f"LOGIN ERROR: {e}")
+            flash('❌ Ошибка входа!')
+        finally:
+            conn.close()
     
-    return render_template('login.html', error=error)
+    return render_template('login.html', error="")
 
 @app.route('/logout')
 def logout():
-    session.clear()
-    # Очистка всех попыток входа
-    for key in list(session.keys()):
-        if key.startswith('login_attempts_'):
-            session.pop(key, None)
-    flash('👋 До свидания!')
-    return redirect(url_for('index'))
+    session.clear()  # ← ОЧИЩАЕТ ВСЕ СЕССИИ
+    flash('👋 До новых боев!')
+    return redirect(url_for('login'))
 
 # ========================================
 # ✅ 1.13 УТИЛЬНЫЕ ФУНКЦИИ
@@ -1210,15 +1216,3 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
-
-
-
-
-
-
-
-
-
-
-
-
