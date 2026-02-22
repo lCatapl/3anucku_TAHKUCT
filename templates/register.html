@@ -1,42 +1,50 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Регистрация</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-900 min-h-screen flex items-center justify-center p-4">
-    <div class="bg-gray-800 rounded-2xl p-8 max-w-md w-full shadow-2xl">
-        <h1 class="text-3xl font-bold text-white text-center mb-8">🛡️ Записки Танкиста</h1>
-        
-        <form method="POST" class="space-y-6">
-            {% if error %}
-                <div class="bg-red-600 text-white p-4 rounded-xl">{{ error }}</div>
-            {% endif %}
-            
-            <div>
-                <label class="block text-gray-300 mb-2">Логин (3-20 символов)</label>
-                <input type="text" name="username" required minlength="3" maxlength="20"
-                       class="w-full p-4 bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                       placeholder="минимум 3 символа">
+{% extends "base.html" %}
+{% block title %}Регистрация - ТанкУстик{% endblock %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full glass-panel p-12 space-y-8">
+        <div>
+            <div class="mx-auto h-24 w-24 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-2xl mb-8">
+                <i class="fas fa-user-plus text-4xl text-white"></i>
             </div>
-            
-            <div>
-                <label class="block text-gray-300 mb-2">Пароль (минимум 6 символов)</label>
-                <input type="password" name="password" required minlength="6"
-                       class="w-full p-4 bg-gray-700 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                       placeholder="минимум 6 символов">
+            <h2 class="mt-6 text-center text-4xl font-black text-white tracking-tight">
+                Новый танкист
+            </h2>
+            <p class="mt-2 text-center text-xl text-gray-300">Создайте аккаунт за 10 секунд</p>
+        </div>
+        <form class="mt-8 space-y-6" method="POST" action="/register">
+            <div class="rounded-md shadow-sm -space-y-px">
+                <div>
+                    <label for="username" class="sr-only">Имя пользователя</label>
+                    <input id="username" name="username" type="text" required minlength="3" maxlength="16"
+                           class="w-full px-6 py-5 border border-transparent rounded-2xl appearance-none bg-white/10 backdrop-blur-sm placeholder-gray-400 text-white placeholder-white/50 text-xl font-medium focus:outline-none focus:ring-4 focus:ring-purple-500/50 focus:border-transparent transition-all" 
+                           placeholder="CatNap_WoT (3-16 символов)">
+                </div>
+                <div>
+                    <label for="password" class="sr-only">Пароль</label>
+                    <input id="password" name="password" type="password" required minlength="6"
+                           class="w-full px-6 py-5 border border-transparent rounded-2xl appearance-none bg-white/10 backdrop-blur-sm placeholder-gray-400 text-white placeholder-white/50 text-xl font-medium focus:outline-none focus:ring-4 focus:ring-purple-500/50 focus:border-transparent transition-all mt-px" 
+                           placeholder="Минимум 6 символов">
+                </div>
             </div>
-            
-            <button type="submit" 
-                    class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-8 rounded-xl font-bold hover:from-blue-500 hover:to-purple-500 transition-all">
-                Зарегистрироваться
-            </button>
+            <div>
+                <button type="submit" 
+                        class="group relative w-full flex justify-center py-5 px-8 border border-transparent text-xl font-bold rounded-2xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-purple-500 shadow-2xl hover:shadow-3xl hover:-translate-y-1 transition-all duration-300 transform">
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-4">
+                        <i class="fas fa-rocket group-hover:rotate-12 transition-transform duration-300"></i>
+                    </span>
+                    <span class="ml-4">🎮 Создать аккаунт</span>
+                </button>
+            </div>
         </form>
-        
-        <p class="text-center mt-6 text-gray-400">
-            Есть аккаунт? <a href="/login" class="text-blue-400 hover:underline">Войти</a>
-        </p>
+        <div class="text-center">
+            <a href="/login" class="text-lg font-semibold text-purple-400 hover:text-purple-300 transition-colors">
+                Уже есть аккаунт? <span class="font-black">Войти</span>
+            </a>
+        </div>
+        <div class="text-xs text-gray-500 text-center pt-8 border-t border-white/20">
+            Первый аккаунт получит роль <span class="font-bold text-emerald-400">Admin</span>
+        </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}
