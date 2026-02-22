@@ -36,7 +36,7 @@
                         <!-- Статистика в шапке -->
                         <div class="hidden md:flex items-center space-x-4 bg-gray-700/50 backdrop-blur-sm px-4 py-2 rounded-2xl border border-gray-600/50">
                             <div class="text-yellow-400 font-bold text-sm">
-                                <i class="fas fa-coins mr-1"></i>{{ player.gold|default(0)|int }}
+                                <i class="fas fa-coins mr-1"></i>{{ player.gold|default(0)|int if player else 0 }}
                             </div>
                             <div class="text-gray-300 font-bold text-sm">
                                 <i class="fas fa-coins mr-1" style="color: #c0c0c0;"></i>{{ player.silver|default(0)|int|comma }}
@@ -119,3 +119,4 @@
     </script>
 </body>
 </html>
+
