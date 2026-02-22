@@ -864,68 +864,23 @@ def garage():
 # ========================================
 # ✅ 1.8 МАГАЗИН ТАНКОВ
 # ========================================
-@app.route('/shop', methods=['GET', 'POST'])
+@app.route('/shop')
 def shop():
     if not validate_session():
         return redirect(url_for('login'))
     
     player = get_player(session['user_id'])
-    owned_ids = set(t for t in player.get('tanks', []))
+    owned_ids = set(player.get('tanks', []))
     
-    # Фильтры
-    nation_filter = request.args.get('nation', 'all')
-    tier_filter = request.args.get('tier', 'all')
-    type_filter = request.args.get('type', 'all')
+    # ✅ tanks = СПИСОК, не словарь!
+    tanks_list = []
+    for tank_id, tank_data in TANKS.items():
+        tank_data['id'] = tank_id  # Добавляем ID для шаблона
+        tanks_list.append(tank_data)
     
-    filtered_tanks = ALL_TANKS_LIST
-    if nation_filter != 'all':
-        filtered_tanks = [t for t in filtered_tanks if t['nation'] == nation_filter]
-    if tier_filter != 'all':
-        filtered_tanks = [t for t in filtered_tanks if t['tier'] == int(tier_filter)]
-    if type_filter != 'all':
-        filtered_tanks = [t for t in filtered_tanks if t['type'] == type_filter]
-    
-    if request.method == 'POST':
-        tank_id = request.form.get('tank_id')
-        payment = request.form.get('payment_method', 'silver')
-        
-        tank = next((t for t in ALL_TANKS_LIST if t['id'] == tank_id), None)
-        if tank and tank['id'] not in owned_ids:
-            price = tank['price']
-            balance = player['gold'] if payment == 'gold' else player['silver']
-            
-            if balance >= price:
-                player['tanks'].append(tank['id'])
-                if payment == 'gold':
-                    player['gold'] -= price
-                else:
-                    player['silver'] -= price
-                player['purchases'] = player.get('purchases', 0) + 1
-                update_player(player)
-                
-                # Админ лог
-                if is_superadmin(player['username']):
-                    log_admin_action(player['username'], f"Купил {tank['name']}")
-                
-                flash(f'✅ Куплен {tank["name"]} за {price:,} {payment}!')
-                return redirect(url_for('shop', nation=nation_filter, tier=tier_filter, type=type_filter))
-        
-        flash('❌ Недостаточно средств или танк уже куплен!')
-        return redirect(url_for('shop'))
-    
-    return render_template('shop.html', 
-                         player=player, 
-                         tanks=filtered_tanks,
-                         owned_ids=owned_ids,
-                         filters={'nation': nation_filter, 'tier': tier_filter, 'type': type_filter})
+    return render_template('shop.html', player=player, tanks=tanks_list, owned_ids=owned_ids)
 
-# 🆕 ПРОФИЛЬ (ИСПРАВЛЕННЫЙ)
-@app.route('/profile')
-def profile():
-    if not validate_session():
-        return redirect(url_for('login'))
-    player = get_player(session['user_id'])
-    return render_template('profile.html', player=player)
+
 
 # 🆕 ПОКУПКА ТАНКА
 @app.route('/buy/<tank_id>', methods=['POST'])
@@ -948,6 +903,28 @@ def buy_tank(tank_id):
     update_player(player)
     flash(f'✅ Куплен {tank["name"]} за {tank["price"]:,}!')
     return redirect(url_for('shop'))
+
+# ✅ ПРОФИЛЬ (2 ВАРИАНТА)
+@app.route('/profile')
+@app.route('/profile/<user_id>') 
+def profile(user_id=None):
+    if not validate_session():
+        return redirect(url_for('login'))
+    player = get_player(session['user_id'])
+    return render_template('profile.html', player=player)
+
+# ✅ АРЕНА (GET+POST)
+@app.route('/battle', methods=['GET', 'POST'])
+def battle():
+    if not validate_session(): return redirect(url_for('login'))
+    player = get_player(session['user_id'])
+    return render_template('battle.html', player=player)
+
+# ✅ ЛИДЕРБОРД (заглушка)
+@app.route('/leaderboard')
+def leaderboard():
+    if not validate_session(): return redirect(url_for('login'))
+    return render_template('leaderboard.html', top_players=[])
 
 # 🆕 ЗАГЛУШКИ
 @app.route('/chat')
@@ -972,96 +949,6 @@ def test():
     <p>Session: {session}</p>
     <a href="/login">→ Логин</a> | <a href="/">→ Главная</a>
     """
-
-# ========================================
-# ✅ 1.9 БОИ И ТУРНИРЫ (ПРОСТЫЕ)
-# ========================================
-@app.route('/battle', methods=['POST'])
-def battle():
-    if not validate_session():
-        return jsonify({'error': 'Unauthorized!'}), 401
-    
-    player = get_player(session['user_id'])
-    if not player.get('tanks'):
-        return jsonify({'error': 'Нет танков для боя!'}), 400
-    
-    # Выбор танков
-    player_tank_id = request.json.get('tank_id') or random.choice(player['tanks'])
-    player_tank = next(t for t in ALL_TANKS_LIST if t['id'] == player_tank_id)
-    enemy_tank = random.choice(ALL_TANKS_LIST)
-    
-    # Симуляция боя (15 раундов макс)
-    player_hp, enemy_hp = player_tank['hp'], enemy_tank['hp']
-    battle_log = []
-    
-    for round_num in range(15):
-        if player_hp <= 0 or enemy_hp <= 0:
-            break
-        
-        # Атака игрока (учет пробития)
-        penetration_chance = player_tank['pen'] / enemy_tank['hp'] * 100
-        if random.randint(1, 100) <= penetration_chance:
-            damage = random.randint(player_tank['damage']//2, player_tank['damage'])
-            enemy_hp = max(0, enemy_hp - damage)
-            battle_log.append(f"💥 {damage} урона врагу!")
-        else:
-            battle_log.append("🛡️ Рикошет!")
-        
-        if enemy_hp <= 0:
-            break
-        
-        # Контратака врага
-        enemy_penetration = enemy_tank['pen'] / player_tank['hp'] * 100
-        if random.randint(1, 100) <= enemy_penetration:
-            damage = random.randint(enemy_tank['damage']//2, enemy_tank['damage'])
-            player_hp = max(0, player_hp - damage)
-            battle_log.append(f"💥 Враг нанес {damage} урона!")
-        else:
-            battle_log.append("🛡️ Ваш рикошет!")
-    
-    # Награды
-    win = player_hp > 0
-    tier_diff = player_tank['tier'] - enemy_tank['tier']
-    multiplier = max(1.0, 1 + tier_diff * 0.2)
-    
-    rewards = {
-        'gold': int(random.randint(800, 2500) * multiplier) if win else random.randint(150, 600),
-        'silver': int(random.randint(4000, 12000) * multiplier) if win else random.randint(800, 2500),
-        'points': int(random.randint(400, 1200) * multiplier) if win else random.randint(80, 250)
-    }
-    
-    # Обновление статистики
-    player['gold'] += rewards['gold']
-    player['silver'] += rewards['silver']
-    player['points'] += rewards['points']
-    player['battles'] += 1
-    if win:
-        player['wins'] += 1
-    
-    update_player(player)
-    
-    return jsonify({
-        'win': win,
-        'player_tank': player_tank['name'],
-        'enemy_tank': enemy_tank['name'],
-        'player_hp_left': max(0, player_hp),
-        'enemy_hp_left': max(0, enemy_hp),
-        'rewards': rewards,
-        'battle_log': battle_log[-8:],
-        'winrate': round(player['wins']/player['battles']*100, 1) if player['battles'] else 0
-    })
-
-# ========================================
-# ✅ 1.10 ЛИДЕРБОРДЫ И ПРОФИЛИ
-# ========================================
-@app.route('/leaderboard')
-def leaderboard():
-    conn = sqlite3.connect('players.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT username, points, wins, battles FROM players ORDER BY points DESC LIMIT 50")
-    top_players = cursor.fetchall()
-    conn.close()
-    return render_template('leaderboard.html', top_players=top_players)
 
 # ========================================
 # ✅ 1.11 АДМИН ПАНЕЛЬ
@@ -1286,5 +1173,3 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
-
-
