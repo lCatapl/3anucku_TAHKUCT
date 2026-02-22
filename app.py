@@ -9,14 +9,20 @@ from wtforms.validators import Length, Regexp, EqualTo, DataRequired
 from flask_wtf.csrf import CSRFProtect
 import secrets
 
-app = Flask(__name__)
-app.secret_key = '3anucku-tankuct-super-secret-2026-kaluga-alexin'  # ← ОБЯЗАТЕЛЬНО!
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 час
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
-WTF_CSRF_ENABLED = False  # ← ГЛАВНЫЙ ФИКС
-app.config['WTF_CSRF_ENABLED'] = False
+app = Flask(__name__)
+app.secret_key = '3anucku-tankuct-2026-super-secret-key-alexin-kaluga'
+
+# Глобальный обработчик ошибок
+@app.errorhandler(500)
+def internal_error(error):
+    return "🚫 Серверная ошибка! Проверь логи Render.", 500
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
 
 def comma(value):
     return "{:,}".format(value).replace(',', ' ')
@@ -687,28 +693,28 @@ def get_rank_progress(points):
 # ========================================
 # ✅ 1.4 БАЗА ДАННЫХ И ИГРОКИ
 # ========================================
-def init_db():
-    conn = sqlite3.connect('players.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS players (
-            id TEXT PRIMARY KEY,
-            username TEXT UNIQUE,
-            password TEXT,
-            gold INTEGER DEFAULT 5000,
-            silver INTEGER DEFAULT 100000,
-            points INTEGER DEFAULT 0,
-            tanks TEXT DEFAULT '[]',
-            battles INTEGER DEFAULT 0,
-            wins INTEGER DEFAULT 0,
-            created_at TEXT,
-            role TEXT DEFAULT 'player'
-        )
-    ''')
-    conn.commit()
-    conn.close()
+import json  # ← ДОБАВЬ!
 
-# Вызвать при запуске
+def init_db():
+    try:
+        conn = sqlite3.connect('players.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS players (
+                id TEXT PRIMARY KEY, username TEXT UNIQUE, password TEXT,
+                gold INTEGER DEFAULT 5000, silver INTEGER DEFAULT 100000,
+                points INTEGER DEFAULT 0, tanks TEXT DEFAULT '[]',
+                battles INTEGER DEFAULT 0, wins INTEGER DEFAULT 0,
+                created_at TEXT, role TEXT DEFAULT 'player'
+            )
+        ''')
+        conn.commit()
+        conn.close()
+        print("✅ База данных готова!")
+    except Exception as e:
+        print(f"DB INIT ERROR: {e}")
+
+# ВЫЗВАТЬ при запуске
 init_db()
 
 def create_player(username, user_id):
@@ -724,31 +730,25 @@ def create_player(username, user_id):
     return True
 
 def get_player(user_id):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('SELECT * FROM players WHERE user_id = ?', (user_id,))
-    player = c.fetchone()
-    conn.close()
-    
-    if player:
-        return {
-            "user_id": player[0],
-            "username": player[1],
-            "gold": player[2],
-            "silver": player[3],
-            "points": player[4],
-            "rank_id": player[5],
-            "tanks": json.loads(player[6]) if player[6] else [],
-            "wins": player[7],
-            "battles": player[8],
-            "daily_streak": player[9],
-            "last_daily": player[10],
-            "is_muted": player[11] == 1,
-            "mute_until": player[12],
-            "role": player[13],
-            "join_date": player[14]
-        }
-    return None
+    try:
+        conn = sqlite3.connect('players.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM players WHERE id=?", (user_id,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        if row:
+            player = {
+                'id': row[0], 'username': row[1], 'password': row[2],
+                'gold': row[3] or 0, 'silver': row[4] or 0, 
+                'points': row[5] or 0, 'tanks': json.loads(row[6] or '[]'),
+                'battles': row[7] or 0, 'wins': row[8] or 0
+            }
+            return player
+        return None
+    except Exception as e:
+        print(f"GET_PLAYER ERROR: {e}")
+        return None
 
 def update_player(player_data):
     conn = sqlite3.connect(DB_PATH)
@@ -891,6 +891,14 @@ def shop():
                          tanks=filtered_tanks,
                          owned_ids=owned_ids,
                          filters={'nation': nation_filter, 'tier': tier_filter, 'type': type_filter})
+
+@app.route('/test')
+def test():
+    return f"""
+    <h1>✅ Сервер работает!</h1>
+    <p>Session: {session}</p>
+    <a href="/login">→ Логин</a> | <a href="/">→ Главная</a>
+    """
 
 # ========================================
 # ✅ 1.9 БОИ И ТУРНИРЫ (ПРОСТЫЕ)
@@ -1055,16 +1063,21 @@ def admin_panel():
 # ========================================
 @app.route('/')
 def index():
-    print(f"INDEX SESSION: {session}")  # DEBUG
-    
-    if not validate_session():
-        print("❌ NO SESSION - redirect to login")
+    try:
+        # Безопасная проверка сессии
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        
+        # Безопасная загрузка игрока
+        player = get_player(session['user_id'])
+        if not player:
+            session.clear()
+            return redirect(url_for('login'))
+        
+        return render_template('index.html', player=player)
+    except Exception as e:
+        print(f"INDEX ERROR: {e}")
         return redirect(url_for('login'))
-    
-    player = get_player(session['user_id'])
-    print(f"✅ PLAYER LOADED: {player['username']}")
-    
-    return render_template('index.html', player=player)
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
@@ -1216,3 +1229,4 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
