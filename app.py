@@ -919,6 +919,52 @@ def shop():
                          owned_ids=owned_ids,
                          filters={'nation': nation_filter, 'tier': tier_filter, 'type': type_filter})
 
+# 🆕 ПРОФИЛЬ (ИСПРАВЛЕННЫЙ)
+@app.route('/profile')
+def profile():
+    if not validate_session():
+        return redirect(url_for('login'))
+    player = get_player(session['user_id'])
+    return render_template('profile.html', player=player)
+
+# 🆕 ПОКУПКА ТАНКА
+@app.route('/buy/<tank_id>', methods=['POST'])
+def buy_tank(tank_id):
+    if not validate_session():
+        return redirect(url_for('login'))
+    
+    player = get_player(session['user_id'])
+    tank = TANKS.get(tank_id)
+    
+    if not tank or player['gold'] < tank['price']:
+        flash('❌ Недостаточно золота!')
+        return redirect(url_for('shop'))
+    
+    # Покупка
+    player['gold'] -= tank['price']
+    if tank_id not in player['tanks']:
+        player['tanks'].append(tank_id)
+    
+    update_player(player)
+    flash(f'✅ Куплен {tank["name"]} за {tank["price"]:,}!')
+    return redirect(url_for('shop'))
+
+# 🆕 ЗАГЛУШКИ
+@app.route('/chat')
+def chat():
+    if not validate_session(): return redirect(url_for('login'))
+    return "<h1>💬 Чат в разработке</h1><a href='/'>← Ангар</a>"
+
+@app.route('/tournaments')
+def tournaments():
+    if not validate_session(): return redirect(url_for('login'))
+    return "<h1>🏆 Турниры в разработке</h1><a href='/'>← Ангар</a>"
+
+@app.route('/achievements')
+def achievements():
+    if not validate_session(): return redirect(url_for('login'))
+    return "<h1>🏅 Достижения в разработке</h1><a href='/'>← Ангар</a>"
+
 @app.route('/test')
 def test():
     return f"""
@@ -1016,17 +1062,6 @@ def leaderboard():
     top_players = cursor.fetchall()
     conn.close()
     return render_template('leaderboard.html', top_players=top_players)
-    
-@app.route('/profile/<user_id>')
-def profile(user_id):
-    if not validate_session():
-        return redirect(url_for('login'))
-    
-    player = get_player(session['user_id'])
-    if not player or player['id'] != user_id:
-        return render_template('404.html'), 404
-    
-    return render_template('profile.html', player=player)
 
 # ========================================
 # ✅ 1.11 АДМИН ПАНЕЛЬ
@@ -1251,4 +1286,5 @@ if __name__ == '__main__':
     init_db()  # Обязательно!
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
