@@ -1,33 +1,177 @@
 {% extends "base.html" %}
-{% block title %}Гараж{% endblock %}
+{% block title %}Гараж - {{ player.username }}{% endblock %}
 {% block content %}
-<div class="max-w-6xl mx-auto px-4 py-12">
-    <h1 class="text-5xl font-black text-center mb-16 bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
-        🏪 Мой Гараж ({{ owned_tanks|length }})
-    </h1>
-    
+<div class="max-w-7xl mx-auto px-4 py-20">
+    <!-- Заголовок -->
+    <div class="text-center mb-20">
+        <h1 class="hero-title mb-8">
+            <i class="fas fa-warehouse"></i>
+            Ваш Гараж
+        </h1>
+        <div class="text-3xl font-bold flex items-center justify-center gap-4 flex-wrap">
+            <span>Танков:</span>
+            <span class="text-4xl text-emerald-400">{{ owned_tanks|length }}</span>
+            <span>/ {{ player.tanks|length }} всего</span>
+        </div>
+    </div>
+
     {% if owned_tanks %}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <!-- ФИЛЬТРЫ ГАРАЖА -->
+    <div class="glass-panel p-8 mb-12">
+        <h2 class="text-3xl font-bold mb-8 flex items-center gap-3">
+            <i class="fas fa-filter"></i> Фильтры гаража
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <select id="garageNation" class="w-full bg-white/10 border border-white/20 rounded-2xl p-4 text-white text-lg backdrop-blur-sm">
+                <option value="">🎯 Все нации</option>
+                <option value="ussr">🇷🇺 СССР</option>
+                <option value="germany">🇩🇪 Германия</option>
+            </select>
+            <select id="garageTier" class="w-full bg-white/10 border border-white/20 rounded-2xl p-4 text-white text-lg backdrop-blur-sm">
+                <option value="">🎯 Все уровни</option>
+                <option value="1">I</option>
+                <option value="2">II</option>
+                <option value="3">III</option>
+                <option value="4">IV</option>
+                <option value="5">V</option>
+                <option value="6">VI</option>
+                <option value="7">VII</option>
+                <option value="8">VIII</option>
+                <option value="9">IX</option>
+                <option value="10">X</option>
+                <option value="11">XI</option>
+            </select>
+            <button onclick="clearGarageFilters()" class="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 text-white py-4 px-8 rounded-2xl font-bold text-lg">
+                <i class="fas fa-times"></i> Очистить
+            </button>
+        </div>
+    </div>
+
+    <!-- ТАБЛИЦА ТАНКОВ -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 garage-grid" id="garageGrid">
         {% for tank in owned_tanks %}
-        <div class="bg-gray-800/50 backdrop-blur-xl p-8 rounded-3xl border border-gray-700/50 hover:border-blue-400/50 hover:shadow-2xl">
-            <div class="text-3xl font-bold text-white mb-4 text-center">{{ tank.name }}</div>
-            <div class="text-xl text-gray-300 mb-6">Ур. {{ tank.tier }} {{ tank.type }}</div>
-            <div class="space-y-2 text-center">
-                <div>❤️ {{ tank.hp }}</div>
-                <div>💥 {{ tank.damage }}</div>
-                <div>📏 {{ tank.pen }}</div>
+        <div class="garage-tank-card group relative overflow-hidden h-full" 
+             data-nation="{{ tank.nation|default('ussr') }}" 
+             data-tier="{{ tank.tier }}">
+            
+            <div class="glass-panel p-8 h-full flex flex-col justify-between transition-all duration-500 group-hover:scale-[1.02] relative z-10">
+                <!-- ПРЕМИУМ -->
+                {% if tank.premium %}
+                <div class="absolute top-4 right-4 bg-gradient-to-br from-yellow-400 to-orange-500 text-black text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
+                    ⭐ ПРЕМИУМ
+                </div>
+                {% endif %}
+
+                <!-- НАЦИЯ + УРОВЕНЬ -->
+                <div class="flex justify-between items-start mb-6">
+                    <div class="text-3xl font-bold">
+                        {% if tank.nation == 'ussr' %}🇷🇺{% elif tank.nation == 'germany' %}🇩🇪{% endif %}
+                    </div>
+                    <div class="text-3xl font-black bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+                        Ур. {{ tank.tier }}
+                    </div>
+                </div>
+
+                <!-- НАЗВАНИЕ -->
+                <h3 class="text-2xl font-black mb-6 text-center leading-tight flex-1">
+                    {{ tank.name }}
+                </h3>
+
+                <!-- СТАТЫ -->
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="p-4 bg-gradient-to-br from-red-500/20 to-red-600/20 rounded-2xl border border-red-400/30 text-center">
+                        <div class="text-2xl font-bold text-red-400">{{ tank.hp }}</div>
+                        <small class="text-red-300 uppercase tracking-wider">HP</small>
+                    </div>
+                    <div class="p-4 bg-gradient-to-br from-yellow-500/20 to-orange-600/20 rounded-2xl border border-yellow-400/30 text-center">
+                        <div class="text-2xl font-bold text-yellow-400">{{ tank.damage }}</div>
+                        <small class="text-yellow-300 uppercase tracking-wider">Урон</small>
+                    </div>
+                    <div class="p-4 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-2xl border border-blue-400/30 text-center">
+                        <div class="text-2xl font-bold text-blue-400">{{ tank.pen }}</div>
+                        <small class="text-blue-300 uppercase tracking-wider">Пробитие</small>
+                    </div>
+                    <div class="p-4 bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 rounded-2xl border border-emerald-400/30 text-center">
+                        <div class="text-2xl font-bold text-emerald-400">{{ tank.speed }}</div>
+                        <small class="text-emerald-300 uppercase tracking-wider">Скорость</small>
+                    </div>
+                </div>
+
+                <!-- СТАТУС И КНОПКИ -->
+                <div class="flex gap-3 pt-4 border-t border-white/10">
+                    <div class="flex-1 text-center py-3 px-4 bg-gradient-to-r from-emerald-500/30 to-green-500/30 rounded-xl border border-emerald-400/50">
+                        <div class="text-xl font-bold text-emerald-400">Готов к бою</div>
+                        <div class="text-sm text-emerald-300">100% экипаж</div>
+                    </div>
+                    <a href="/battle" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white py-3 px-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
+                        <i class="fas fa-fire"></i>
+                        В бой!
+                    </a>
+                </div>
             </div>
         </div>
         {% endfor %}
     </div>
+
     {% else %}
+    <!-- ПУСТОЙ ГАРАЖ -->
     <div class="text-center py-32">
-        <div class="text-8xl mb-8">🚫</div>
-        <h2 class="text-4xl font-bold text-gray-300 mb-8">Гараж пуст</h2>
-        <a href="/shop" class="inline-flex items-center bg-gradient-to-r from-emerald-600 to-green-600 text-white px-12 py-4 rounded-3xl font-bold text-xl">
-            → Купить первый танк
-        </a>
+        <div class="glass-panel max-w-2xl mx-auto p-20">
+            <i class="fas fa-warehouse text-9xl text-gray-500 mb-8 opacity-50"></i>
+            <h2 class="text-5xl font-black mb-6 text-gray-400">Гараж пуст</h2>
+            <p class="text-xl text-gray-500 mb-12">Купите первый танк в магазине, чтобы начать бои!</p>
+            <a href="/shop" class="inline-flex items-center gap-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white px-12 py-6 rounded-3xl font-bold text-2xl shadow-2xl hover:shadow-3xl hover:-translate-y-2 transition-all">
+                <i class="fas fa-shopping-cart"></i>
+                Купить танк
+            </a>
+        </div>
     </div>
     {% endif %}
 </div>
+
+<script>
+function filterGarageTanks() {
+    const nation = document.getElementById('garageNation').value;
+    const tier = document.getElementById('garageTier').value;
+    
+    document.querySelectorAll('.garage-tank-card').forEach(card => {
+        const show = (!nation || card.dataset.nation === nation) &&
+                    (!tier || card.dataset.tier === tier);
+        card.style.display = show ? 'block' : 'none';
+    });
+}
+
+function clearGarageFilters() {
+    document.getElementById('garageNation').value = '';
+    document.getElementById('garageTier').value = '';
+    filterGarageTanks();
+}
+
+// Инициализация фильтров
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('garageNation').addEventListener('change', filterGarageTanks);
+    document.getElementById('garageTier').addEventListener('change', filterGarageTanks);
+});
+</script>
+
+<style>
+.garage-tank-card {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.garage-tank-card:nth-child(1) { transition-delay: 0.1s; }
+.garage-tank-card:nth-child(2) { transition-delay: 0.2s; }
+.garage-tank-card:nth-child(3) { transition-delay: 0.3s; }
+.group:hover .glass-panel {
+    box-shadow: 0 35px 80px -20px rgba(59, 130, 246, 0.4);
+}
+@keyframes slideInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 768px) {
+    .garage-grid { grid-template-columns: 1fr; }
+}
+</style>
 {% endblock %}
