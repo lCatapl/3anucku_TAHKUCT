@@ -484,30 +484,6 @@ TANKS = {
     "vz36": {"name": "Vz. 36", "tier": 6, "type": "TD", "price": 125000, "hp": 1220, "damage": 400, "pen": 258, "speed": 38, "premium": True},
 }
 
-def get_leaderboard():
-    """Реальные данные из БД - топ по серебру"""
-    try:
-        conn = sqlite3.connect('players.db')
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT username, silver, gold, role FROM players 
-            ORDER BY silver DESC LIMIT 50
-        """)
-        players = []
-        for i, row in enumerate(cursor.fetchall(), 1):
-            players.append({
-                'rank': i,
-                'username': row[0],
-                'silver': row[1],
-                'gold': row[2],
-                'tank_count': len(get_player_tanks(row[0])),
-                'level': min(row[1]//10000, 50)  # Уровень = серебро/10k
-            })
-        conn.close()
-        return players
-    except:
-        return []
-
 def get_player_tanks(player_id):
     """Сколько танков у игрока"""
     try:
@@ -541,43 +517,123 @@ def api_leaderboard():
 def init_db():
     conn = sqlite3.connect('players.db')
     cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS players (
-            id TEXT PRIMARY KEY,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            gold INTEGER DEFAULT 1500,
-            silver INTEGER DEFAULT 25000,
-            points INTEGER DEFAULT 0,
-            tanks TEXT DEFAULT '[]',
-            battles INTEGER DEFAULT 0,
-            wins INTEGER DEFAULT 0,
-            created_at TEXT,
-            role TEXT DEFAULT 'player',
-            rank TEXT DEFAULT 'Солдат'
-        )
-    ''')
     
-    # ✅ ТЕСТОВЫЙ АДМИН
-    cursor.execute("SELECT COUNT(*) FROM players")
-    if cursor.fetchone()[0] == 0:
-        admin_id = 'admin0001'
-        admin_pw = bcrypt.hashpw('120187'.encode(), bcrypt.gensalt()).decode()
-        cursor.execute('''
-            INSERT INTO players (id, username, password, role, created_at, gold)
-            VALUES (?, 'Назар', ?, 'superadmin', ?, 100000)
-        ''', (admin_id, admin_pw, datetime.now().isoformat()))
-        print("✅ Админ: Админ/120187")
-
-        # ДАЁМ ВСЕМ НОВИЧКАМ MS-1 бесплатно
-        cursor.execute("UPDATE players SET silver = 50000, tank_id = 'ms1' WHERE silver < 1000")
-        cursor.execute('''CREATE TABLE IF NOT EXISTS battles 
-                        (id INTEGER PRIMARY KEY, player_id TEXT, opponent TEXT, 
-                         player_tier INT, result TEXT, silver_reward INT, battle_time TIMESTAMP)''')
-
+    # Создаём таблицу players (если нет колонок - добавляем)
+    cursor.execute('''CREATE TABLE IF NOT EXISTS players (
+        id TEXT PRIMARY KEY,
+        username TEXT UNIQUE,
+        password TEXT,
+        silver INTEGER DEFAULT 0,
+        gold INTEGER DEFAULT 0,
+        role TEXT DEFAULT 'player',
+        wins INTEGER DEFAULT 0,
+        battles INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )''')
+    
+    # 🔥 АДАПТИВНОЕ обновление структуры БД
+    cursor.execute("PRAGMA table_info(players)")
+    columns = [col[1] for col in cursor.fetchall()]
+    
+    # Добавляем tank_id если нет
+    if 'tank_id' not in columns:
+        cursor.execute("ALTER TABLE players ADD COLUMN tank_id TEXT DEFAULT NULL")
+    
+    # Добавляем wins, battles если нет
+    if 'wins' not in columns:
+        cursor.execute("ALTER TABLE players ADD COLUMN wins INTEGER DEFAULT 0")
+    if 'battles' not in columns:
+        cursor.execute("ALTER TABLE players ADD COLUMN battles INTEGER DEFAULT 0")
+    
+    # ДАЁМ НОВИЧКАМ стартовый капитал + MS-1
+    cursor.execute("""
+        UPDATE players SET silver = 50000, tank_id = 'ms1', wins = 0, battles = 0 
+        WHERE silver < 10000 OR tank_id IS NULL
+    """)
+    
+    # Создаём garage.db
+    cursor.execute('''CREATE TABLE IF NOT EXISTS garage (
+        id INTEGER PRIMARY KEY,
+        player_id TEXT,
+        tank_id TEXT,
+        bought_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (player_id) REFERENCES players (id)
+    )''')
+    
+    # battles.db для боёв
+    cursor.execute('''CREATE TABLE IF NOT EXISTS battles (
+        id INTEGER PRIMARY KEY,
+        player_id TEXT,
+        opponent_type TEXT,  -- 'ai' или 'player'
+        player_tier INTEGER,
+        opponent_tier INTEGER,
+        result TEXT,  -- 'win' или 'loss'
+        silver_reward INTEGER,
+        battle_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (player_id) REFERENCES players (id)
+    )''')
+    
     conn.commit()
+    
+    # Создаём админа если нет
+    cursor.execute("SELECT id FROM players WHERE username = 'Назар'")
+    if not cursor.fetchone():
+        password_hash = bcrypt.hashpw("120187".encode(), bcrypt.gensalt())
+        cursor.execute(
+            "INSERT INTO players (id, username, password, silver, gold, role) VALUES (?, ?, ?, 1000000, 10000, 'superadmin')",
+            ('admin0001', 'Администратор', password_hash)
+        )
+        conn.commit()
+    
     conn.close()
     print("✅ База данных готова!")
+
+def get_player_stats(player_id):
+    """Полные статы игрока"""
+    conn = sqlite3.connect('players.db')
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT username, silver, gold, wins, battles, role 
+        FROM players WHERE id = ?
+    """, (player_id,))
+    row = cursor.fetchone()
+    conn.close()
+    
+    if row:
+        winrate = (row[3] / max(row[4], 1)) * 100 if row[4] > 0 else 0
+        return {
+            'username': row[0],
+            'silver': row[1],
+            'gold': row[2],
+            'wins': row[3],
+            'battles': row[4],
+            'winrate': round(winrate, 1),
+            'tank_count': len(get_player_tanks(player_id))
+        }
+    return None
+
+def get_leaderboard(limit=50):
+    """Реальный лидерборд"""
+    conn = sqlite3.connect('players.db')
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT username, silver, gold, wins, battles FROM players 
+        ORDER BY wins DESC, silver DESC LIMIT ?
+    """, (limit,))
+    
+    players = []
+    for i, row in enumerate(cursor.fetchall(), 1):
+        winrate = (row[3] / max(row[4], 1)) * 100 if row[4] > 0 else 0
+        players.append({
+            'rank': i,
+            'username': row[0],
+            'silver': row[1],
+            'wins': row[3],
+            'winrate': round(winrate, 1),
+            'tank_count': len(get_player_tanks(row[0]))
+        })
+    conn.close()
+    return players
 
 # ========================================
 # ✅ ОСНОВНЫЕ ФУНКЦИИ ИГРОКА
@@ -908,5 +964,6 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
