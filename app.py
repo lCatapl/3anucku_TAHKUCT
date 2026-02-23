@@ -48,44 +48,42 @@ ADMIN_USERS = {
 
 # ГЛОБАЛЬНЫЙ CONTEXT PROCESSOR для player во ВСЕХ шаблонах
 @app.context_processor
-def inject_player_and_utils():
+def inject_realtime_data():
     def get_player(user_id):
-        """Получает player по user_id из БД или None"""
-        if not user_id:
-            return None
-        
+        if not user_id: return None
         try:
-            # ТВОЯ ЛОГИКА get_player — замени на реальную!
-            # Пример для SQLite (адаптируй под твою БД):
             conn = sqlite3.connect('players.db')
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM players WHERE id = ?", (user_id,))
+            cursor.execute("SELECT id, username, silver, gold, role, tank_id FROM players WHERE id = ?", (user_id,))
             row = cursor.fetchone()
             conn.close()
-            
             if row:
                 return {
                     'id': row[0], 'username': row[1], 'silver': row[2], 
-                    'gold': row[3], 'role': row[4], 'tank_id': row[5] or None
-                    # Добавь поля из твоей таблицы players
+                    'gold': row[3], 'role': row[4], 'tank_id': row[5]
                 }
             return None
-        except Exception:
-            return None  # Безопасный fallback
-    
-    # Утилиты для шаблонов (опционально)
-    def format_gold(amount):
-        return f"{amount:,} 🪙".replace(",", " ")
-    
-    def is_admin(role):
-        return role in ['admin', 'superadmin']
-    
+        except:
+            return None
+
+    def get_live_gold():
+        """Реальное золото из БД (сумма всех игроков)"""
+        try:
+            conn = sqlite3.connect('players.db')
+            cursor = conn.cursor()
+            cursor.execute("SELECT SUM(gold) FROM players")
+            total = cursor.fetchone()[0] or 0
+            conn.close()
+            return int(total)
+        except:
+            return 0
+
     return {
-    'get_player': get_player,
-    'format_gold': format_gold,
-    'is_admin': is_admin,
-    'now': datetime.now()  # ← ДЛЯ ЛИДЕРБОРДА!
-}
+        'get_player': get_player,
+        'live_gold': get_live_gold,  # ← НАСТОЯЩЕЕ!
+        'now': datetime.now(),
+        'format_number': lambda x: f"{x:,}".replace(",", " ")
+    }
 
 # =================================
 # ✅ ПОЛНЫЙ СПИСОК 60+ ТАНКОВ v9.9
@@ -617,6 +615,15 @@ def register():
     
     return render_template('register.html')
 
+@app.route('/api/live-data')
+def api_live_data():
+    player = get_player(session.get('user_id')) if validate_session() else None
+    return {
+        'total_gold': get_live_gold(),  # Сумма ВСЕХ игроков!
+        'player': {'silver': player['silver']} if player else None,
+        'timestamp': datetime.now().isoformat()
+    }
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -688,10 +695,9 @@ def shop():
 
 @app.route('/garage')
 def garage():
-    if not validate_session():
-        return redirect(url_for('login'))
-    
+    if not validate_session(): return redirect(url_for('login'))
     player = get_player(session['user_id'])
+    
     conn = sqlite3.connect('garage.db')
     cursor = conn.cursor()
     cursor.execute("SELECT tank_id FROM garage WHERE player_id = ?", (player['id'],))
@@ -838,6 +844,7 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
 
