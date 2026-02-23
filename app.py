@@ -518,7 +518,7 @@ def init_db():
     conn = sqlite3.connect('players.db')
     cursor = conn.cursor()
     
-    # Создаём таблицу players (если нет колонок - добавляем)
+    # 1. Создаём структуру БД
     cursor.execute('''CREATE TABLE IF NOT EXISTS players (
         id TEXT PRIMARY KEY,
         username TEXT UNIQUE,
@@ -528,65 +528,54 @@ def init_db():
         role TEXT DEFAULT 'player',
         wins INTEGER DEFAULT 0,
         battles INTEGER DEFAULT 0,
+        tank_id TEXT DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
     
-    # 🔥 АДАПТИВНОЕ обновление структуры БД
+    # 2. Проверяем/добавляем колонки
     cursor.execute("PRAGMA table_info(players)")
     columns = [col[1] for col in cursor.fetchall()]
-    
-    # Добавляем tank_id если нет
     if 'tank_id' not in columns:
         cursor.execute("ALTER TABLE players ADD COLUMN tank_id TEXT DEFAULT NULL")
-    
-    # Добавляем wins, battles если нет
     if 'wins' not in columns:
         cursor.execute("ALTER TABLE players ADD COLUMN wins INTEGER DEFAULT 0")
     if 'battles' not in columns:
         cursor.execute("ALTER TABLE players ADD COLUMN battles INTEGER DEFAULT 0")
     
-    # ДАЁМ НОВИЧКАМ стартовый капитал + MS-1
+    # 3. 🔥 СОЗДАЁМ АДМИНОВ (ВНУТРИ init_db!)
+    admins = [
+        {'id': 'admin0001', 'username': 'Админ', 'password': '120187', 'silver': 1000000},
+        {'id': 'nazar_2026', 'username': 'Назар', 'password': '120187', 'silver': 1000000}
+    ]
+    
+    for admin in admins:
+        cursor.execute("SELECT id FROM players WHERE username = ?", (admin['username'],))
+        if not cursor.fetchone():
+            password_hash = bcrypt.hashpw(admin['password'].encode(), bcrypt.gensalt())
+            cursor.execute("""
+                INSERT INTO players (id, username, password, silver, gold, role, tank_id, wins, battles) 
+                VALUES (?, ?, ?, ?, 10000, 'superadmin', 'ms1', 0, 0)
+            """, (admin['id'], admin['username'], password_hash, admin['silver']))
+    
+    # 4. Стартовый танк всем новичкам
     cursor.execute("""
-        UPDATE players SET silver = 50000, tank_id = 'ms1', wins = 0, battles = 0 
-        WHERE silver < 10000 OR tank_id IS NULL
+        UPDATE players SET silver = 50000, tank_id = 'ms1' 
+        WHERE silver < 10000 AND role = 'player'
     """)
     
-    # Создаём garage.db
+    # 5. garage.db + battles.db
     cursor.execute('''CREATE TABLE IF NOT EXISTS garage (
-        id INTEGER PRIMARY KEY,
-        player_id TEXT,
-        tank_id TEXT,
-        bought_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (player_id) REFERENCES players (id)
+        id INTEGER PRIMARY KEY, player_id TEXT, tank_id TEXT, 
+        bought_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
-    
-    # battles.db для боёв
     cursor.execute('''CREATE TABLE IF NOT EXISTS battles (
-        id INTEGER PRIMARY KEY,
-        player_id TEXT,
-        opponent_type TEXT,  -- 'ai' или 'player'
-        player_tier INTEGER,
-        opponent_tier INTEGER,
-        result TEXT,  -- 'win' или 'loss'
-        silver_reward INTEGER,
-        battle_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (player_id) REFERENCES players (id)
+        id INTEGER PRIMARY KEY, player_id TEXT, opponent_type TEXT, 
+        player_tier INTEGER, result TEXT, silver_reward INTEGER, battle_time TIMESTAMP
     )''')
     
     conn.commit()
-    
-    # Создаём админа если нет
-    cursor.execute("SELECT id FROM players WHERE username = 'Назар'")
-if not cursor.fetchone():
-    password_hash = bcrypt.hashpw("120187".encode(), bcrypt.gensalt())
-    cursor.execute(
-        "INSERT INTO players (id, username, password, silver, gold, role) VALUES (?, ?, ?, 1000000, 10000, 'superadmin')",
-        ('nazar_2026', 'Назар', password_hash)  # ← ✅ password_hash, НЕ строка!
-    )
-    conn.commit()
-    
     conn.close()
-    print("✅ База данных готова!")
+    print("✅ БД готова! Назар/120187 + Админ/120187")
 
 def get_player_stats(player_id):
     """Полные статы игрока"""
@@ -964,6 +953,7 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
 
