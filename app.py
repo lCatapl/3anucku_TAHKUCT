@@ -483,6 +483,58 @@ TANKS = {
     "st_i": {"name": "ST-1", "tier": 10, "type": "HT", "price": 1150000, "hp": 2400, "damage": 400, "pen": 257, "speed": 28, "premium": True},
     "vz36": {"name": "Vz. 36", "tier": 6, "type": "TD", "price": 125000, "hp": 1220, "damage": 400, "pen": 258, "speed": 38, "premium": True},
 }
+
+def get_leaderboard():
+    """Реальные данные из БД - топ по серебру"""
+    try:
+        conn = sqlite3.connect('players.db')
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT username, silver, gold, role FROM players 
+            ORDER BY silver DESC LIMIT 50
+        """)
+        players = []
+        for i, row in enumerate(cursor.fetchall(), 1):
+            players.append({
+                'rank': i,
+                'username': row[0],
+                'silver': row[1],
+                'gold': row[2],
+                'tank_count': len(get_player_tanks(row[0])),
+                'level': min(row[1]//10000, 50)  # Уровень = серебро/10k
+            })
+        conn.close()
+        return players
+    except:
+        return []
+
+def get_player_tanks(player_id):
+    """Сколько танков у игрока"""
+    try:
+        conn = sqlite3.connect('garage.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM garage WHERE player_id = ?", (player_id,))
+        count = cursor.fetchone()[0]
+        conn.close()
+        return count
+    except:
+        return 0
+
+@app.route('/leaderboard')
+def leaderboard():
+    top_players = get_leaderboard()
+    player = get_player(session.get('user_id')) if validate_session() else None
+    player_rank = None
+    if player:
+        all_players = get_leaderboard(limit=100)
+        player_rank = next((p for p in all_players if p['username'] == player['username']), None)
+    return render_template('leaderboard.html', top_players=top_players, player_rank=player_rank)
+
+@app.route('/api/leaderboard')
+def api_leaderboard():
+    """LIVE обновление лидерборда"""
+    return jsonify(get_leaderboard())
+
 # ========================================
 # ✅ БАЗА ДАННЫХ - ИНИЦИАЛИЗАЦИЯ v9.9
 # ========================================
@@ -510,13 +562,19 @@ def init_db():
     cursor.execute("SELECT COUNT(*) FROM players")
     if cursor.fetchone()[0] == 0:
         admin_id = 'admin0001'
-        admin_pw = bcrypt.hashpw('admin123'.encode(), bcrypt.gensalt()).decode()
+        admin_pw = bcrypt.hashpw('120187'.encode(), bcrypt.gensalt()).decode()
         cursor.execute('''
             INSERT INTO players (id, username, password, role, created_at, gold)
-            VALUES (?, 'Admin', ?, 'superadmin', ?, 100000)
+            VALUES (?, 'Назар', ?, 'superadmin', ?, 100000)
         ''', (admin_id, admin_pw, datetime.now().isoformat()))
-        print("✅ Тестовый Admin: Admin/admin123")
-    
+        print("✅ Админ: Админ/120187")
+
+        # ДАЁМ ВСЕМ НОВИЧКАМ MS-1 бесплатно
+        cursor.execute("UPDATE players SET silver = 50000, tank_id = 'ms1' WHERE silver < 1000")
+        cursor.execute('''CREATE TABLE IF NOT EXISTS battles 
+                        (id INTEGER PRIMARY KEY, player_id TEXT, opponent TEXT, 
+                         player_tier INT, result TEXT, silver_reward INT, battle_time TIMESTAMP)''')
+
     conn.commit()
     conn.close()
     print("✅ База данных готова!")
@@ -695,22 +753,29 @@ def shop():
 
 @app.route('/garage')
 def garage():
-    if not validate_session():
-        return redirect(url_for('login'))
+    if not validate_session(): return redirect(url_for('login'))
     
     player = get_player(session['user_id'])
     
-    # Берем НАСТОЯЩИЕ танки из garage.db
+    # ГАРАНТИРУЕМ создание garage.db
     conn = sqlite3.connect('garage.db')
     cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS garage 
+                    (id INTEGER PRIMARY KEY, player_id TEXT, tank_id TEXT, 
+                     bought_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+    
+    # Если нет танков - даём MS-1 бесплатно
+    cursor.execute("SELECT COUNT(*) FROM garage WHERE player_id = ?", (player['id'],))
+    if cursor.fetchone()[0] == 0:
+        cursor.execute("INSERT INTO garage (player_id, tank_id) VALUES (?, 'ms1')", (player['id'],))
+        cursor.execute("UPDATE players SET silver = 50000 WHERE id = ?", (player['id'],))
+    
     cursor.execute("SELECT tank_id FROM garage WHERE player_id = ?", (player['id'],))
     player_tanks = [row[0] for row in cursor.fetchall()]
+    conn.commit()
     conn.close()
     
-    return render_template('garage.html', 
-                         player=player, 
-                         player_tanks=player_tanks,  # ← ПРАВИЛЬНОЕ ИМЯ!
-                         tanks=TANKS)
+    return render_template('garage.html', player=player, player_tanks=player_tanks, tanks=TANKS)
 
 @app.route('/battle', methods=['GET', 'POST'])
 def battle():
@@ -768,13 +833,6 @@ def buy_tank(tank_id):
 # ========================================
 # ✅ ДОПОЛНИТЕЛЬНЫЕ СТРАНИЦЫ
 # ========================================
-@app.route('/leaderboard')
-def leaderboard():
-    if not validate_session():
-        return redirect(url_for('login'))
-    
-    return render_template('leaderboard.html', top_players=[])
-
 @app.route('/chat')
 def chat():
     if not validate_session():
@@ -850,8 +908,5 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
-
-
-
 
 
