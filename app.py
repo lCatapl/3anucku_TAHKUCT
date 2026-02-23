@@ -695,16 +695,22 @@ def shop():
 
 @app.route('/garage')
 def garage():
-    if not validate_session(): return redirect(url_for('login'))
+    if not validate_session():
+        return redirect(url_for('login'))
+    
     player = get_player(session['user_id'])
     
+    # Берем НАСТОЯЩИЕ танки из garage.db
     conn = sqlite3.connect('garage.db')
     cursor = conn.cursor()
     cursor.execute("SELECT tank_id FROM garage WHERE player_id = ?", (player['id'],))
     player_tanks = [row[0] for row in cursor.fetchall()]
     conn.close()
     
-    return render_template('garage.html', player=player, player_tanks=player_tanks, tanks=TANKS)
+    return render_template('garage.html', 
+                         player=player, 
+                         player_tanks=player_tanks,  # ← ПРАВИЛЬНОЕ ИМЯ!
+                         tanks=TANKS)
 
 @app.route('/battle', methods=['GET', 'POST'])
 def battle():
@@ -844,6 +850,7 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
 
