@@ -10,7 +10,7 @@
         <div class="glass-panel inline-flex items-center gap-8 p-6 px-12 text-2xl">
             <span>Топ по победам</span>
             <div class="w-px h-10 bg-white/30 mx-8"></div>
-            <span class="text-yellow-400 font-black text-3xl">Обновлено: {{ moment().format('HH:mm DD.MM.YY') }}</span>
+            <span class="text-yellow-400 font-black text-3xl">Обновлено: {{ now.strftime('%H:%M %d.%m.%Y') }}</span>
         </div>
     </div>
 
