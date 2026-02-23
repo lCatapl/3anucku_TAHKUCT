@@ -80,10 +80,11 @@ def inject_player_and_utils():
         return role in ['admin', 'superadmin']
     
     return {
-        'get_player': get_player,
-        'format_gold': format_gold,
-        'is_admin': is_admin
-    }
+    'get_player': get_player,
+    'now': datetime.now(),  # ← ДОБАВЬ
+    'format_gold': format_gold,
+    'is_admin': is_admin
+     }
 
 # =================================
 # ✅ ПОЛНЫЙ СПИСОК 60+ ТАНКОВ v9.9
@@ -722,26 +723,33 @@ def profile(user_id=None):
 @app.route('/buy/<tank_id>', methods=['POST'])
 def buy_tank(tank_id):
     if not validate_session():
+        flash('🚫 Войдите в аккаунт!')
         return redirect(url_for('login'))
     
     player = get_player(session['user_id'])
     tank = TANKS.get(tank_id)
     
-    if not tank:
-        flash('❌ Танк не найден!')
+    if not tank or player['silver'] < tank['price']:
+        flash('❌ Недостаточно серебра!')
         return redirect(url_for('shop'))
     
-    if player['gold'] < tank['price']:
-        flash(f'❌ Нужно {tank["price"]:,} 🪙 (у вас {player["gold"]:,})')
-        return redirect(url_for('shop'))
+    # 🔥 СПАСИБЫ: 1) Обновляем серебро 2) Добавляем в ГАРАЖ
+    update_player_silver(player['id'], player['silver'] - tank['price'])
     
-    # ✅ ПОКУПКА
-    player['gold'] -= tank['price']
-    if tank_id not in player['tanks']:
-        player['tanks'].append(tank_id)
+    # СОЗДАЁМ garage.db если нет
+    conn = sqlite3.connect('garage.db')
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS garage 
+                      (id INTEGER PRIMARY KEY, player_id TEXT, tank_id TEXT, 
+                       bought_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
     
-    update_player(player)
-    flash(f'✅ Куплен "{tank["name"]}" за {tank["price"]:,} 🪙!')
+    # ДОБАВЛЯЕМ ТАНК В ГАРАЖ
+    cursor.execute("INSERT INTO garage (player_id, tank_id) VALUES (?, ?)", 
+                   (player['id'], tank_id))
+    conn.commit()
+    conn.close()
+    
+    flash(f'✅ Купил {tank["name"]} за {tank["price"]:,}! 🪙')
     return redirect(url_for('shop'))
 
 # ========================================
@@ -829,4 +837,5 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
