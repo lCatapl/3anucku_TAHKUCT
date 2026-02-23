@@ -581,7 +581,7 @@ def init_db():
         password_hash = bcrypt.hashpw("120187".encode(), bcrypt.gensalt())
         cursor.execute(
             "INSERT INTO players (id, username, password, silver, gold, role) VALUES (?, ?, ?, 1000000, 10000, 'superadmin')",
-            ('admin0001', 'Администратор', password_hash)
+            ('admin_nazar_2026', 'Назар', 120187)
         )
         conn.commit()
     
@@ -964,6 +964,7 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
 
