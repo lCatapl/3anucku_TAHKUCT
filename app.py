@@ -9,6 +9,7 @@ from wtforms.validators import Length, Regexp, EqualTo, DataRequired
 from flask_wtf.csrf import CSRFProtect
 import secrets
 import logging
+from datetime import datetime
 logging.basicConfig(level=logging.DEBUG)
 
 # 1️⃣ FLASK APP
@@ -81,10 +82,10 @@ def inject_player_and_utils():
     
     return {
     'get_player': get_player,
-    'now': datetime.now(),  # ← ДОБАВЬ
     'format_gold': format_gold,
-    'is_admin': is_admin
-     }
+    'is_admin': is_admin,
+    'now': datetime.now()  # ← ДЛЯ ЛИДЕРБОРДА!
+}
 
 # =================================
 # ✅ ПОЛНЫЙ СПИСОК 60+ ТАНКОВ v9.9
@@ -691,17 +692,13 @@ def garage():
         return redirect(url_for('login'))
     
     player = get_player(session['user_id'])
-    owned_ids = player.get('tanks', [])
+    conn = sqlite3.connect('garage.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT tank_id FROM garage WHERE player_id = ?", (player['id'],))
+    player_tanks = [row[0] for row in cursor.fetchall()]
+    conn.close()
     
-    # ✅ ТАНКИ ИЗ ГАРАЖА
-    owned_tanks = []
-    for tank_id in owned_ids:
-        if tank_id in TANKS:
-            tank_data = TANKS[tank_id].copy()
-            tank_data['id'] = tank_id
-            owned_tanks.append(tank_data)
-    
-    return render_template('garage.html', player=player, owned_tanks=owned_tanks)
+    return render_template('garage.html', player=player, player_tanks=player_tanks, tanks=TANKS)
 
 @app.route('/battle', methods=['GET', 'POST'])
 def battle():
@@ -733,23 +730,27 @@ def buy_tank(tank_id):
         flash('❌ Недостаточно серебра!')
         return redirect(url_for('shop'))
     
-    # 🔥 СПАСИБЫ: 1) Обновляем серебро 2) Добавляем в ГАРАЖ
-    update_player_silver(player['id'], player['silver'] - tank['price'])
-    
-    # СОЗДАЁМ garage.db если нет
-    conn = sqlite3.connect('garage.db')
+    # 🔥 ФИКС: Обновляем серебро напрямую в players.db
+    conn = sqlite3.connect('players.db')
     cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS garage 
-                      (id INTEGER PRIMARY KEY, player_id TEXT, tank_id TEXT, 
-                       bought_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+    new_silver = player['silver'] - tank['price']
+    cursor.execute("UPDATE players SET silver = ? WHERE id = ?", (new_silver, player['id']))
     
-    # ДОБАВЛЯЕМ ТАНК В ГАРАЖ
-    cursor.execute("INSERT INTO garage (player_id, tank_id) VALUES (?, ?)", 
-                   (player['id'], tank_id))
+    # СОЗДАЁМ garage.db + добавляем танк
+    conn_garage = sqlite3.connect('garage.db')
+    cursor_garage = conn_garage.cursor()
+    cursor_garage.execute('''CREATE TABLE IF NOT EXISTS garage 
+                          (id INTEGER PRIMARY KEY, player_id TEXT, tank_id TEXT, 
+                           bought_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+    cursor_garage.execute("INSERT INTO garage (player_id, tank_id) VALUES (?, ?)", 
+                         (player['id'], tank_id))
+    conn_garage.commit()
+    conn_garage.close()
+    
     conn.commit()
     conn.close()
     
-    flash(f'✅ Купил {tank["name"]} за {tank["price"]:,}! 🪙')
+    flash(f'✅ Купил {tank["name"]} за {tank["price"]:,} серебра! 🪙')
     return redirect(url_for('shop'))
 
 # ========================================
@@ -837,5 +838,6 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
