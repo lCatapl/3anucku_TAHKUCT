@@ -45,6 +45,46 @@ ADMIN_USERS = {
     "Admin": {"user_id": "admin0001", "role": "superadmin", "permissions": ["all"]},
 }
 
+# ГЛОБАЛЬНЫЙ CONTEXT PROCESSOR для player во ВСЕХ шаблонах
+@app.context_processor
+def inject_player_and_utils():
+    def get_player(user_id):
+        """Получает player по user_id из БД или None"""
+        if not user_id:
+            return None
+        
+        try:
+            # ТВОЯ ЛОГИКА get_player — замени на реальную!
+            # Пример для SQLite (адаптируй под твою БД):
+            conn = sqlite3.connect('players.db')
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM players WHERE id = ?", (user_id,))
+            row = cursor.fetchone()
+            conn.close()
+            
+            if row:
+                return {
+                    'id': row[0], 'username': row[1], 'silver': row[2], 
+                    'gold': row[3], 'role': row[4], 'tank_id': row[5] or None
+                    # Добавь поля из твоей таблицы players
+                }
+            return None
+        except Exception:
+            return None  # Безопасный fallback
+    
+    # Утилиты для шаблонов (опционально)
+    def format_gold(amount):
+        return f"{amount:,} 🪙".replace(",", " ")
+    
+    def is_admin(role):
+        return role in ['admin', 'superadmin']
+    
+    return {
+        'get_player': get_player,
+        'format_gold': format_gold,
+        'is_admin': is_admin
+    }
+
 # =================================
 # ✅ ПОЛНЫЙ СПИСОК 60+ ТАНКОВ v9.9
 # =================================
@@ -789,3 +829,4 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
