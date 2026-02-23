@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    <!-- LIVE UPDATE JS -->
+<script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+<script>
+let updateInterval;
+
+function startLiveUpdates() {
+    updateInterval = setInterval(async () => {
+        try {
+            const res = await axios.get('/api/live-data');
+            document.getElementById('live-gold').textContent = res.data.total_gold.toLocaleString() + ' 🪙';
+            document.getElementById('live-time').textContent = new Date().toLocaleString('ru-RU');
+            // Обновляем серебро игрока
+            if (res.data.player) {
+                <span id="player-silver">{{ format_number(player.silver) if player else '0' }}</span> серебра
+            }
+        } catch(e) { console.log('Live update failed'); }
+    }, 1000);  // КАЖДУЮ СЕКУНДУ!
+}
+
+document.addEventListener('DOMContentLoaded', startLiveUpdates);
+</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}3anucku ТAHKУCТ{% endblock %}</title>
@@ -43,7 +65,7 @@
             backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--glass-border);
         }
-                .nav-container {
+        .nav-container {
             max-width: 1400px;
             margin: 0 auto;
             display: flex;
@@ -318,3 +340,4 @@
     </script>
 </body>
 </html>
+
