@@ -24,7 +24,7 @@
 
     <!-- 🎮 КНОПКИ НАВИГАЦИЯ -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-        <a href="{{ url_for('profile') }}" class="nav-card bg-gradient-to-br from-slate-800 to-gray-900 hover:from-slate-700 hover:to-gray-800 text-white p-10 rounded-3xl shadow-2xl hover:scale-105 transition-all duration-300 border-4 border-slate-600/50 text-center group">
+        <a href="{{ url_for('profile', user_id=player.id if player else '') or url_for('profile') }}">
             <i class="fas fa-user-circle text-5xl mb-4 group-hover:text-emerald-400"></i>
             <div class="text-2xl font-black mb-2">👤 Профиль</div>
             <div class="opacity-75">Статистика и награды</div>
@@ -68,4 +68,5 @@ setInterval(async () => {
 }, 1000);  // Каждые 2 сек = не нагружает
 </script>
 {% endblock %}
+
 
