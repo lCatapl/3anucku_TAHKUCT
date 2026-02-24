@@ -57,54 +57,47 @@ def player_has_tank(player_id, tank_id):
         return False
 
 # ФИЛЬТРЫ JINJA
-@app.template_filter('datetimeformat')
-def datetimeformat(value):
-    if value:
-        try:
-            return datetime.datetime.fromtimestamp(float(value)).strftime('%d.%m.%Y %H:%M')
-        except:
-            return value
-    return '—'
+from datetime import datetime as dt
 
+# 🔥 ГЛОБАЛЬНЫЕ ФИЛЬТРЫ
 @app.template_filter('numberformat')
 def numberformat(value):
-    if value is None:
-        return '0'
     try:
-        val = int(value)
-        if val >= 1_000_000:
-            return f'{val//1000000}M'
-        elif val >= 1_000:
-            return f'{val//1000}K'
+        val = int(value or 0)
+        if val >= 1_000_000: return f'{val//1000000}M'
+        if val >= 1_000: return f'{val//1000}K'
         return f'{val:,}'
-    except:
-        return str(value)
+    except: return '0'
+
+@app.template_filter('datetimeformat')
+def datetimeformat(value):
+    try:
+        return dt.fromtimestamp(float(value or 0)).strftime('%d.%m.%Y')
+    except: return '—'
+
+@app.template_filter('format_number')  # 🔥 ДЛЯ ЛИДЕРБОРДА!
+def format_number(value):
+    return numberformat(value)
 
 # 🔥 LIVE СТАТИСТИКА
 @app.route('/api/stats')
 def api_stats():
-    try:
-        conn = sqlite3.connect('players.db')
-        cursor = conn.cursor()
-        
-        now = time.time()
-        cursor.execute("SELECT COUNT(*) FROM players")
-        total = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT COUNT(*) FROM players WHERE last_activity > ?", (now-300,))
-        online = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT COUNT(*) FROM players WHERE last_activity > ? AND last_activity < ?", 
-                      (now-1800, now-300))
-        afk = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT COALESCE(SUM(gold), 0) FROM players")
-        gold = cursor.fetchone()[0]
-        
-        conn.close()
-        return jsonify({'online': online, 'afk': afk, 'total': total, 'gold': gold})
-    except:
-        return jsonify({'online': 7, 'afk': 3, 'total': 42, 'gold': 24500})
+    conn = sqlite3.connect('players.db')
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT COUNT(*) FROM players")
+    total = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(*) FROM players WHERE last_activity > ?", (time.time()-300,))
+    online = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COALESCE(SUM(wins), 0), COALESCE(SUM(gold), 0) FROM players")
+    wins, gold = cursor.fetchone()
+    
+    conn.close()
+    return jsonify({
+        'online': online, 'total': total, 'wins': wins or 0, 'gold': gold or 0
+    })
 
 # 🔥 ИНИЦИАЛИЗАЦИЯ БД GARAGE
 def init_garage_db():
@@ -1390,54 +1383,53 @@ def profile(user_id=None):
     if not validate_session() and not user_id:
         return redirect(url_for('login'))
     
-    # Свой ID если не указан
-    target_id = user_id or session.get('user_id')
+    # ID по умолчанию
+    target_id = user_id or session.get('user_id', 120187)
     
-    # Получаем данные игрока
     conn = sqlite3.connect('players.db')
     cursor = conn.cursor()
-    cursor.execute('''SELECT id, username, silver, gold, wins, battles, xp, crystal, bond, created 
+    
+    # 🔥 БЕЗОПАСНЫЙ SELECT - только существующие колонки!
+    cursor.execute('''SELECT id, username, silver, gold, wins, battles, crystal, bond, created, last_activity 
                       FROM players WHERE id=?''', (target_id,))
     row = cursor.fetchone()
-    conn.close()
     
     if not row:
         flash('Игрок не найден!')
         return redirect(url_for('index'))
     
-    # Форматируем профиль
+    # 🔥 XP = wins * 10 если нет колонки
     wins, battles = row[4] or 0, row[5] or 0
+    xp = wins * 10  # Автоматический XP
+    
     player = {
         'id': row[0], 'username': row[1], 'silver': row[2] or 0, 'gold': row[3] or 0,
         'wins': wins, 'battles': battles, 'winrate': round((wins/max(battles,1))*100, 1),
-        'xp': row[6] or 0, 'crystal': row[7] or 0, 'bond': row[8] or 0, 'created': row[9] or 0
+        'xp': xp, 'crystal': row[6] or 0, 'bond': row[7] or 0, 'created': row[8] or 0
     }
     
-    # 🔥 РАНГ + ПРОГРЕСС
-    current_rank, current_xp = get_rank_info(player['xp'])
-    next_rank = next((r for r in RANK_SYSTEM.values() if r != current_rank), '🏆 Легенда')
-    next_xp_req = next((k for k,v in RANK_SYSTEM.items() if v == next_rank), 99999)
-    player.update({
-        'rank': current_rank, 'next_rank': next_rank,
-        'progress': min(100, (player['xp']/next_xp_req)*100),
-        'xp_to_next': next_xp_req
-    })
+    # 🔥 РАНГ
+    rank_system = {0: 'Рекрут 🪖', 100: 'Лейтенант ⭐', 500: 'Капитан ⚔️', 
+                   1500: 'Майор 🛡️', 3500: 'Полковник 👑', 7000: 'Генерал 🌟'}
+    current_rank = 'Рекрут 🪖'
+    for min_xp, rank in sorted(rank_system.items(), reverse=True):
+        if xp >= min_xp: 
+            current_rank = rank
+            break
     
-    # 🔥 КОЛЛЕКЦИЯ
-    collection_count = sum(1 for tank_id in COLLECTION_TANKS if player_has_tank(target_id, tank_id))
-    player['collection_count'] = collection_count
-    player['collection_total'] = len(COLLECTION_TANKS)
+    player.update({
+        'rank': current_rank, 'progress': min(100, (xp/7000)*100), 'xp_to_next': 7000
+    })
     
     # 🔥 ГАРАЖ
     try:
-        conn = sqlite3.connect('garage.db')
-        cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM garage WHERE player_id=?", (target_id,))
         player['garage_count'] = cursor.fetchone()[0]
-        conn.close()
-    except: player['garage_count'] = 0
+    except: 
+        player['garage_count'] = 0
     
-    return render_template('profile.html', player=player, COLLECTION_TANKS=COLLECTION_TANKS)
+    conn.close()
+    return render_template('profile.html', player=player)
 
 # ========================================
 # ✅ ИНИЦИАЛИЗАЦИЯ
@@ -1447,4 +1439,3 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
-
