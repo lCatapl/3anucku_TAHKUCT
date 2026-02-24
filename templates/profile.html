@@ -1,134 +1,132 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- 🎖️ ШАПКА ПРОФИЛЯ -->
-    <div class="profile-header bg-gradient-to-r from-slate-800 to-gray-900 rounded-3xl p-8 mb-8 shadow-2xl border-4 border-slate-600/50 backdrop-blur-xl">
-        <div class="flex flex-col lg:flex-row items-center lg:items-start gap-8">
-            <!-- АВАТАР + ЗВАНИЕ -->
+<div class="max-w-5xl mx-auto px-4 py-12">
+    <!-- 🔥 ШАПКА ПРОФИЛЯ -->
+    <div class="profile-hero bg-gradient-to-br from-slate-900 via-purple-900/30 to-black rounded-3xl p-10 mb-10 shadow-4xl border-4 border-white/10 backdrop-blur-xl">
+        <div class="flex flex-col lg:flex-row items-start lg:items-center gap-8">
+            <!-- АВАТАР + РАНГ -->
             <div class="flex flex-col items-center lg:items-start text-center lg:text-left">
-                <div class="avatar-ring w-32 h-32 lg:w-40 lg:h-40 bg-gradient-to-r from-emerald-500 to-blue-600 rounded-full shadow-2xl border-8 border-white/20 flex items-center justify-center mb-4 relative overflow-hidden">
-                    <i class="fas fa-user text-5xl lg:text-7xl text-white"></i>
-                    {% if player.rank == 'legend' %}
-                    <div class="absolute -top-2 -right-2 w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center border-4 border-black">
-                        <i class="fas fa-crown text-black text-xl"></i>
+                <div class="avatar-frame w-28 h-28 lg:w-36 lg:h-36 bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-600 rounded-full shadow-4xl border-8 border-white/20 p-4 mb-6 relative overflow-hidden group">
+                    <i class="fas fa-user text-4xl lg:text-6xl text-white"></i>
+                    {% if 'Легенда' in player.rank %}
+                    <div class="absolute top-2 right-2 w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center border-4 border-black shadow-lg">
+                        <i class="fas fa-crown text-black text-lg"></i>
                     </div>
                     {% endif %}
                 </div>
-                <div class="rank-badge px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl text-white font-black text-2xl mb-2 shadow-xl">
-                    {{ player.rank|title }} {{ player.level }}
+                <div class="rank-badge px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl text-white font-black text-2xl lg:text-3xl mb-4 shadow-2xl">
+                    {{ player.rank }}
                 </div>
-                <div class="username text-4xl lg:text-5xl font-black bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
+                <div class="username text-4xl lg:text-6xl font-black bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent drop-shadow-2xl">
                     {{ player.username }}
                 </div>
-                <div class="flex gap-4 mt-2 text-xl opacity-80">
-                    <span>ID: #{{ player.id }}</span>
-                    <span><i class="fas fa-clock mr-1"></i>{{ player.created|datetimeformat }}</span>
+                <div class="flex flex-wrap gap-4 mt-4 text-xl opacity-80">
+                    <span class="bg-white/10 px-4 py-2 rounded-xl">ID: #{{ player.id }}</span>
+                    <span class="flex items-center"><i class="fas fa-calendar mr-2"></i>{{ player.created|datetimeformat }}</span>
                 </div>
             </div>
             
-            <!-- СТАТИСТИКА -->
-            <div class="stats-grid grid grid-cols-2 lg:grid-cols-4 gap-4 flex-1 w-full">
-                <div class="stat-box bg-white/10 backdrop-blur-xl p-6 rounded-2xl border-2 border-white/20 text-center hover:scale-105 transition-all">
-                    <div class="text-3xl font-black text-emerald-400">{{ player.wins|default(0) }}</div>
-                    <div class="text-sm opacity-75">Побед</div>
+            <!-- 🔥 LIVE СТАТИСТИКА -->
+            <div class="stats-grid grid grid-cols-2 lg:grid-cols-4 gap-6 flex-1 w-full">
+                <div class="stat-card bg-gradient-to-br from-emerald-500/90 to-green-600/90 p-8 rounded-3xl text-white shadow-2xl hover:scale-105 border-4 border-white/20">
+                    <div class="text-4xl lg:text-5xl font-black mb-2 text-emerald-100">{{ player.wins|numberformat }}</div>
+                    <div class="text-xl opacity-90">🏆 Побед</div>
                 </div>
-                <div class="stat-box bg-white/10 backdrop-blur-xl p-6 rounded-2xl border-2 border-white/20 text-center hover:scale-105 transition-all">
-                    <div class="text-3xl font-black text-red-400">{{ player.battles|default(0) }}</div>
-                    <div class="text-sm opacity-75">Боев</div>
+                <div class="stat-card bg-gradient-to-br from-red-500/90 to-rose-600/90 p-8 rounded-3xl text-white shadow-2xl hover:scale-105 border-4 border-white/20">
+                    <div class="text-4xl lg:text-5xl font-black mb-2 text-red-100">{{ player.battles|numberformat }}</div>
+                    <div class="text-xl opacity-90">⚔️ Боёв</div>
                 </div>
-                <div class="stat-box bg-white/10 backdrop-blur-xl p-6 rounded-2xl border-2 border-white/20 text-center hover:scale-105 transition-all">
-                    <div class="text-3xl font-black text-yellow-400">{{ player.winrate }}%</div>
-                    <div class="text-sm opacity-75">Винрейт</div>
+                <div class="stat-card bg-gradient-to-br from-yellow-500/90 to-orange-600/90 p-8 rounded-3xl text-white shadow-2xl hover:scale-105 border-4 border-white/20">
+                    <div class="text-4xl lg:text-5xl font-black mb-2 text-yellow-100">{{ player.winrate }}%</div>
+                    <div class="text-xl opacity-90">📊 Винрейт</div>
                 </div>
-                <div class="stat-box bg-white/10 backdrop-blur-xl p-6 rounded-2xl border-2 border-white/20 text-center hover:scale-105 transition-all">
-                    <div class="text-3xl font-black text-blue-400">{{ player.collection_count }}</div>
-                    <div class="text-sm opacity-75">Коллекция</div>
+                <div class="stat-card bg-gradient-to-br from-blue-500/90 to-indigo-600/90 p-8 rounded-3xl text-white shadow-2xl hover:scale-105 border-4 border-white/20">
+                    <div class="text-4xl lg:text-5xl font-black mb-2 text-blue-100">{{ player.collection_count }}/{{ player.collection_total }}</div>
+                    <div class="text-xl opacity-90">💎 Коллекция</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 💰 ВАЛЮТЫ -->
-    <div class="currencies-grid grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div class="currency-card bg-gradient-to-br from-gray-600 to-gray-700 p-6 rounded-2xl text-white text-center shadow-xl hover:scale-105">
-            <div class="text-3xl mb-2">🪙</div>
-            <div class="text-2xl font-black">{{ player.silver|numberformat }}</div>
-            <div class="text-sm opacity-75">Серебро</div>
+    <!-- 🔥 4 ВАЛЮТЫ -->
+    <div class="currencies-section grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+        <div class="currency-card bg-gradient-to-br from-gray-700 to-gray-800 p-8 rounded-3xl text-white text-center shadow-2xl hover:scale-105 border-4 border-gray-500/30">
+            <div class="text-4xl mb-4">🪙</div>
+            <div class="text-3xl font-black">{{ player.silver|numberformat }}</div>
+            <div class="text-lg opacity-75">Серебро</div>
         </div>
-        <div class="currency-card bg-gradient-to-br from-yellow-500 to-orange-500 p-6 rounded-2xl text-white text-center shadow-xl hover:scale-105">
-            <div class="text-3xl mb-2">⭐</div>
-            <div class="text-2xl font-black">{{ player.gold|numberformat }}</div>
-            <div class="text-sm opacity-75">Золото</div>
+        <div class="currency-card bg-gradient-to-br from-yellow-500 to-orange-500 p-8 rounded-3xl text-white text-center shadow-2xl hover:scale-105 border-4 border-yellow-400/50">
+            <div class="text-4xl mb-4">⭐</div>
+            <div class="text-3xl font-black">{{ player.gold|numberformat }}</div>
+            <div class="text-lg opacity-75">Золото</div>
         </div>
-        <div class="currency-card bg-gradient-to-br from-purple-600 to-pink-600 p-6 rounded-2xl text-white text-center shadow-xl hover:scale-105">
-            <div class="text-3xl mb-2">💎</div>
-            <div class="text-2xl font-black">{{ player.crystal|numberformat }}</div>
-            <div class="text-sm opacity-75">Кристаллы</div>
+        <div class="currency-card bg-gradient-to-br from-purple-600 to-pink-600 p-8 rounded-3xl text-white text-center shadow-2xl hover:scale-105 border-4 border-purple-400/50">
+            <div class="text-4xl mb-4">💎</div>
+            <div class="text-3xl font-black">{{ player.crystal|numberformat }}</div>
+            <div class="text-lg opacity-75">Кристаллы</div>
         </div>
-        <div class="currency-card bg-gradient-to-br from-amber-600 to-orange-700 p-6 rounded-2xl text-white text-center shadow-xl hover:scale-105">
-            <div class="text-3xl mb-2">🏅</div>
-            <div class="text-2xl font-black">{{ player.bond|numberformat }}</div>
-            <div class="text-sm opacity-75">Бонды</div>
+        <div class="currency-card bg-gradient-to-br from-amber-600 to-orange-700 p-8 rounded-3xl text-white text-center shadow-2xl hover:scale-105 border-4 border-amber-400/50">
+            <div class="text-4xl mb-4">🏅</div>
+            <div class="text-3xl font-black">{{ player.bond|numberformat }}</div>
+            <div class="text-lg opacity-75">Бонды</div>
         </div>
     </div>
 
-    <!-- 📈 ПРОГРЕСС УРОВНЯ -->
-    <div class="progress-section bg-gradient-to-r from-slate-800 to-gray-900 p-8 rounded-3xl mb-8 shadow-2xl border-4 border-slate-600/50">
-        <div class="flex items-center justify-between mb-6">
-            <h2 class="text-3xl font-black bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">
-                Прогресс до {{ next_rank_name }}
+    <!-- 🔥 ПРОГРЕСС УРОВНЯ -->
+    <div class="progress-section bg-gradient-to-r from-slate-800 to-gray-900 p-10 rounded-3xl mb-12 shadow-4xl border-4 border-slate-600/50">
+        <div class="flex flex-col lg:flex-row items-center justify-between mb-8 gap-4">
+            <h2 class="text-4xl font-black bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">
+                Прогресс до {{ player.next_rank }}
             </h2>
-            <div class="rank-preview text-2xl font-bold text-yellow-400">
-                {{ player.level }} → {{ player.next_level }}
+            <div class="rank-info text-2xl font-bold text-yellow-400 flex items-center gap-2">
+                <span>{{ player.xp|numberformat }} XP</span>
+                <i class="fas fa-arrow-right"></i>
+                <span>{{ player.xp_to_next|numberformat }} XP</span>
             </div>
         </div>
-        <div class="progress-bar w-full bg-white/10 rounded-full h-6 overflow-hidden">
-            <div class="progress-fill h-full bg-gradient-to-r from-emerald-400 to-blue-500 rounded-full transition-all duration-1000" 
-                 style="width: {{ player.progress }}%"></div>
-        </div>
-        <div class="progress-text mt-4 text-lg font-bold">
-            {{ player.xp }} / {{ player.xp_to_next }} XP ({{ player.progress }}%)
+        <div class="progress-container w-full bg-white/10 rounded-full h-8 overflow-hidden shadow-inner">
+            <div class="progress-bar h-full bg-gradient-to-r from-emerald-400 via-blue-400 to-purple-500 rounded-full shadow-2xl transition-all duration-1000 flex items-center justify-center text-lg font-bold text-white" 
+                 style="width: {{ player.progress }}%">
+                {{ player.progress }}%
+            </div>
         </div>
     </div>
 
-    <!-- 🏆 КОЛЛЕКЦИОННЫЕ ТАНКИ -->
-    <div class="collection-section">
-        <h2 class="text-4xl font-black mb-8 bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent text-center">
-            💎 КОЛЛЕКЦИЯ ({{ player.collection_count }}/{{ collection_total }})
+    <!-- 🔥 КОЛЛЕКЦИОННЫЕ ТАНКИ -->
+    <div class="collection-section bg-gradient-to-r from-purple-900/50 to-pink-900/50 p-10 rounded-3xl shadow-4xl border-4 border-purple-500/30">
+        <h2 class="text-5xl font-black mb-12 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent text-center">
+            💎 КОЛЛЕКЦИЯ ({{ player.collection_count }} / {{ player.collection_total }})
         </h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
             {% for tank_id, tank in COLLECTION_TANKS.items() %}
-                {% if player_has_tank(player.id, tank_id) %}
-                <div class="collection-tank bg-gradient-to-br from-purple-600/80 to-pink-600/80 backdrop-blur-xl p-4 rounded-2xl text-white text-center hover:scale-110 hover:shadow-2xl transition-all border-2 border-purple-400/50 group">
-                    <div class="tank-icon w-16 h-16 mx-auto mb-2 bg-white/20 rounded-xl flex items-center justify-center">
-                        <span class="font-bold text-lg">{{ tank.tier }}</span>
-                    </div>
-                    <div class="tank-name font-bold text-sm truncate">{{ tank.name }}</div>
-                    <div class="tank-type text-xs opacity-75">{{ tank.type }}</div>
+            {% if player_has_tank(player.id, tank_id) %}
+            <div class="collection-tank-owned bg-gradient-to-br from-purple-600/90 to-pink-600/90 backdrop-blur-xl p-6 rounded-3xl text-white text-center hover:scale-110 hover:shadow-4xl transition-all border-4 border-purple-400/60 shadow-2xl group cursor-pointer">
+                <div class="tank-tier w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-white to-gray-200 rounded-2xl flex items-center justify-center shadow-2xl group-hover:bg-yellow-400 group-hover:text-black transition-all">
+                    <span class="font-black text-2xl">{{ tank.tier }}</span>
                 </div>
-                {% else %}
-                <div class="collection-tank-locked bg-gray-800/50 p-4 rounded-2xl text-gray-400 text-center border-2 border-gray-600/50 group hover:bg-gray-700/50">
-                    <div class="tank-icon w-16 h-16 mx-auto mb-2 bg-gray-700/50 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-lock text-sm"></i>
-                    </div>
-                    <div class="text-xs opacity-50">ЗАКРЫТО</div>
+                <div class="tank-name font-bold text-lg truncate mb-2 group-hover:text-yellow-300">{{ tank.name[:20] }}</div>
+                <div class="tank-type text-sm opacity-80">{{ tank.type }}</div>
+            </div>
+            {% else %}
+            <div class="collection-tank-locked bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 rounded-3xl text-gray-400 text-center border-4 border-gray-600/50 hover:bg-gray-700/50 transition-all cursor-not-allowed">
+                <div class="tank-locked-icon w-20 h-20 mx-auto mb-4 bg-gray-700/50 rounded-2xl flex items-center justify-center">
+                    <i class="fas fa-lock text-xl"></i>
                 </div>
-                {% endif %}
+                <div class="text-sm opacity-50">🔒 ЗАКРЫТО</div>
+            </div>
+            {% endif %}
             {% endfor %}
         </div>
     </div>
+
+    <!-- 🔥 АДАПТИВНОСТЬ -->
+    <style>
+        .progress-bar { box-shadow: 0 0 30px rgba(34,197,94,0.6); }
+        .avatar-frame:hover { transform: scale(1.05) rotate(5deg); }
+        @media (max-width: 768px) {
+            .username { font-size: 2.5rem !important; }
+            .tank-name { font-size: 1rem !important; }
+        }
+    </style>
 </div>
-
-<!-- ФИЛЬТРЫ ДЛЯ ЧУЖИХ ПРОФИЛЕЙ -->
-<script>
-function openProfile(userId) {
-    window.location.href = `/profile/${userId}`;
-}
-</script>
-
-<style>
-.progress-fill { box-shadow: 0 0 20px rgba(34, 197, 94, 0.5); }
-.rank-badge { box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4); }
-.avatar-ring { box-shadow: 0 20px 40px rgba(16, 185, 129, 0.3); }
-</style>
 {% endblock %}
