@@ -12,6 +12,9 @@ import logging
 from datetime import datetime
 logging.basicConfig(level=logging.DEBUG)
 
+app = Flask(__name__)
+app.secret_key = 'super-secret-tank-key-2026'
+
 import time
 import random
 from collections import defaultdict
@@ -1365,6 +1368,7 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
 
