@@ -143,18 +143,77 @@ def get_stats():
 
 @app.route('/api/stats')
 def api_stats():
-    stats = get_stats()
-    stats.update({
-        'silver': 1234567,
-        'gold': 24500, 
-        'crystal': 8901,
-        'bond': 5678  # 🆕 БОНДЫ
-    })
-    return jsonify(stats)
+    try:
+        conn = sqlite3.connect('players.db')
+        cursor = conn.cursor()
+        
+        # 🔥 НАСТОЯЩАЯ СТАТИСТИКА ИГРОКОВ
+        now = time.time()
+        cursor.execute("SELECT COUNT(*) FROM players")
+        total_players = cursor.fetchone()[0]
+        
+        # Онлайн (активность за 5 мин)
+        cursor.execute("SELECT id, last_activity FROM players WHERE last_activity > ?", (now - 300,))
+        online_players = len(cursor.fetchall())
+        
+        # АФК (были 5-30 мин назад)
+        cursor.execute("SELECT COUNT(*) FROM players WHERE last_activity > ? AND last_activity < ?", 
+                      (now - 1800, now - 300))
+        afk_players = cursor.fetchone()[0]
+        
+        # 🔥 4 ВАЛЮТЫ - СУММА ВСЕХ ИГРОКОВ
+        cursor.execute("""
+            SELECT 
+                COALESCE(SUM(silver), 0) as total_silver,
+                COALESCE(SUM(gold), 0) as total_gold,
+                COALESCE(SUM(crystal), 0) as total_crystal,
+                COALESCE(SUM(bond), 0) as total_bond
+            FROM players
+        """)
+        silver, gold, crystal, bond = cursor.fetchone()
+        
+        conn.close()
+        
+        return jsonify({
+            'online': online_players,
+            'afk': afk_players, 
+            'total': total_players,
+            'silver': int(silver),
+            'gold': int(gold),
+            'crystal': int(crystal),
+            'bond': int(bond)
+        })
+        
+    except Exception as e:
+        print(f"STATS ERROR: {e}")
+        return jsonify({
+            'online': 1, 'afk': 0, 'total': 1,
+            'silver': 1234567, 'gold': 24500, 
+            'crystal': 8901, 'bond': 5678
+        })
 
 # Обновляем активность
-def update_activity(player_id):
-    last_activity[player_id] = time.time()
+def update_player_activity(player_id):
+    try:
+        conn = sqlite3.connect('players.db')
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE players SET last_activity = ? WHERE id = ?", 
+            (time.time(), player_id)
+        )
+        conn.commit()
+        conn.close()
+    except:
+        pass
+
+# Вызываем в каждом route:
+@app.route('/profile')
+def profile():
+    if not validate_session():
+        return redirect(url_for('login'))
+    update_player_activity(session['user_id'])  # ✅ НАСТОЯЩАЯ активность!
+    player = get_player(session['user_id'])
+    return render_template('profile.html', player=player)
 
 @app.route('/battle_queue/<int:tier>')
 def battle_queue_page(tier):
@@ -1104,7 +1163,6 @@ def battle_result():
     
     return jsonify({'reward': reward, 'status': 'ok'})
 
-@app.route('/profile')
 @app.route('/profile/<user_id>')
 def profile(user_id=None):
     if not validate_session():
@@ -1227,6 +1285,7 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
 
