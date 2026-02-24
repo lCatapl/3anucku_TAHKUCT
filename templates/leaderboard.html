@@ -14,7 +14,7 @@
             </div>
             <h2 class="text-3xl font-black mb-4">{{ player.username }}</h2>
             <div class="space-y-3 text-xl">
-                <div>🏆 Побед: {{ player.wins|format_number }}</div>
+                <div>🏆 Побед: {{ player.wins|numberformat }}</div>
                 <div>🪙 Серебро: {{ player.silver|format_number }}</div>
                 <div>📊 Винрейт: {{ player.winrate }}%</div>
                 <div>🛡️ Танков: {{ player.tank_count }}</div>
