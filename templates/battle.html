@@ -1,90 +1,52 @@
 {% extends "base.html" %}
-{% block title %}Арена - {{ player.username }}{% endblock %}
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-20">
-    <h1 class="hero-title mb-12 text-center">⚔️ Арена</h1>
+<div class="max-w-4xl mx-auto px-6 py-20">
+    <!-- АНИМАЦИЯ БОЯ -->
+    <div id="battle-arena" class="relative h-96 bg-gradient-to-r from-red-900 via-black to-blue-900 rounded-3xl p-8 mb-12 shadow-2xl">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,...')] opacity-20 animate-pulse"></div>
+        <div class="relative z-10 flex justify-between items-center h-full">
+            <!-- ТВОЙ ТАНК -->
+            <div class="tank-container animate-bounce">
+                <div class="tank-body bg-gradient-to-b from-emerald-500 to-green-700 w-32 h-24 rounded-xl shadow-2xl border-4 border-white/30 transform rotate-6"></div>
+                <div class="tank-gun bg-gray-300 w-20 h-4 rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rotate-12"></div>
+                <div class="tank-text font-black text-lg text-center mt-2">{{ player.tank_id|upper }}</div>
+            </div>
+            
+            <!-- VS -->
+            <div class="text-6xl font-black bg-gradient-to-r from-red-400 to-yellow-400 bg-clip-text text-transparent drop-shadow-2xl">
+                VS
+            </div>
+            
+            <!-- ПРОТИВНИК -->
+            <div class="tank-container animate-pulse">
+                <div class="tank-body bg-gradient-to-b from-red-500 to-rose-700 w-32 h-24 rounded-xl shadow-2xl border-4 border-white/30 transform -rotate-6"></div>
+                <div class="tank-gun bg-gray-300 w-20 h-4 rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 -rotate-12"></div>
+                <div class="tank-text font-black text-lg text-center mt-2">ИС-2</div>
+            </div>
+        </div>
+    </div>
     
-    <!-- ТВОИ ТАНКИ -->
-    <div class="glass-panel p-8 mb-8">
-        <h2 class="text-3xl font-bold mb-6">Выберите танк:</h2>
-        <div class="flex flex-wrap gap-4">
-            {% set player_tanks = get_player_tanks(player.id) %}
-            {% for tank_id in player_tanks %}
-            {% set tank = tanks[tank_id] %}
-            <button onclick="queueBattle('{{ tank_id }}', {{ tank.tier }})" 
-                    class="tank-select-btn p-6 rounded-2xl font-bold flex-1 min-w-[200px] 
-                           bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500">
-                🇷🇺 {{ tank.name }}<br>
-                <span class="text-lg">Ур. {{ tank.tier }}</span>
-            </button>
-            {% endfor %}
-            <!-- ИИ БОЙ -->
-            <button onclick="queueBattle('ai', 1)" 
-                    class="tank-select-btn p-6 rounded-2xl font-bold flex-1 min-w-[200px] 
-                           bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500">
-                🤖 Бой с ИИ<br><span class="text-lg">Ур. 1 (легко)</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- ОЖИДАНИЕ ИГРОКОВ -->
-    <div id="waiting" class="glass-panel p-8 mb-8 hidden">
-        <h2 class="text-3xl font-bold mb-6 flex items-center gap-3">
-            <i class="fas fa-clock animate-spin"></i> В очереди...
-        </h2>
-        <div id="queueStatus" class="text-2xl text-center">
-            Ждёт:<br>
-            <span id="queueTiers">1 уровня: 0 игроков</span>
-        </div>
-        <button onclick="cancelQueue()" class="mt-6 bg-red-500 hover:bg-red-400 text-white py-3 px-8 rounded-2xl font-bold">
-            ❌ Выйти из очереди
+    <!-- КНОПКИ БОЯ -->
+    <div class="text-center space-y-6">
+        <button onclick="startBattle()" class="battle-btn bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black py-6 px-12 text-2xl rounded-3xl shadow-2xl hover:scale-105 transform transition-all duration-300">
+            <i class="fas fa-fire mr-3"></i>🚀 НАЧАТЬ БОЙ
         </button>
-    </div>
-
-    <!-- БОЙ -->
-    <div id="battle" class="glass-panel p-12 hidden text-center">
-        <div class="text-6xl mb-8 animate-pulse">⚔️</div>
-        <h2 id="battleTitle" class="text-4xl font-black mb-8"></h2>
-        <div id="battleResult" class="text-3xl mb-8"></div>
-        <button onclick="newBattle()" class="bg-gradient-to-r from-emerald-500 to-green-600 text-white py-4 px-12 rounded-2xl font-bold text-xl">
-            Ещё бой!
-        </button>
+        <div id="battle-result" class="hidden text-3xl font-black bg-green-500/20 p-8 rounded-2xl backdrop-blur-xl border-2 border-green-400/50 animate-pulse">
+            <i class="fas fa-trophy mr-4 text-yellow-400"></i>
+            <span>ПОБЕДА! +<span id="reward">15,000</span> 🪙</span>
+        </div>
     </div>
 </div>
 
 <script>
-let currentQueue = null;
-let liveInterval;
-
-async function queueBattle(tank_id, tier) {
-    currentQueue = {tank_id, tier};
-    document.getElementById('waiting').classList.remove('hidden');
-    
-    // LIVE статус очереди
-    liveInterval = setInterval(async () => {
-        const res = await fetch('/api/queue-status?tier=' + tier);
-        const data = await res.json();
-        document.getElementById('queueTiers').innerHTML = 
-            `1 уровня: ${data.tier1} | 2 уровня: ${data.tier2} | 3 уровня: ${data.tier3}`;
-    }, 1000);
-    
-    // Симуляция боя через 3-10 сек
+let battleAudio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAo...');
+function startBattle() {
+    battleAudio.play();
+    document.querySelector('.battle-btn').innerHTML = '<i class="fas fa-spinner fa-spin mr-3"></i>БЬЁМСЯ...';
     setTimeout(() => {
-        clearInterval(liveInterval);
-        showBattleResult(tank_id, tier);
-    }, Math.random() * 7000 + 3000);
-}
-
-function showBattleResult(tank_id, tier) {
-    document.getElementById('waiting').classList.add('hidden');
-    document.getElementById('battle').classList.remove('hidden');
-    
-    const win = Math.random() > 0.3; // 70%勝率
-    document.getElementById('battleTitle').innerHTML = win ? '✅ ПОБЕДА!' : '❌ ПОРАЖЕНИЕ';
-    document.getElementById('battleResult').innerHTML = win ? 
-        '+15,000 серебра!' : '+2,000 серебра';
-    
-    // LIVE лидерборд обновится автоматически
+        document.getElementById('battle-result').classList.remove('hidden');
+        document.querySelector('.battle-btn').style.display = 'none';
+    }, 3000);
 }
 </script>
 {% endblock %}
