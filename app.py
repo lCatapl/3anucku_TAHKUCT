@@ -114,7 +114,6 @@ def register_new_player(username, password):
     print(f"🎉 Новый игрок: {username} [{start_package['silver']} серебра]")
     return True
 
-fix_db()
 init_sample_data()  # ← Всё готово!
 
 # 🔥 СИСТЕМА 4 ВАЛЮТ
@@ -1546,5 +1545,6 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
