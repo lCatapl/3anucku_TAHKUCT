@@ -1,162 +1,63 @@
 {% extends "base.html" %}
-{% block title %}Ангар - {{ player.username }}{% endblock %}
 {% block content %}
-<div class="text-center py-20">
-    <!-- Геройский заголовок -->
-    <h1 class="hero-title mb-12">
-        <i class="fas fa-fire"></i>
-        Добро пожаловать в ангар,
-        <span style="background: var(--accent-gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-            {{ player.username }}
-        </span>
-    </h1>
-
-    <!-- Статистика игрока -->
-    <div class="stats-grid">
-        <!-- Золото -->
-        <div class="stat-card">
-            <i class="fas fa-coins stat-icon" style="color: #facc15;"></i>
-            <div class="stat-value">{{ player.gold|comma }}</div>
-            <div class="stat-label">Золото 🪙</div>
+<div class="max-w-6xl mx-auto px-6 py-12">
+    <!-- 🎯 СТАТИСТИКА ONLINE (анимированная) -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16">
+        <div class="stat-card bg-gradient-to-br from-emerald-500/90 to-green-600/90 text-white p-8 rounded-3xl shadow-2xl hover:scale-105 transition-all duration-300 border-4 border-white/20">
+            <div class="text-3xl font-black mb-2" id="live-online">42</div>
+            <div class="text-lg opacity-90">👥 Онлайн сейчас</div>
+            <div class="text-sm opacity-70 mt-2 animate-pulse">⚡ обновляется</div>
         </div>
-
-        <!-- Серебро -->
-        <div class="stat-card">
-            <i class="fas fa-coins stat-icon" style="color: #c0c0c0;"></i>
-            <div class="stat-value">{{ player.silver|comma }}</div>
-            <div class="stat-label">Серебро 💰</div>
+        <div class="stat-card bg-gradient-to-br from-yellow-500/90 to-orange-600/90 text-white p-8 rounded-3xl shadow-2xl hover:scale-105 transition-all duration-300 border-4 border-white/20">
+            <div class="text-3xl font-black mb-2" id="live-afk">15</div>
+            <div class="text-lg opacity-90">😴 АФК</div>
         </div>
-
-        <!-- Танки -->
-        <div class="stat-card">
-            <i class="fas fa-warehouse stat-icon" style="color: #10b981;"></i>
-            <div class="stat-value">{{ player.tanks|length }}</div>
-            <div class="stat-label">Танков в гараже</div>
+        <div class="stat-card bg-gradient-to-br from-purple-500/90 to-pink-600/90 text-white p-8 rounded-3xl shadow-2xl hover:scale-105 transition-all duration-300 border-4 border-white/20">
+            <div class="text-3xl font-black mb-2" id="live-total">1,247</div>
+            <div class="text-lg opacity-90">👑 Всего игроков</div>
         </div>
-
-        <!-- Победы/Бои -->
-        <div class="stat-card">
-            <i class="fas fa-trophy stat-icon" style="color: #fbbf24;"></i>
-            <div class="stat-value">
-                {{ player.wins|default(0) }}<span style="font-size: 1.5rem;">W</span>
-            </div>
-            <div class="stat-label">
-                Победы / {{ player.battles|default(0) }} боёв
-                {% if player.battles|default(0) > 0 %}
-                    <span style="color: #10b981; font-weight: 600;">
-                        ({{ (player.wins|default(0) / player.battles|default(1) * 100)|round(1) }}%)
-                    </span>
-                {% endif %}
-            </div>
+        <div class="stat-card bg-gradient-to-br from-blue-500/90 to-indigo-600/90 text-white p-8 rounded-3xl shadow-2xl hover:scale-105 transition-all duration-300 border-4 border-white/20">
+            <div class="text-3xl font-black mb-2" id="live-gold">₽24.5M</div>
+            <div class="text-lg opacity-90">💰 Общее золото</div>
         </div>
     </div>
 
-    <!-- Быстрые действия -->
-    <div class="action-grid">
-        <!-- Магазин -->
-        <a href="/shop" class="action-card">
-            <i class="fas fa-store action-icon" style="color: #10b981;"></i>
-            <h2 class="action-title">🛒 Магазин</h2>
-            <p class="action-desc">Купить новые танки из СССР и Германии. 60+ моделей от 1 до 11 уровня!</p>
+    <!-- 🎮 КНОПКИ НАВИГАЦИЯ -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+        <a href="{{ url_for('profile') }}" class="nav-card bg-gradient-to-br from-slate-800 to-gray-900 hover:from-slate-700 hover:to-gray-800 text-white p-10 rounded-3xl shadow-2xl hover:scale-105 transition-all duration-300 border-4 border-slate-600/50 text-center group">
+            <i class="fas fa-user-circle text-5xl mb-4 group-hover:text-emerald-400"></i>
+            <div class="text-2xl font-black mb-2">👤 Профиль</div>
+            <div class="opacity-75">Статистика и награды</div>
         </a>
-
-        <!-- Гараж -->
-        <a href="/garage" class="action-card">
-            <i class="fas fa-warehouse action-icon" style="color: #3b82f6;"></i>
-            <h2 class="action-title">🏪 Гараж</h2>
-            <p class="action-desc">Посмотреть все ваши танки. Оснастить экипаж и подготовиться к бою.</p>
+        <a href="{{ url_for('garage') }}" class="nav-card bg-gradient-to-br from-emerald-600 to-green-700 hover:from-emerald-500 hover:to-green-600 text-white p-10 rounded-3xl shadow-2xl hover:scale-105 transition-all duration-300 border-4 border-emerald-500/50 text-center group">
+            <i class="fas fa-warehouse text-5xl mb-4 group-hover:text-yellow-300"></i>
+            <div class="text-2xl font-black mb-2">🏪 Гараж</div>
+            <div class="opacity-75">Твои танки</div>
         </a>
-
-        <!-- Арена -->
-        <a href="/battle" class="action-card">
-            <i class="fas fa-fire action-icon" style="color: #ef4444;"></i>
-            <h2 class="action-title">⚔️ Арена</h2>
-            <p class="action-desc">Заточить пушку и в бой! Сражайтесь за золото и серебро.</p>
+        <a href="{{ url_for('shop') }}" class="nav-card bg-gradient-to-br from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white p-10 rounded-3xl shadow-2xl hover:scale-105 transition-all duration-300 border-4 border-amber-400/50 text-center group">
+            <i class="fas fa-store text-5xl mb-4 group-hover:text-white"></i>
+            <div class="text-2xl font-black mb-2">🛒 Магазин</div>
+            <div class="opacity-75">Покупай танки!</div>
         </a>
-
-        <!-- Профиль -->
-        <a href="/profile" class="action-card">
-            <i class="fas fa-user-circle action-icon" style="color: #8b5cf6;"></i>
-            <h2 class="action-title">👤 Профиль</h2>
-            <p class="action-desc">Ваша статистика, достижения и прогресс в боях.</p>
-        </a>
-
-        <!-- Лидерборд -->
-        <a href="/leaderboard" class="action-card">
-            <i class="fas fa-trophy action-icon" style="color: #fbbf24;"></i>
-            <h2 class="action-title">🏆 Топ игроков</h2>
-            <p class="action-desc">Лучшие танкисты мира. Займите своё место в таблице!</p>
-        </a>
-
-        <!-- Турниры (скоро) -->
-        <div class="action-card" onclick="alert('🏆 Турниры появятся в Q2 2026!'); return false;">
-            <i class="fas fa-crown action-icon" style="color: #f59e0b;"></i>
-            <h2 class="action-title">👑 Турниры</h2>
-            <p class="action-desc">Грандиозные соревнования. Скоро!</p>
-        </div>
-    </div>
-
-    <!-- Информация о проекте -->
-    <div class="glass-panel max-w-4xl mx-auto mt-20 p-12 text-center">
-        <h2 class="text-4xl font-bold mb-8" style="background: var(--accent-purple); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-            🚀 Что нового в ТанкУстик v9.9
-        </h2>
-        <div class="grid md:grid-cols-3 gap-8 text-left">
-            <div>
-                <h3 class="text-2xl font-bold mb-4 flex items-center gap-3">
-                    <i class="fas fa-fire text-red-400"></i>60+ танков
-                </h3>
-                <p>Полная линейка СССР и Германии. От МС-1 до Объекта 279. Точные характеристики из World of Tanks.</p>
-            </div>
-            <div>
-                <h3 class="text-2xl font-bold mb-4 flex items-center gap-3">
-                    <i class="fas fa-coins text-yellow-400"></i>Баланс экономики
-                </h3>
-                <p>1500 золота на старте. Тяжёлые танки стоят 400k+. Выигрывайте бои чтобы разбогатеть!</p>
-            </div>
-            <div>
-                <h3 class="text-2xl font-bold mb-4 flex items-center gap-3">
-                    <i class="fas fa-brain text-purple-400"></i>AI противники
-                </h3>
-                <p>Скоро появится полноценная боевая система с ИИ. Тактические бои 1v1!</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Быстрые ссылки снизу -->
-    <div class="flex flex-wrap justify-center gap-6 mt-20 pt-12 border-t border-white/10">
-        <a href="/shop" class="px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white font-bold rounded-2xl hover:from-emerald-500 hover:to-green-500 transition-all duration-300 transform hover:-translate-y-2 shadow-2xl">
-            🛒 В магазин
-        </a>
-        <a href="/garage" class="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-2xl hover:from-blue-500 hover:to-indigo-500 transition-all duration-300 transform hover:-translate-y-2 shadow-2xl">
-            🏪 В гараж
-        </a>
-        <a href="/battle" class="px-8 py-4 bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold rounded-2xl hover:from-red-500 hover:to-orange-500 transition-all duration-300 transform hover:-translate-y-2 shadow-2xl">
-            ⚔️ На арену!
+        <a href="{{ url_for('battle_queue') }}" class="nav-card bg-gradient-to-br from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white p-10 rounded-3xl shadow-2xl hover:scale-105 transition-all duration-300 border-4 border-red-500/50 text-center group">
+            <i class="fas fa-crosshairs text-5xl mb-4 group-hover:text-yellow-300"></i>
+            <div class="text-2xl font-black mb-2">⚔️ Бои</div>
+            <div class="opacity-75">PvP / Бот</div>
         </a>
     </div>
 </div>
 
-<style>
-.hero-title {
-    text-shadow: 
-        0 0 20px rgba(16, 185, 129, 0.5),
-        0 0 40px rgba(16, 185, 129, 0.3);
-}
-.action-card:hover .action-icon {
-    animation: bounce 0.6s ease infinite;
-}
-@keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-}
-@media (max-width: 768px) {
-    .stats-grid, .action-grid {
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    }
-    .action-grid {
-        grid-template-columns: 1fr;
-    }
-}
-</style>
+<script>
+// 🔥 LIVE СТАТИСТИКА каждую 1 сек
+setInterval(async () => {
+    try {
+        const res = await fetch('/api/stats');
+        const stats = await res.json();
+        document.getElementById('live-online').textContent = stats.online;
+        document.getElementById('live-afk').textContent = stats.afk;
+        document.getElementById('live-total').textContent = stats.total;
+        document.getElementById('live-gold').textContent = stats.gold.toLocaleString() + '₽';
+    } catch(e) {}
+}, 1000);
+</script>
 {% endblock %}
