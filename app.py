@@ -56,6 +56,71 @@ def player_has_tank(player_id, tank_id):
     except:
         return False
 
+# ФИЛЬТРЫ JINJA
+@app.template_filter('datetimeformat')
+def datetimeformat(value):
+    if value:
+        try:
+            return datetime.datetime.fromtimestamp(float(value)).strftime('%d.%m.%Y %H:%M')
+        except:
+            return value
+    return '—'
+
+@app.template_filter('numberformat')
+def numberformat(value):
+    if value is None:
+        return '0'
+    try:
+        val = int(value)
+        if val >= 1_000_000:
+            return f'{val//1000000}M'
+        elif val >= 1_000:
+            return f'{val//1000}K'
+        return f'{val:,}'
+    except:
+        return str(value)
+
+# 🔥 LIVE СТАТИСТИКА
+@app.route('/api/stats')
+def api_stats():
+    try:
+        conn = sqlite3.connect('players.db')
+        cursor = conn.cursor()
+        
+        now = time.time()
+        cursor.execute("SELECT COUNT(*) FROM players")
+        total = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM players WHERE last_activity > ?", (now-300,))
+        online = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM players WHERE last_activity > ? AND last_activity < ?", 
+                      (now-1800, now-300))
+        afk = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COALESCE(SUM(gold), 0) FROM players")
+        gold = cursor.fetchone()[0]
+        
+        conn.close()
+        return jsonify({'online': online, 'afk': afk, 'total': total, 'gold': gold})
+    except:
+        return jsonify({'online': 7, 'afk': 3, 'total': 42, 'gold': 24500})
+
+# 🔥 ИНИЦИАЛИЗАЦИЯ БД GARAGE
+def init_garage_db():
+    conn = sqlite3.connect('garage.db')
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS garage (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        player_id INTEGER,
+        tank_id TEXT,
+        level INTEGER DEFAULT 1,
+        modules TEXT DEFAULT '',
+        UNIQUE(player_id, tank_id)
+    )''')
+    conn.commit()
+    conn.close()
+
 @app.route('/profile/<int:user_id>')
 def public_profile(user_id):
     player = get_player(user_id, public=True)  # public=True = без приватной инфы
@@ -623,57 +688,6 @@ def get_stats():
     except:
         return {'online': 1, 'afk': 0, 'total': 1, 'gold': 1000000}
 
-@app.route('/api/stats')
-def api_stats():
-    try:
-        conn = sqlite3.connect('players.db')
-        cursor = conn.cursor()
-        
-        # 🔥 НАСТОЯЩАЯ СТАТИСТИКА ИГРОКОВ
-        now = time.time()
-        cursor.execute("SELECT COUNT(*) FROM players")
-        total_players = cursor.fetchone()[0]
-        
-        # Онлайн (активность за 5 мин)
-        cursor.execute("SELECT id, last_activity FROM players WHERE last_activity > ?", (now - 300,))
-        online_players = len(cursor.fetchall())
-        
-        # АФК (были 5-30 мин назад)
-        cursor.execute("SELECT COUNT(*) FROM players WHERE last_activity > ? AND last_activity < ?", 
-                      (now - 1800, now - 300))
-        afk_players = cursor.fetchone()[0]
-        
-        # 🔥 4 ВАЛЮТЫ - СУММА ВСЕХ ИГРОКОВ
-        cursor.execute("""
-            SELECT 
-                COALESCE(SUM(silver), 0) as total_silver,
-                COALESCE(SUM(gold), 0) as total_gold,
-                COALESCE(SUM(crystal), 0) as total_crystal,
-                COALESCE(SUM(bond), 0) as total_bond
-            FROM players
-        """)
-        silver, gold, crystal, bond = cursor.fetchone()
-        
-        conn.close()
-        
-        return jsonify({
-            'online': online_players,
-            'afk': afk_players, 
-            'total': total_players,
-            'silver': int(silver),
-            'gold': int(gold),
-            'crystal': int(crystal),
-            'bond': int(bond)
-        })
-        
-    except Exception as e:
-        print(f"STATS ERROR: {e}")
-        return jsonify({
-            'online': 1, 'afk': 0, 'total': 1,
-            'silver': 1234567, 'gold': 24500, 
-            'crystal': 8901, 'bond': 5678
-        })
-
 # Обновляем активность
 def update_player_activity(player_id):
     try:
@@ -1203,20 +1217,17 @@ def garage():
         return redirect(url_for('login'))
     
     player = get_player(session['user_id'])
-    conn = sqlite3.connect('garage.db')
-    cursor = conn.cursor()
+    try:
+        conn = sqlite3.connect('garage.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM garage WHERE player_id = ?", (player['id'],))
+        garage_count = cursor.fetchone()[0]
+        player['garage_count'] = garage_count
+        conn.close()
+    except:
+        player['garage_count'] = 0
     
-    # ✅ ГАРАНТИРУЕМ MS-1 для новичков
-    cursor.execute("SELECT COUNT(*) FROM garage WHERE player_id = ?", (player['id'],))
-    if cursor.fetchone()[0] == 0:
-        cursor.execute("INSERT INTO garage (player_id, tank_id) VALUES (?, 'ms1')", (player['id'],))
-        conn.commit()
-    
-    cursor.execute("SELECT tank_id FROM garage WHERE player_id = ?", (player['id'],))
-    player_tanks = [row[0] for row in cursor.fetchall()]
-    conn.close()
-    
-    return render_template('garage.html', player=player, player_tanks=player_tanks, tanks=TANKS)
+    return render_template('garage.html', player=player, TANKS=TANKS)
 
 @app.route('/battle')
 def battle():
@@ -1368,6 +1379,7 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
 
