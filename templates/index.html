@@ -39,7 +39,7 @@
             <div class="text-2xl font-black mb-2">🛒 Магазин</div>
             <div class="opacity-75">Покупай танки!</div>
         </a>
-        <a href="{{ url_for('battle_queue') }}" class="nav-card bg-gradient-to-br from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white p-10 rounded-3xl shadow-2xl hover:scale-105 transition-all duration-300 border-4 border-red-500/50 text-center group">
+        <a href="/battle" class="nav-card bg-gradient-to-br from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white p-10 rounded-3xl shadow-2xl hover:scale-105 transition-all duration-300 border-4 border-red-500/50 text-center group">
             <i class="fas fa-crosshairs text-5xl mb-4 group-hover:text-yellow-300"></i>
             <div class="text-2xl font-black mb-2">⚔️ Бои</div>
             <div class="opacity-75">PvP / Бот</div>
@@ -68,5 +68,6 @@ setInterval(async () => {
 }, 1000);  // Каждые 2 сек = не нагружает
 </script>
 {% endblock %}
+
 
 
