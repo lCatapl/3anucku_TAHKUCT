@@ -21,61 +21,6 @@ from collections import defaultdict
 
 from werkzeug.security import generate_password_hash
 
-def init_sample_data():
-    """Инициализация БД с админами и тестовыми игроками"""
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    # 🎖️ АДМИНЫ (полные права)
-    admins = [
-        ('Назар', '120187', 5000, 0, 0, 0, 0, 1),  # Ветеран
-        ('CatNap', '120187', 5000, 0, 0, 0, 0, 1),  # Топ-3
-    ]
-    # 1. Создать админов
-    for username, password, silver, gold, wins, battles, crystal, level in admins:
-        password_hash = generate_password_hash(password)
-        cursor.execute('''INSERT OR REPLACE INTO players 
-                         (username, password, silver, gold, wins, battles, crystal, level, 
-                          is_admin, created, last_activity)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)''',
-                      (username, password_hash, silver, gold, wins, battles, crystal, level,
-                       datetime.now(), datetime.now()))
-    
-    # 2. Создать тестовых игроков  
-    for username, password, silver, gold, wins, battles, crystal, level in test_players:
-        password_hash = generate_password_hash(password)
-        cursor.execute('''INSERT OR IGNORE INTO players 
-                         (username, password, silver, gold, wins, battles, crystal, level,
-                          created, last_activity)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                      (username, password_hash, silver, gold, wins, battles, crystal, level,
-                       datetime.now(), datetime.now()))
-    
-    # 3. Установить стартовые значения для новых игроков
-    cursor.execute('''UPDATE players SET 
-                         silver = COALESCE(silver, 500),
-                         gold = COALESCE(gold, 0),
-                         wins = COALESCE(wins, 0),
-                         battles = COALESCE(battles, 0),
-                         crystal = COALESCE(crystal, 0),
-                         level = COALESCE(level, 1)
-                      WHERE silver IS NULL''')
-    
-    conn.commit()
-    
-    # 4. Показать статистику
-    cursor.execute('SELECT COUNT(*) FROM players')
-    total_players = cursor.fetchone()[0]
-    cursor.execute('SELECT SUM(battles) FROM players')
-    total_battles = cursor.fetchone()[0] or 0
-    
-    print(f"✅ БД инициализирована!")
-    print(f"👑 Админы: Назар/120187, CatNap/120187")
-    print(f"📊 Игроков: {total_players} | Боёв: {total_battles}")
-    print(f"🎮 Новички стартуют с 500 серебра")
-    
-    conn.close()
-
 # ⭐ ЛУЧШАЯ ФУНКЦИЯ РЕГИСТРАЦИИ
 from werkzeug.security import generate_password_hash
 from datetime import datetime
@@ -1076,6 +1021,61 @@ def init_db():
 # Вызвать при старте
 init_db()
 
+def init_sample_data():
+    """Инициализация БД с админами и тестовыми игроками"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # 🎖️ АДМИНЫ (полные права)
+    admins = [
+        ('Назар', '120187', 5000, 0, 0, 0, 0, 1),  # Ветеран
+        ('CatNap', '120187', 5000, 0, 0, 0, 0, 1),  # Топ-3
+    ]
+    # 1. Создать админов
+    for username, password, silver, gold, wins, battles, crystal, level in admins:
+        password_hash = generate_password_hash(password)
+        cursor.execute('''INSERT OR REPLACE INTO players 
+                         (username, password, silver, gold, wins, battles, crystal, level, 
+                          is_admin, created, last_activity)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)''',
+                      (username, password_hash, silver, gold, wins, battles, crystal, level,
+                       datetime.now(), datetime.now()))
+    
+    # 2. Создать тестовых игроков  
+    for username, password, silver, gold, wins, battles, crystal, level in test_players:
+        password_hash = generate_password_hash(password)
+        cursor.execute('''INSERT OR IGNORE INTO players 
+                         (username, password, silver, gold, wins, battles, crystal, level,
+                          created, last_activity)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                      (username, password_hash, silver, gold, wins, battles, crystal, level,
+                       datetime.now(), datetime.now()))
+    
+    # 3. Установить стартовые значения для новых игроков
+    cursor.execute('''UPDATE players SET 
+                         silver = COALESCE(silver, 500),
+                         gold = COALESCE(gold, 0),
+                         wins = COALESCE(wins, 0),
+                         battles = COALESCE(battles, 0),
+                         crystal = COALESCE(crystal, 0),
+                         level = COALESCE(level, 1)
+                      WHERE silver IS NULL''')
+    
+    conn.commit()
+    
+    # 4. Показать статистику
+    cursor.execute('SELECT COUNT(*) FROM players')
+    total_players = cursor.fetchone()[0]
+    cursor.execute('SELECT SUM(battles) FROM players')
+    total_battles = cursor.fetchone()[0] or 0
+    
+    print(f"✅ БД инициализирована!")
+    print(f"👑 Админы: Назар/120187, CatNap/120187")
+    print(f"📊 Игроков: {total_players} | Боёв: {total_battles}")
+    print(f"🎮 Новички стартуют с 500 серебра")
+    
+    conn.close()
+
 def get_player_stats(target_id):
     conn = get_db()
     cursor = conn.cursor()
@@ -1545,6 +1545,7 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
 
