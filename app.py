@@ -1268,7 +1268,7 @@ def login():
         
         conn = sqlite3.connect('players.db')
         cursor = conn.cursor()
-        cursor.execute("SELECT id, password, role FROM players WHERE username = ?", (username,))
+        cursor.execute("SELECT id, password, is_admin as role FROM players WHERE username = ?", (username,))
         row = cursor.fetchone()
         conn.close()
         
@@ -1587,6 +1587,7 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
 
