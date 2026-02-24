@@ -46,9 +46,8 @@
         </a>
     </div>
 </div>
-
 <script>
-// 🔥 LIVE СТАТИСТИКА каждую 1 сек
+// 🔥 LIVE СТАТИСТИКА (замени setInterval)
 setInterval(async () => {
     try {
         const res = await fetch('/api/stats');
@@ -57,17 +56,12 @@ setInterval(async () => {
         document.getElementById('live-online').textContent = stats.online;
         document.getElementById('live-afk').textContent = stats.afk;
         document.getElementById('live-total').textContent = stats.total.toLocaleString();
-        
-        // Форматируем золото красиво
-        const goldK = (stats.gold / 1000).toLocaleString('ru-RU', {maximumFractionDigits: 1});
-        document.getElementById('live-gold').textContent = goldK + 'K₽';
-        
-    } catch(e) {
-        console.log('Live stats failed');
-    }
-}, 1000);  // Каждые 2 сек = не нагружает
+        document.getElementById('live-gold').textContent = (stats.gold/1000).toFixed(1) + 'K₽';
+    } catch(e) {}
+}, 1000);
 </script>
 {% endblock %}
+
 
 
 
