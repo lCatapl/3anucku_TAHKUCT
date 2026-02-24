@@ -53,11 +53,19 @@ setInterval(async () => {
     try {
         const res = await fetch('/api/stats');
         const stats = await res.json();
+        
         document.getElementById('live-online').textContent = stats.online;
         document.getElementById('live-afk').textContent = stats.afk;
-        document.getElementById('live-total').textContent = stats.total;
-        document.getElementById('live-gold').textContent = stats.gold.toLocaleString() + '₽';
-    } catch(e) {}
-}, 1000);
+        document.getElementById('live-total').textContent = stats.total.toLocaleString();
+        
+        // Форматируем золото красиво
+        const goldK = (stats.gold / 1000).toLocaleString('ru-RU', {maximumFractionDigits: 1});
+        document.getElementById('live-gold').textContent = goldK + 'K₽';
+        
+    } catch(e) {
+        console.log('Live stats failed');
+    }
+}, 1000);  // Каждые 2 сек = не нагружает
 </script>
 {% endblock %}
+
