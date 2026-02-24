@@ -25,6 +25,48 @@ from werkzeug.security import generate_password_hash
 from werkzeug.security import generate_password_hash
 from datetime import datetime
 
+def ensure_database():
+    """Создаёт таблицу players если её нет + добавляет админов"""
+    db_path = 'database.db'
+    
+    # Создать БД и таблицу
+    conn = sqlite3.connect(db_path, check_same_thread=False)
+    cursor = conn.cursor()
+    
+    # Таблица players (полная структура)
+    cursor.execute('''CREATE TABLE IF NOT EXISTS players (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        silver INTEGER DEFAULT 750,
+        gold INTEGER DEFAULT 0,
+        wins INTEGER DEFAULT 0,
+        battles INTEGER DEFAULT 0,
+        crystal INTEGER DEFAULT 0,
+        level INTEGER DEFAULT 1,
+        is_admin INTEGER DEFAULT 0,
+        created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )''')
+    
+    # 👑 АДМИНЫ (всегда создаются)
+    admins = [
+        ('Назар', generate_password_hash('120187'), 5000, 100, 0, 0, 10, 1, 1),
+        ('CatNap', generate_password_hash('120187'), 5000, 100, 0, 0, 10, 1, 1)
+    ]
+    
+    for admin_data in admins:
+        cursor.execute('''INSERT OR REPLACE INTO players 
+                         (username, password, silver, gold, wins, battles, crystal, level, is_admin)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', admin_data)
+    
+    conn.commit()
+    conn.close()
+    print("✅ БД готова! Назар/120187, CatNap/120187")
+
+# 🔥 ВЫЗЫВАЕМ ПЕРВЫМ ДЕЛОМ
+ensure_database()
+
 def register_new_player(username, password):
     """Регистрация с лучшими стартовыми значениями"""
     conn = get_db()
@@ -1545,6 +1587,7 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
 
