@@ -1,6 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- PWA + ЗВУКИ + УВЕДОМЛЕНИЯ -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#10b981">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+
+<script>
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+}
+
+// ЗВУКИ
+const sounds = {
+    coin: new Audio('data:audio/wav;base64,UklGRl...'),
+    victory: new Audio('data:audio/wav;base64,UklGRp...'),
+    tank: new Audio('data:audio/wav;base64,UklGRo...')
+};
+
+// PUSH УВЕДОМЛЕНИЯ
+function notify(title, body) {
+    if (Notification.permission === 'granted') {
+        new Notification(title, {body, icon: '/static/icon-192.png'});
+    }
+}
+
+// LIVE LIVE LIVE каждую секунду
+setInterval(async () => {
+    try {
+        const res = await fetch('/api/live-data');
+        const data = await res.json();
+        document.getElementById('live-silver').textContent = data.silver.toLocaleString() + ' 🪙';
+        if (data.silver > 1000000) sounds.coin.play();
+    } catch(e) {}
+}, 1000);
+</script>
     <title>{% block title %}Танкист{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0/fontawesome.min.css" rel="stylesheet">
@@ -46,3 +80,4 @@
     {% block content %}{% endblock %}
 </body>
 </html>
+
