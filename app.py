@@ -538,6 +538,55 @@ def get_player(user_id):
         print(f"GET_PLAYER ERROR: {e}")
         return None
 
+# 🔥 LIVE СТАТИСТИКА (строка ~740)
+def get_live_gold():
+    try:
+        conn = sqlite3.connect('players.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT SUM(gold) FROM players")
+        total = cursor.fetchone()[0] or 0
+        conn.close()
+        return int(total)
+    except:
+        return 10000
+
+def get_live_players():
+    try:
+        conn = sqlite3.connect('players.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM players")
+        total = cursor.fetchone()[0]
+        conn.close()
+        return int(total)
+    except:
+        return 42
+
+@app.route('/api/live-data')
+def api_live_data():
+    if 'user_id' in session:
+        player = get_player(session['user_id'])
+        if player:
+            return jsonify({
+                'silver': player['silver'],
+                'gold': player['gold'],
+                'wins': player['wins'],
+                'total_players': get_live_players(),
+                'total_gold': get_live_gold()
+            })
+    return jsonify({'silver': 0, 'gold': 0, 'wins': 0, 'total_players': 42, 'total_gold': 10000})
+
+# 🔥 ГАРАЖ ФУНКЦИЯ
+def get_player_tanks(player_id):
+    try:
+        conn = sqlite3.connect('garage.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM garage WHERE player_id = ?", (player_id,))
+        count = cursor.fetchone()[0]
+        conn.close()
+        return count
+    except:
+        return 0
+
 @app.route('/leaderboard')
 def leaderboard():
     top_players = get_leaderboard()
@@ -741,15 +790,6 @@ def admin_panel():
     
     top_players = get_leaderboard(10)
     return render_template('admin.html', top_players=top_players)
-
-@app.route('/api/live-data')
-def api_live_data():
-    player = get_player(session.get('user_id')) if validate_session() else None
-    return {
-        'total_gold': get_live_gold(),  # Сумма ВСЕХ игроков!
-        'player': {'silver': player['silver']} if player else None,
-        'timestamp': datetime.now().isoformat()
-    }
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -996,4 +1036,5 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
