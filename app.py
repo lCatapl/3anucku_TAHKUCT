@@ -1266,35 +1266,31 @@ def login():
         password = request.form['password']
         print(f"DEBUG LOGIN: username={username}")
         
-        conn = sqlite3.connect('players.db')
+        # 🔥 ГАРАНТИРОВАННОЕ создание БД ПЕРЕД запросом
+        ensure_database()
+        
+        conn = get_db()
         cursor = conn.cursor()
+        
+        # Проверяем существование таблицы
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='players'")
+        if not cursor.fetchone():
+            ensure_database()
+            conn = get_db()
+            cursor = conn.cursor()
+        
         cursor.execute("SELECT id, password, is_admin as role FROM players WHERE username = ?", (username,))
-        row = cursor.fetchone()
+        player = cursor.fetchone()
+        
+        if player and check_password_hash(player[1], password):
+            session['user_id'] = player[0]
+            session['username'] = username
+            session['role'] = player[2]
+            conn.close()
+            return redirect(url_for('index'))
+        
         conn.close()
-        
-        if row:
-            stored_hash = row[1]  # Уже bytes!
-            
-            # ✅ ПРОВЕРЯЕМ БЕЗ .encode() если уже bytes
-            try:
-                if isinstance(stored_hash, bytes) and bcrypt.checkpw(password.encode(), stored_hash):
-                    session['user_id'] = row[0]
-                    session['role'] = row[2]
-                    print(f"✅ LOGIN OK: {username}")
-                    return redirect(url_for('profile'))
-            except:
-                pass
-            
-            # Fallback для строковых хэшей
-            if isinstance(stored_hash, str):
-                stored_hash = stored_hash.encode()
-                if bcrypt.checkpw(password.encode(), stored_hash):
-                    session['user_id'] = row[0]
-                    session['role'] = row[2]
-                    return redirect(url_for('profile'))
-        
-        print("LOGIN ERROR: неверный пароль")
-        return render_template('login.html', error="Неверный логин/пароль")
+        flash('Неверный логин или пароль')
     
     return render_template('login.html')
 
@@ -1587,6 +1583,7 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
 
