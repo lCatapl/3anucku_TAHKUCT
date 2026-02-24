@@ -509,17 +509,35 @@ def get_leaderboard(limit=50):
     conn.close()
     return players
 
-def get_player_tanks(player_id):
-    """Возвращает КОЛИЧЕСТВО танков (int)"""
+def get_player(user_id):
+    """Полные данные игрока из БД"""
     try:
-        conn = sqlite3.connect('garage.db')
+        conn = sqlite3.connect('players.db')
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM garage WHERE player_id = ?", (player_id,))
-        count = cursor.fetchone()[0]  # int!
+        cursor.execute("""
+            SELECT id, username, silver, gold, wins, battles, role, tank_id 
+            FROM players WHERE id = ?
+        """, (user_id,))
+        row = cursor.fetchone()
         conn.close()
-        return count
-    except:
-        return 0
+        
+        if row:  # ✅ Проверяем row
+            winrate = (row[4] / max(row[5], 1)) * 100 if row[5] > 0 else 0
+            return {
+                'id': row[0],
+                'username': row[1],
+                'silver': row[2],
+                'gold': row[3],
+                'wins': row[4],
+                'battles': row[5],
+                'winrate': round(winrate, 1),
+                'role': row[6],
+                'tank_id': row[7] or 'ms1'
+            }
+        return None
+    except Exception as e:
+        print(f"GET_PLAYER ERROR: {e}")
+        return None
 
 @app.route('/leaderboard')
 def leaderboard():
@@ -626,30 +644,6 @@ def get_player_stats(player_id):
         }
     return None
 
-# ========================================
-# ✅ ОСНОВНЫЕ ФУНКЦИИ ИГРОКА
-# ========================================
-def get_player(user_id):
-    try:
-        conn = sqlite3.connect('players.db')
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM players WHERE id=?", (user_id,))
-        row = cursor.fetchone()
-        conn.close()
-        
-        if row:
-            player = {
-                'id': row[0], 'username': row[1], 'password': row[2],
-                'gold': row[3] or 0, 'silver': row[4] or 0, 'points': row[5] or 0,
-                'tanks': json.loads(row[6] or '[]'), 'battles': row[7] or 0, 'wins': row[8] or 0,
-                'created_at': row[9], 'role': row[10] or 'player', 'rank': row[11] or 'Солдат'
-            }
-            return player
-        return None
-    except Exception as e:
-        print(f"GET_PLAYER ERROR: {e}")
-        return None
-
 def update_player(player):
     try:
         conn = sqlite3.connect('players.db')
@@ -677,6 +671,39 @@ def validate_session():
 
 def is_superadmin(username):
     return username in ADMIN_LOGINS
+
+queue_players = {}  # {tier: [player_ids]}
+
+@app.route('/api/queue-status')
+def api_queue_status():
+    return jsonify({
+        'tier1': len(queue_players.get(1, [])),
+        'tier2': len(queue_players.get(2, [])),
+        'tier3': len(queue_players.get(3, []))
+    })
+
+@app.route('/battle/<tank_id>')
+def battle(tank_id):
+    if not validate_session():
+        return redirect(url_for('login'))
+    
+    player = get_player(session['user_id'])
+    tier = TANKS[tank_id]['tier'] if tank_id != 'ai' else 1
+    
+    # Добавляем в очередь
+    if tier not in queue_players:
+        queue_players[tier] = []
+    queue_players[tier].append(player['id'])
+    
+    return render_template('battle.html', player=player, tank_id=tank_id, tier=tier)
+
+def give_reward(player_id, silver):
+    conn = sqlite3.connect('players.db')
+    cursor = conn.cursor()
+    cursor.execute("UPDATE players SET silver = silver + ? WHERE id = ?", (silver, player_id))
+    cursor.execute("UPDATE players SET wins = wins + 1, battles = battles + 1 WHERE id = ?", (player_id,))
+    conn.commit()
+    conn.close()
 
 # ========================================
 # ✅ МАРШРУТЫ - АВТОРИЗАЦИЯ
@@ -719,6 +746,14 @@ def register():
             conn.close()
     
     return render_template('register.html')
+
+@app.route('/admin')
+def admin_panel():
+    if session.get('role') != 'superadmin':
+        return redirect(url_for('login'))
+    
+    top_players = get_leaderboard(10)
+    return render_template('admin.html', top_players=top_players)
 
 @app.route('/api/live-data')
 def api_live_data():
@@ -954,10 +989,3 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
-
-
-
-
-
-
-
