@@ -19,6 +19,112 @@ import time
 import random
 from collections import defaultdict
 
+from werkzeug.security import generate_password_hash
+
+def init_sample_data():
+    """Инициализация БД с админами и тестовыми игроками"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # 🎖️ АДМИНЫ (полные права)
+    admins = [
+        ('Назар', '120187', 120187, 50, 45, 892, 1250, 15),  # Ветеран
+        ('CatNap', '120187', 85000, 35, 32, 743, 980, 12),  # Топ-3
+    ]
+    
+    # 👥 ТЕСТОВЫЕ ИГРОКИ (разные уровни)
+    test_players = [
+        ('T-34_85', 't34', 24500, 18, 7, 156, 420, 5),      # Средний
+        ('PanzerIV', '88mm', 32800, 22, 9, 198, 512, 6),    # Продвинутый  
+        ('Новичок', '123', 850, 0, 3, 12, 0, 1),            # Только начал
+    ]
+    
+    # 1. Создать админов
+    for username, password, silver, gold, wins, battles, crystal, level in admins:
+        password_hash = generate_password_hash(password)
+        cursor.execute('''INSERT OR REPLACE INTO players 
+                         (username, password, silver, gold, wins, battles, crystal, level, 
+                          is_admin, created, last_activity)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)''',
+                      (username, password_hash, silver, gold, wins, battles, crystal, level,
+                       datetime.now(), datetime.now()))
+    
+    # 2. Создать тестовых игроков  
+    for username, password, silver, gold, wins, battles, crystal, level in test_players:
+        password_hash = generate_password_hash(password)
+        cursor.execute('''INSERT OR IGNORE INTO players 
+                         (username, password, silver, gold, wins, battles, crystal, level,
+                          created, last_activity)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                      (username, password_hash, silver, gold, wins, battles, crystal, level,
+                       datetime.now(), datetime.now()))
+    
+    # 3. Установить стартовые значения для новых игроков
+    cursor.execute('''UPDATE players SET 
+                         silver = COALESCE(silver, 500),
+                         gold = COALESCE(gold, 0),
+                         wins = COALESCE(wins, 0),
+                         battles = COALESCE(battles, 0),
+                         crystal = COALESCE(crystal, 0),
+                         level = COALESCE(level, 1)
+                      WHERE silver IS NULL''')
+    
+    conn.commit()
+    
+    # 4. Показать статистику
+    cursor.execute('SELECT COUNT(*) FROM players')
+    total_players = cursor.fetchone()[0]
+    cursor.execute('SELECT SUM(battles) FROM players')
+    total_battles = cursor.fetchone()[0] or 0
+    
+    print(f"✅ БД инициализирована!")
+    print(f"👑 Админы: Назар/120187, CatNap/120187")
+    print(f"📊 Игроков: {total_players} | Боёв: {total_battles}")
+    print(f"🎮 Новички стартуют с 500 серебра")
+    
+    conn.close()
+
+# ⭐ ЛУЧШАЯ ФУНКЦИЯ РЕГИСТРАЦИИ
+from werkzeug.security import generate_password_hash
+from datetime import datetime
+
+def register_new_player(username, password):
+    """Регистрация с лучшими стартовыми значениями"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    password_hash = generate_password_hash(password)
+    
+    # 🚀 СТАРТОВЫЙ ПАКЕТ НОВИЧКА (как в WoT)
+    start_package = {
+        'silver': 5000,     # 7+ боёв MS-1
+        'gold': 0,          # Только донат
+        'wins': 0,
+        'battles': 0, 
+        'crystal': 0,       # Премиум валюта
+        'level': 1,         # Ранг новичка
+    }
+    
+    cursor.execute('''INSERT OR IGNORE INTO players 
+                     (username, password, silver, gold, wins, battles, crystal, level, created)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                  (username, password_hash,
+                   start_package['silver'], 
+                   start_package['gold'],
+                   start_package['wins'], 
+                   start_package['battles'],
+                   start_package['crystal'], 
+                   start_package['level'],
+                   datetime.now()))
+    
+    conn.commit()
+    conn.close()
+    print(f"🎉 Новый игрок: {username} [{start_package['silver']} серебра]")
+    return True
+
+fix_db()
+init_sample_data()  # ← Всё готово!
+
 # 🔥 СИСТЕМА 4 ВАЛЮТ
 CURRENCIES = {
     'silver': {'emoji': '🪙', 'name': 'Серебро', 'color': 'gray'},
@@ -75,29 +181,43 @@ def datetimeformat(value):
         return dt.fromtimestamp(float(value or 0)).strftime('%d.%m.%Y')
     except: return '—'
 
-@app.template_filter('format_number')  # 🔥 ДЛЯ ЛИДЕРБОРДА!
+@app.template_filter('format_number')
 def format_number(value):
-    return numberformat(value)
+    if value is None:
+        return '0'
+    return f'{int(value):,}'.replace(',', ' ')
 
 # 🔥 LIVE СТАТИСТИКА
 @app.route('/api/stats')
 def api_stats():
-    conn = sqlite3.connect('players.db')
+    conn = get_db()  # твоя функция подключения к БД
     cursor = conn.cursor()
     
-    cursor.execute("SELECT COUNT(*) FROM players")
-    total = cursor.fetchone()[0]
+    # Общее количество игроков
+    cursor.execute('SELECT COUNT(*) FROM players')
+    total_players = cursor.fetchone()[0]
     
-    cursor.execute("SELECT COUNT(*) FROM players WHERE last_activity > ?", (time.time()-300,))
+    # Всего боёв
+    cursor.execute('SELECT SUM(battles) FROM players')
+    total_battles = cursor.fetchone()[0] or 0
+    
+    # Онлайн (последние 5 минут)
+    cursor.execute('SELECT COUNT(*) FROM players WHERE last_activity > datetime("now", "-5 minutes")')
     online = cursor.fetchone()[0]
-    
-    cursor.execute("SELECT COALESCE(SUM(wins), 0), COALESCE(SUM(gold), 0) FROM players")
-    wins, gold = cursor.fetchone()
     
     conn.close()
     return jsonify({
-        'online': online, 'total': total, 'wins': wins or 0, 'gold': gold or 0
+        'players': total_players,
+        'battles': total_battles,
+        'online': online,
+        'avg_winrate': f"{(cursor.execute('SELECT AVG(wins*100.0/battles) FROM players WHERE battles>0').fetchone()[0] or 0):.1f}%"
     })
+
+@app.route('/sw.js')
+@app.route('/manifest.json')
+@app.route('/robots.txt')
+def static_files():
+    return '', 204  # No content
 
 # 🔥 ИНИЦИАЛИЗАЦИЯ БД GARAGE
 def init_garage_db():
@@ -883,17 +1003,21 @@ def get_live_players():
 
 @app.route('/api/live-data')
 def api_live_data():
-    if 'user_id' in session:
-        player = get_player(session['user_id'])
-        if player:
-            return jsonify({
-                'silver': player['silver'],
-                'gold': player['gold'],
-                'wins': player['wins'],
-                'total_players': get_live_players(),
-                'total_gold': get_live_gold()
-            })
-    return jsonify({'silver': 0, 'gold': 0, 'wins': 0, 'total_players': 42, 'total_gold': 10000})
+    if 'user_id' not in session:
+        return jsonify({'silver': 0, 'gold': 0, 'wins': 0, 'battles': 0})
+    
+    conn = get_db()
+    cursor = conn.execute('SELECT silver, gold, wins, battles FROM players WHERE id=?', 
+                         (session['user_id'],))
+    player = cursor.fetchone()
+    conn.close()
+    
+    return jsonify({
+        'silver': player[0] if player else 0,
+        'gold': player[1] if player else 0,
+        'wins': player[2] if player else 0,
+        'battles': player[3] if player else 0
+    })
 
 # 🔥 ГАРАЖ ФУНКЦИЯ
 def get_player_tanks(player_id):
@@ -909,12 +1033,27 @@ def get_player_tanks(player_id):
 
 @app.route('/leaderboard')
 def leaderboard():
-    top_players = get_leaderboard()
-    player = get_player(session.get('user_id')) if validate_session() else None
-    player_rank = None
-    if player:
-        all_players = get_leaderboard(limit=100)
-        player_rank = next((p for p in all_players if p['username'] == player['username']), None)
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Топ 10 по победам
+    cursor.execute('''SELECT username, wins, battles, silver 
+                      FROM players ORDER BY wins DESC LIMIT 10''')
+    top_players = cursor.fetchall()
+    
+    # Позиция текущего игрока
+    if 'user_id' in session:
+        cursor.execute('''SELECT username, wins FROM players WHERE id=?''', (session['user_id'],))
+        player_data = cursor.fetchone()
+        if player_data:
+            cursor.execute('SELECT COUNT(*) + 1 FROM players WHERE wins > ?', (player_data[1],))
+            player_rank = cursor.fetchone()[0]
+        else:
+            player_rank = None
+    else:
+        player_rank = None
+    
+    conn.close()
     return render_template('leaderboard.html', top_players=top_players, player_rank=player_rank)
 
 @app.route('/api/leaderboard')
@@ -926,67 +1065,43 @@ def api_leaderboard():
 # ✅ БАЗА ДАННЫХ - ИНИЦИАЛИЗАЦИЯ v9.9
 # ========================================
 def init_db():
-    conn = sqlite3.connect('players.db')
+    conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
-    
-    # 1. Создаём структуру БД
     cursor.execute('''CREATE TABLE IF NOT EXISTS players (
-        id TEXT PRIMARY KEY,
+        id INTEGER PRIMARY KEY,
         username TEXT UNIQUE,
-        password TEXT,
         silver INTEGER DEFAULT 0,
         gold INTEGER DEFAULT 0,
-        role TEXT DEFAULT 'player',
         wins INTEGER DEFAULT 0,
         battles INTEGER DEFAULT 0,
-        tank_id TEXT DEFAULT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        crystal INTEGER DEFAULT 0,  -- добавить эту строку
+        bond INTEGER DEFAULT 0,
+        created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
-    
-    # 2. Проверяем/добавляем колонки
-    cursor.execute("PRAGMA table_info(players)")
-    columns = [col[1] for col in cursor.fetchall()]
-    if 'tank_id' not in columns:
-        cursor.execute("ALTER TABLE players ADD COLUMN tank_id TEXT DEFAULT NULL")
-    if 'wins' not in columns:
-        cursor.execute("ALTER TABLE players ADD COLUMN wins INTEGER DEFAULT 0")
-    if 'battles' not in columns:
-        cursor.execute("ALTER TABLE players ADD COLUMN battles INTEGER DEFAULT 0")
-    
-    # 3. 🔥 СОЗДАЁМ АДМИНОВ (ВНУТРИ init_db!)
-    admins = [
-        {'id': 'admin0001', 'username': 'Админ', 'password': '120187', 'silver': 1000000},
-        {'id': 'nazar_2026', 'username': 'Назар', 'password': '120187', 'silver': 1000000}
-    ]
-    
-    for admin in admins:
-        cursor.execute("SELECT id FROM players WHERE username = ?", (admin['username'],))
-        if not cursor.fetchone():
-            password_hash = bcrypt.hashpw(admin['password'].encode(), bcrypt.gensalt())
-            cursor.execute("""
-                INSERT INTO players (id, username, password, silver, gold, role, tank_id, wins, battles) 
-                VALUES (?, ?, ?, ?, 10000, 'superadmin', 'ms1', 0, 0)
-            """, (admin['id'], admin['username'], password_hash, admin['silver']))
-    
-    # 4. Стартовый танк всем новичкам
-    cursor.execute("""
-        UPDATE players SET silver = 50000, tank_id = 'ms1' 
-        WHERE silver < 10000 AND role = 'player'
-    """)
-    
-    # 5. garage.db + battles.db
-    cursor.execute('''CREATE TABLE IF NOT EXISTS garage (
-        id INTEGER PRIMARY KEY, player_id TEXT, tank_id TEXT, 
-        bought_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )''')
-    cursor.execute('''CREATE TABLE IF NOT EXISTS battles (
-        id INTEGER PRIMARY KEY, player_id TEXT, opponent_type TEXT, 
-        player_tier INTEGER, result TEXT, silver_reward INTEGER, battle_time TIMESTAMP
-    )''')
-    
     conn.commit()
     conn.close()
-    print("✅ БД готова! Назар/120187 + Админ/120187")
+
+# Вызвать при старте
+init_db()
+
+def get_player_stats(target_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Безопасный запрос только существующих колонок
+    cursor.execute('PRAGMA table_info(players)')
+    columns = [col[1] for col in cursor.fetchall()]
+    
+    select_cols = ['id', 'username', 'silver', 'gold', 'wins', 'battles', 'created', 'last_activity']
+    if 'crystal' in columns: select_cols.append('crystal')
+    if 'bond' in columns: select_cols.append('bond')
+    
+    query = f'SELECT {", ".join(select_cols)} FROM players WHERE id=?'
+    cursor.execute(query, (target_id,))
+    player = cursor.fetchone()
+    conn.close()
+    return player
 
 def get_player_stats(player_id):
     """Полные статы игрока"""
@@ -1439,3 +1554,4 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
