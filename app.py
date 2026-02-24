@@ -174,250 +174,6 @@ COLLECTION_TANKS = {
     }
 }
 
-# 🔥 ОЧЕРЕДЬ БОЁВ (глобальная)
-battle_queue = defaultdict(list)  # {tier: [{'player_id': 1, 'tank_id': 't34'}]}
-
-# 🔥 СТАТИСТИКА ONLINE
-last_activity = {}  # {player_id: timestamp}
-
-# Получить все танки для боя/покупки
-def get_combat_tanks():
-    return {**TANKS, **COLLECTION_TANKS}  # TANKS = обычные+премиум
-
-# Проверить коллекционный ли танк
-def is_collection_tank(tank_id):
-    return tank_id in COLLECTION_TANKS
-
-# Магазин показывает все
-all_tanks = {**TANKS, **COLLECTION_TANKS}
-
-# Гараж боевых танков (исключая коллекционные)
-combat_tanks = {k: v for k, v in all_tanks.items() if not is_collection_tank(k)}
-
-def get_stats():
-    try:
-        conn = sqlite3.connect('players.db')
-        cursor = conn.cursor()
-        
-        # Всего игроков
-        cursor.execute("SELECT COUNT(*) FROM players")
-        total = cursor.fetchone()[0]
-        
-        # Активные (последние 5 мин)
-        now = time.time()
-        online = sum(1 for last_time in last_activity.values() if now - last_time < 300)
-        
-        # АФК
-        afk = len(last_activity) - online
-        
-        # Золото
-        cursor.execute("SELECT SUM(gold) FROM players")
-        gold = cursor.fetchone()[0] or 0
-        
-        conn.close()
-        return {
-            'online': online, 
-            'afk': afk, 
-            'total': total,
-            'gold': int(gold)
-        }
-    except:
-        return {'online': 1, 'afk': 0, 'total': 1, 'gold': 1000000}
-
-@app.route('/api/stats')
-def api_stats():
-    try:
-        conn = sqlite3.connect('players.db')
-        cursor = conn.cursor()
-        
-        # 🔥 НАСТОЯЩАЯ СТАТИСТИКА ИГРОКОВ
-        now = time.time()
-        cursor.execute("SELECT COUNT(*) FROM players")
-        total_players = cursor.fetchone()[0]
-        
-        # Онлайн (активность за 5 мин)
-        cursor.execute("SELECT id, last_activity FROM players WHERE last_activity > ?", (now - 300,))
-        online_players = len(cursor.fetchall())
-        
-        # АФК (были 5-30 мин назад)
-        cursor.execute("SELECT COUNT(*) FROM players WHERE last_activity > ? AND last_activity < ?", 
-                      (now - 1800, now - 300))
-        afk_players = cursor.fetchone()[0]
-        
-        # 🔥 4 ВАЛЮТЫ - СУММА ВСЕХ ИГРОКОВ
-        cursor.execute("""
-            SELECT 
-                COALESCE(SUM(silver), 0) as total_silver,
-                COALESCE(SUM(gold), 0) as total_gold,
-                COALESCE(SUM(crystal), 0) as total_crystal,
-                COALESCE(SUM(bond), 0) as total_bond
-            FROM players
-        """)
-        silver, gold, crystal, bond = cursor.fetchone()
-        
-        conn.close()
-        
-        return jsonify({
-            'online': online_players,
-            'afk': afk_players, 
-            'total': total_players,
-            'silver': int(silver),
-            'gold': int(gold),
-            'crystal': int(crystal),
-            'bond': int(bond)
-        })
-        
-    except Exception as e:
-        print(f"STATS ERROR: {e}")
-        return jsonify({
-            'online': 1, 'afk': 0, 'total': 1,
-            'silver': 1234567, 'gold': 24500, 
-            'crystal': 8901, 'bond': 5678
-        })
-
-# Обновляем активность
-def update_player_activity(player_id):
-    try:
-        conn = sqlite3.connect('players.db')
-        cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE players SET last_activity = ? WHERE id = ?", 
-            (time.time(), player_id)
-        )
-        conn.commit()
-        conn.close()
-    except:
-        pass
-
-# Вызываем в каждом route:
-@app.route('/profile')
-def profile():
-    if not validate_session():
-        return redirect(url_for('login'))
-    update_player_activity(session['user_id'])  # ✅ НАСТОЯЩАЯ активность!
-    player = get_player(session['user_id'])
-    return render_template('profile.html', player=player)
-
-@app.route('/battle_queue/<int:tier>')
-def battle_queue_page(tier):
-    if not validate_session():
-        return redirect(url_for('login'))
-    
-    player = get_player(session['user_id'])
-    waiting = battle_queue[tier]
-    
-    return render_template('battle_queue.html', player=player, tier=tier, waiting=waiting)
-
-@app.route('/join_queue/<int:tier>/<tank_id>')
-def join_queue(tier, tank_id):
-    if not validate_session():
-        return jsonify({'error': 'Не авторизован'})
-    
-    player_id = session['user_id']
-    player = get_player(player_id)
-    
-    # Проверяем гараж
-    if not has_tank(player_id, tank_id):
-        return jsonify({'error': 'Танк не в гараже'})
-    
-    # Добавляем в очередь
-    battle_queue[tier].append({'player_id': player_id, 'tank_id': tank_id})
-    update_activity(player_id)
-    
-    return jsonify({'success': True, 'message': f'Ждёшь бой {tier} уровня!'})
-
-def has_tank(player_id, tank_id):
-    try:
-        conn = sqlite3.connect('garage.db')
-        cursor = conn.cursor()
-        cursor.execute("SELECT 1 FROM garage WHERE player_id = ? AND tank_id = ?", (player_id, tank_id))
-        result = cursor.fetchone()
-        conn.close()
-        return result is not None
-    except:
-        return False
-
-def find_opponent(tier):
-    # Ищем в очереди того же тиера
-    if battle_queue[tier]:
-        return battle_queue[tier].pop(0)
-    # Создаём бота
-    bot_tanks = [tid for tid, tank in TANKS.items() if tank['tier'] == tier]
-    return {'player_id': 'bot', 'tank_id': random.choice(bot_tanks)}
-
-# 1️⃣ FLASK APP
-app = Flask(__name__)
-app.secret_key = '3anucku-tankuct-2026-super-secret-key-alexin-kaluga-secure-v9.9'
-
-# 2️⃣ ERROR HANDLERS (ПЕРЕД ФИЛЬТРАМИ!)
-@app.errorhandler(500)
-def internal_error(error):
-    return "🚫 Серверная ошибка! Проверь логи Render.", 500
-
-@app.errorhandler(404)
-def not_found_error(error):
-    return render_template('404.html', player=None), 404  # ← player=None!
-
-# 3️⃣ Jinja2 ФИЛЬТР ДЛЯ ЧИСЕЛ (ОБЯЗАТЕЛЬНО!)
-def comma(value):
-    try:
-        return "{:,}".format(int(value)).replace(',', ' ')
-    except:
-        return value
-
-app.jinja_env.filters['comma'] = comma
-
-# 4️⃣ ГЛОБАЛЬНЫЕ КОНСТАНТЫ v9.9
-PLAYERS_EQUAL = True
-ADMIN_LOGINS = ["Назар", "CatNap", "Admin"]
-DB_PATH = 'players.db'  # ЕДИНАЯ БД!
-
-# 🔥 АДМИНЫ С ПРАВАМИ БОГА
-ADMIN_USERS = {
-    "Назар": {"user_id": "admin_nazar_2026", "role": "superadmin", "permissions": ["all"]},
-    "CatNap": {"user_id": "admin_catnap_2026", "role": "superadmin", "permissions": ["all"]},
-    "Admin": {"user_id": "admin0001", "role": "superadmin", "permissions": ["all"]},
-}
-
-# ГЛОБАЛЬНЫЙ CONTEXT PROCESSOR для player во ВСЕХ шаблонах
-@app.context_processor
-def inject_realtime_data():
-    def get_player(user_id):
-        if not user_id: return None
-        try:
-            conn = sqlite3.connect('players.db')
-            cursor = conn.cursor()
-            cursor.execute("SELECT id, username, silver, gold, role, tank_id FROM players WHERE id = ?", (user_id,))
-            row = cursor.fetchone()
-            conn.close()
-            if row:
-                return {
-                    'id': row[0], 'username': row[1], 'silver': row[2], 
-                    'gold': row[3], 'role': row[4], 'tank_id': row[5]
-                }
-            return None
-        except:
-            return None
-
-    def get_live_gold():
-        """Реальное золото из БД (сумма всех игроков)"""
-        try:
-            conn = sqlite3.connect('players.db')
-            cursor = conn.cursor()
-            cursor.execute("SELECT SUM(gold) FROM players")
-            total = cursor.fetchone()[0] or 0
-            conn.close()
-            return int(total)
-        except:
-            return 0
-
-    return {
-        'get_player': get_player,
-        'live_gold': get_live_gold,  # ← НАСТОЯЩЕЕ!
-        'now': datetime.now(),
-        'format_number': lambda x: f"{x:,}".replace(",", " ")
-    }
-
 # =================================
 # ✅ ПОЛНЫЙ СПИСОК 60+ ТАНКОВ v9.9
 # =================================
@@ -816,6 +572,250 @@ TANKS = {
     "st_i": {"name": "ST-1", "tier": 10, "type": "HT", "price": 1150000, "hp": 2400, "damage": 400, "pen": 257, "speed": 28, "premium": True},
     "vz36": {"name": "Vz. 36", "tier": 6, "type": "TD", "price": 125000, "hp": 1220, "damage": 400, "pen": 258, "speed": 38, "premium": True},
 }
+
+# 🔥 ОЧЕРЕДЬ БОЁВ (глобальная)
+battle_queue = defaultdict(list)  # {tier: [{'player_id': 1, 'tank_id': 't34'}]}
+
+# 🔥 СТАТИСТИКА ONLINE
+last_activity = {}  # {player_id: timestamp}
+
+# Получить все танки для боя/покупки
+def get_combat_tanks():
+    return {**TANKS, **COLLECTION_TANKS}  # TANKS = обычные+премиум
+
+# Проверить коллекционный ли танк
+def is_collection_tank(tank_id):
+    return tank_id in COLLECTION_TANKS
+
+# Магазин показывает все
+all_tanks = {**TANKS, **COLLECTION_TANKS}
+
+# Гараж боевых танков (исключая коллекционные)
+combat_tanks = {k: v for k, v in all_tanks.items() if not is_collection_tank(k)}
+
+def get_stats():
+    try:
+        conn = sqlite3.connect('players.db')
+        cursor = conn.cursor()
+        
+        # Всего игроков
+        cursor.execute("SELECT COUNT(*) FROM players")
+        total = cursor.fetchone()[0]
+        
+        # Активные (последние 5 мин)
+        now = time.time()
+        online = sum(1 for last_time in last_activity.values() if now - last_time < 300)
+        
+        # АФК
+        afk = len(last_activity) - online
+        
+        # Золото
+        cursor.execute("SELECT SUM(gold) FROM players")
+        gold = cursor.fetchone()[0] or 0
+        
+        conn.close()
+        return {
+            'online': online, 
+            'afk': afk, 
+            'total': total,
+            'gold': int(gold)
+        }
+    except:
+        return {'online': 1, 'afk': 0, 'total': 1, 'gold': 1000000}
+
+@app.route('/api/stats')
+def api_stats():
+    try:
+        conn = sqlite3.connect('players.db')
+        cursor = conn.cursor()
+        
+        # 🔥 НАСТОЯЩАЯ СТАТИСТИКА ИГРОКОВ
+        now = time.time()
+        cursor.execute("SELECT COUNT(*) FROM players")
+        total_players = cursor.fetchone()[0]
+        
+        # Онлайн (активность за 5 мин)
+        cursor.execute("SELECT id, last_activity FROM players WHERE last_activity > ?", (now - 300,))
+        online_players = len(cursor.fetchall())
+        
+        # АФК (были 5-30 мин назад)
+        cursor.execute("SELECT COUNT(*) FROM players WHERE last_activity > ? AND last_activity < ?", 
+                      (now - 1800, now - 300))
+        afk_players = cursor.fetchone()[0]
+        
+        # 🔥 4 ВАЛЮТЫ - СУММА ВСЕХ ИГРОКОВ
+        cursor.execute("""
+            SELECT 
+                COALESCE(SUM(silver), 0) as total_silver,
+                COALESCE(SUM(gold), 0) as total_gold,
+                COALESCE(SUM(crystal), 0) as total_crystal,
+                COALESCE(SUM(bond), 0) as total_bond
+            FROM players
+        """)
+        silver, gold, crystal, bond = cursor.fetchone()
+        
+        conn.close()
+        
+        return jsonify({
+            'online': online_players,
+            'afk': afk_players, 
+            'total': total_players,
+            'silver': int(silver),
+            'gold': int(gold),
+            'crystal': int(crystal),
+            'bond': int(bond)
+        })
+        
+    except Exception as e:
+        print(f"STATS ERROR: {e}")
+        return jsonify({
+            'online': 1, 'afk': 0, 'total': 1,
+            'silver': 1234567, 'gold': 24500, 
+            'crystal': 8901, 'bond': 5678
+        })
+
+# Обновляем активность
+def update_player_activity(player_id):
+    try:
+        conn = sqlite3.connect('players.db')
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE players SET last_activity = ? WHERE id = ?", 
+            (time.time(), player_id)
+        )
+        conn.commit()
+        conn.close()
+    except:
+        pass
+
+# Вызываем в каждом route:
+@app.route('/profile')
+def profile():
+    if not validate_session():
+        return redirect(url_for('login'))
+    update_player_activity(session['user_id'])  # ✅ НАСТОЯЩАЯ активность!
+    player = get_player(session['user_id'])
+    return render_template('profile.html', player=player)
+
+@app.route('/battle_queue/<int:tier>')
+def battle_queue_page(tier):
+    if not validate_session():
+        return redirect(url_for('login'))
+    
+    player = get_player(session['user_id'])
+    waiting = battle_queue[tier]
+    
+    return render_template('battle_queue.html', player=player, tier=tier, waiting=waiting)
+
+@app.route('/join_queue/<int:tier>/<tank_id>')
+def join_queue(tier, tank_id):
+    if not validate_session():
+        return jsonify({'error': 'Не авторизован'})
+    
+    player_id = session['user_id']
+    player = get_player(player_id)
+    
+    # Проверяем гараж
+    if not has_tank(player_id, tank_id):
+        return jsonify({'error': 'Танк не в гараже'})
+    
+    # Добавляем в очередь
+    battle_queue[tier].append({'player_id': player_id, 'tank_id': tank_id})
+    update_activity(player_id)
+    
+    return jsonify({'success': True, 'message': f'Ждёшь бой {tier} уровня!'})
+
+def has_tank(player_id, tank_id):
+    try:
+        conn = sqlite3.connect('garage.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1 FROM garage WHERE player_id = ? AND tank_id = ?", (player_id, tank_id))
+        result = cursor.fetchone()
+        conn.close()
+        return result is not None
+    except:
+        return False
+
+def find_opponent(tier):
+    # Ищем в очереди того же тиера
+    if battle_queue[tier]:
+        return battle_queue[tier].pop(0)
+    # Создаём бота
+    bot_tanks = [tid for tid, tank in TANKS.items() if tank['tier'] == tier]
+    return {'player_id': 'bot', 'tank_id': random.choice(bot_tanks)}
+
+# 1️⃣ FLASK APP
+app = Flask(__name__)
+app.secret_key = '3anucku-tankuct-2026-super-secret-key-alexin-kaluga-secure-v9.9'
+
+# 2️⃣ ERROR HANDLERS (ПЕРЕД ФИЛЬТРАМИ!)
+@app.errorhandler(500)
+def internal_error(error):
+    return "🚫 Серверная ошибка! Проверь логи Render.", 500
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html', player=None), 404  # ← player=None!
+
+# 3️⃣ Jinja2 ФИЛЬТР ДЛЯ ЧИСЕЛ (ОБЯЗАТЕЛЬНО!)
+def comma(value):
+    try:
+        return "{:,}".format(int(value)).replace(',', ' ')
+    except:
+        return value
+
+app.jinja_env.filters['comma'] = comma
+
+# 4️⃣ ГЛОБАЛЬНЫЕ КОНСТАНТЫ v9.9
+PLAYERS_EQUAL = True
+ADMIN_LOGINS = ["Назар", "CatNap", "Admin"]
+DB_PATH = 'players.db'  # ЕДИНАЯ БД!
+
+# 🔥 АДМИНЫ С ПРАВАМИ БОГА
+ADMIN_USERS = {
+    "Назар": {"user_id": "admin_nazar_2026", "role": "superadmin", "permissions": ["all"]},
+    "CatNap": {"user_id": "admin_catnap_2026", "role": "superadmin", "permissions": ["all"]},
+    "Admin": {"user_id": "admin0001", "role": "superadmin", "permissions": ["all"]},
+}
+
+# ГЛОБАЛЬНЫЙ CONTEXT PROCESSOR для player во ВСЕХ шаблонах
+@app.context_processor
+def inject_realtime_data():
+    def get_player(user_id):
+        if not user_id: return None
+        try:
+            conn = sqlite3.connect('players.db')
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, username, silver, gold, role, tank_id FROM players WHERE id = ?", (user_id,))
+            row = cursor.fetchone()
+            conn.close()
+            if row:
+                return {
+                    'id': row[0], 'username': row[1], 'silver': row[2], 
+                    'gold': row[3], 'role': row[4], 'tank_id': row[5]
+                }
+            return None
+        except:
+            return None
+
+    def get_live_gold():
+        """Реальное золото из БД (сумма всех игроков)"""
+        try:
+            conn = sqlite3.connect('players.db')
+            cursor = conn.cursor()
+            cursor.execute("SELECT SUM(gold) FROM players")
+            total = cursor.fetchone()[0] or 0
+            conn.close()
+            return int(total)
+        except:
+            return 0
+
+    return {
+        'get_player': get_player,
+        'live_gold': get_live_gold,  # ← НАСТОЯЩЕЕ!
+        'now': datetime.now(),
+        'format_number': lambda x: f"{x:,}".replace(",", " ")
+    }
 
 def get_leaderboard(limit=50):
     conn = sqlite3.connect('players.db')
@@ -1368,6 +1368,7 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
 
