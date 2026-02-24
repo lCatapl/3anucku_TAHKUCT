@@ -1,343 +1,48 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <!-- LIVE UPDATE JS -->
-<script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
-<script>
-let updateInterval;
-
-function startLiveUpdates() {
-    updateInterval = setInterval(async () => {
-        try {
-            const res = await axios.get('/api/live-data');
-            document.getElementById('live-gold').textContent = res.data.total_gold.toLocaleString() + ' 🪙';
-            document.getElementById('live-time').textContent = new Date().toLocaleString('ru-RU');
-            // Обновляем серебро игрока
-            if (res.data.player) {
-                <span id="player-silver">{{ format_number(player.silver) if player else '0' }}</span> серебра
-            }
-        } catch(e) { console.log('Live update failed'); }
-    }, 1000);  // КАЖДУЮ СЕКУНДУ!
-}
-
-document.addEventListener('DOMContentLoaded', startLiveUpdates);
-</script>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}3anucku ТAHKУCТ{% endblock %}</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-primary: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
-            --glass: rgba(30, 30, 46, 0.85);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --text-primary: #ffffff;
-            --text-secondary: #a0a0a0;
-            --accent-gold: linear-gradient(135deg, #facc15, #eab308);
-            --accent-emerald: linear-gradient(135deg, #10b981, #059669);
-            --accent-purple: linear-gradient(135deg, #8b5cf6, #7c3aed);
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-        .glass-panel {
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-        .navbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            padding: 1rem 2rem;
-            background: rgba(15, 15, 35, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border);
-        }
-        .nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .logo {
-            font-size: 2rem;
-            font-weight: 900;
-            background: var(--accent-gold);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        .nav-links {
-            display: flex;
-            gap: 1.5rem;
-            align-items: center;
-        }
-        .nav-link {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 500;
-            padding: 0.75rem 1.5rem;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .nav-link:hover {
-            color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateY(-2px);
-        }
-        .resources {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-        .resource {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .main-content {
-            margin-top: 100px;
-            padding: 2rem;
-            min-height: calc(100vh - 100px);
-        }
-        .hero-title {
-            font-size: clamp(3rem, 8vw, 6rem);
-            font-weight: 900;
-            background: var(--accent-emerald);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-align: center;
-            margin-bottom: 2rem;
-            line-height: 1.1;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            max-width: 1200px;
-            margin: 0 auto 4rem;
-        }
-        .stat-card {
-            background: var(--glass);
-            padding: 2.5rem;
-            border-radius: 24px;
-            text-align: center;
-            transition: all 0.4s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--accent-gold);
-            transform: scaleX(0);
-            transition: transform 0.3s ease;
-        }
-        .stat-card:hover {
-            transform: translateY(-12px);
-            box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.6);
-        }
-        .stat-card:hover::before {
-            transform: scaleX(1);
-        }
-        .stat-icon {
-            font-size: 3.5rem;
-            margin-bottom: 1.5rem;
-            display: block;
-        }
-        .stat-value {
-            font-size: 3rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-            background: var(--accent-gold);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .stat-label {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-        .action-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .action-card {
-            background: var(--glass);
-            padding: 3rem 2.5rem;
-            border-radius: 24px;
-            text-align: center;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-            border: 2px solid transparent;
-            position: relative;
-            overflow: hidden;
-        }
-        .action-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transition: left 0.6s;
-        }
-        .action-card:hover::before {
-            left: 100%;
-        }
-        .action-card:hover {
-            transform: translateY(-16px) scale(1.02);
-            border-color: rgba(255, 255, 255, 0.3);
-            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.7);
-        }
-        .action-icon {
-            font-size: 4rem;
-            margin-bottom: 1.5rem;
-            display: block;
-        }
-        .action-title {
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            color: var(--text-primary);
-        }
-        .action-desc {
-            color: var(--text-secondary);
-            line-height: 1.6;
-            margin-bottom: 2rem;
-        }
-        @media (max-width: 768px) {
-            .navbar { padding: 1rem; }
-            .nav-links { gap: 1rem; }
-            .main-content { margin-top: 80px; padding: 1rem; }
-            .stats-grid, .action-grid { grid-template-columns: 1fr; }
-        }
-        .flash-messages {
-            position: fixed;
-            top: 120px;
-            right: 2rem;
-            z-index: 2000;
-            max-width: 400px;
-        }
-        .flash-message {
-            background: var(--glass);
-            padding: 1.5rem 2rem;
-            border-radius: 16px;
-            margin-bottom: 1rem;
-            border-left: 4px solid #10b981;
-            animation: slideInRight 0.4s ease-out;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-        }
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-    </style>
+    <title>{% block title %}Танкист{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0/fontawesome.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 </head>
-<body>
-    <!-- Flash сообщения -->
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div class="flash-messages">
-                {% for message in messages %}
-                    <div class="flash-message">
-                        {{ message }}
+<body class="bg-gradient-to-br from-gray-900 to-black text-white">
+    <!-- NAV с LIVE серебром -->
+    <nav class="glass-panel fixed top-0 w-full z-50 backdrop-blur-xl">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="text-3xl font-black bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent">
+                    <i class="fas fa-fire"></i> Танкист
+                </a>
+                
+                {% if session.user_id %}
+                <div class="flex items-center gap-6">
+                    <!-- LIVE серебро -->
+                    <div id="live-silver" class="text-2xl font-bold flex items-center gap-2">
+                        <i class="fas fa-coins text-yellow-400"></i>
+                        <span>1,000,000 🪙</span>
                     </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
-
-    <!-- Навигация -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="/" class="logo">
-                <i class="fas fa-tank-rumble"></i>
-                3anucku ТAHKУCТ
-            </a>
-            <div class="nav-links">
-                <a href="/" class="nav-link"><i class="fas fa-home"></i> Ангар</a>
-                <a href="/shop" class="nav-link"><i class="fas fa-store"></i> Магазин</a>
-                <a href="/garage" class="nav-link"><i class="fas fa-warehouse"></i> Гараж</a>
-                <a href="/battle" class="nav-link"><i class="fas fa-fire"></i> Арена</a>
-                <a href="/leaderboard" class="nav-link"><i class="fas fa-trophy"></i> Топ</a>
-                <div class="resources">
-                    {% if session.user_id %}
-                        {% set player = get_player(session.user_id) if session.user_id else none %}
-                        <div class="resource">
-                            <i class="fas fa-coins" style="color: #facc15;"></i>
-                            {{ (player.gold if player else 0)|default(0)|comma }}
-                        </div>
-                        <div class="resource">
-                            <i class="fas fa-coins" style="color: #c0c0c0;"></i>
-                            {{ (player.silver if player else 0)|default(0)|comma }}
-                        </div>
-                    {% endif %}
+                    <a href="/garage" class="btn-primary"><i class="fas fa-warehouse"></i></a>
+                    <a href="/battle" class="btn-danger"><i class="fas fa-fire"></i> Арена</a>
+                    <a href="/leaderboard" class="btn-secondary">🏆 Топ</a>
+                    <a href="/profile" class="btn-primary">{{ player.username }}</a>
+                    <a href="/logout" class="btn-gray">Выход</a>
                 </div>
-                <a href="/profile" class="nav-link">
-                    <i class="fas fa-user-circle"></i>
-                    {{ session.username if session.username else 'Гость' }}
-                </a>
-                <a href="/logout" class="nav-link">
-                    <i class="fas fa-sign-out-alt"></i>
-                </a>
+                {% endif %}
             </div>
         </div>
     </nav>
 
-    <!-- Основной контент -->
-    <main class="main-content">
-        {% block content %}{% endblock %}
-    </main>
-
+    <!-- LIVE обновление -->
     <script>
-        // Авто-скрытие flash сообщений
-        setTimeout(() => {
-            const flashes = document.querySelectorAll('.flash-message');
-            flashes.forEach((flash, index) => {
-                setTimeout(() => {
-                    flash.style.animation = 'slideInRight 0.4s ease-out reverse';
-                    setTimeout(() => flash.remove(), 400);
-                }, (index + 1) * 3000);
-            });
-        }, 5000);
+    setInterval(async () => {
+        const res = await axios.get('/api/live-data');
+        document.getElementById('live-silver').innerHTML = 
+            `<i class="fas fa-coins text-yellow-400"></i> ${res.data.silver.toLocaleString()} 🪙`;
+    }, 1000);
     </script>
+
+    {% block content %}{% endblock %}
 </body>
 </html>
-
