@@ -510,7 +510,6 @@ def get_leaderboard(limit=50):
     return players
 
 def get_player(user_id):
-    """Полные данные игрока из БД"""
     try:
         conn = sqlite3.connect('players.db')
         cursor = conn.cursor()
@@ -521,7 +520,7 @@ def get_player(user_id):
         row = cursor.fetchone()
         conn.close()
         
-        if row:  # ✅ Проверяем row
+        if row and len(row) >= 8:  # ✅ Проверяем длину tuple
             winrate = (row[4] / max(row[5], 1)) * 100 if row[5] > 0 else 0
             return {
                 'id': row[0],
@@ -667,7 +666,10 @@ def validate_session():
     if 'user_id' not in session:
         return False
     player = get_player(session['user_id'])
-    return bool(player)
+    if not player:
+        session.clear()
+        return False
+    return True
 
 def is_superadmin(username):
     return username in ADMIN_LOGINS
@@ -681,21 +683,6 @@ def api_queue_status():
         'tier2': len(queue_players.get(2, [])),
         'tier3': len(queue_players.get(3, []))
     })
-
-@app.route('/battle/<tank_id>')
-def battle(tank_id):
-    if not validate_session():
-        return redirect(url_for('login'))
-    
-    player = get_player(session['user_id'])
-    tier = TANKS[tank_id]['tier'] if tank_id != 'ai' else 1
-    
-    # Добавляем в очередь
-    if tier not in queue_players:
-        queue_players[tier] = []
-    queue_players[tier].append(player['id'])
-    
-    return render_template('battle.html', player=player, tank_id=tank_id, tier=tier)
 
 def give_reward(player_id, silver):
     conn = sqlite3.connect('players.db')
@@ -858,13 +845,33 @@ def garage():
     
     return render_template('garage.html', player=player, player_tanks=player_tanks, tanks=TANKS)
 
-@app.route('/battle', methods=['GET', 'POST'])
+@app.route('/battle')
 def battle():
     if not validate_session():
         return redirect(url_for('login'))
     
     player = get_player(session['user_id'])
-    return render_template('battle.html', player=player)
+    if not player:
+        return redirect(url_for('login'))
+    
+    # Получаем танк из GET параметра или используем основной
+    tank_id = request.args.get('tank', player.get('tank_id', 'ms1'))
+    tier = TANKS.get(tank_id, {}).get('tier', 1)
+    
+    return render_template('battle.html', player=player, tank_id=tank_id, tier=tier)
+
+@app.route('/api/battle-result', methods=['POST'])
+def battle_result():
+    """API для результата боя"""
+    data = request.json
+    player_id = data['player_id']
+    tier = data['tier']
+    is_win = data['win']
+    
+    reward = 15000 if is_win else 2000
+    give_reward(player_id, reward)
+    
+    return jsonify({'reward': reward, 'status': 'ok'})
 
 @app.route('/profile')
 @app.route('/profile/<user_id>')
@@ -989,3 +996,4 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
