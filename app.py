@@ -484,13 +484,38 @@ TANKS = {
     "vz36": {"name": "Vz. 36", "tier": 6, "type": "TD", "price": 125000, "hp": 1220, "damage": 400, "pen": 258, "speed": 38, "premium": True},
 }
 
+def get_leaderboard(limit=50):
+    conn = sqlite3.connect('players.db')
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT id, username, silver, gold, wins, battles FROM players 
+        ORDER BY wins DESC, silver DESC LIMIT ?
+    """, (limit,))
+    
+    players = []
+    for i, row in enumerate(cursor.fetchall(), 1):
+        # ✅ Используем player ID, НЕ username
+        tank_count = get_player_tanks(row[0])  # row[0] = id
+        
+        winrate = (row[4] / max(row[5], 1)) * 100 if row[5] > 0 else 0
+        players.append({
+            'rank': i,
+            'username': row[1],
+            'silver': row[2],
+            'wins': row[4],
+            'winrate': round(winrate, 1),
+            'tank_count': tank_count  # ✅ int, НЕ len()
+        })
+    conn.close()
+    return players
+
 def get_player_tanks(player_id):
-    """Сколько танков у игрока"""
+    """Возвращает КОЛИЧЕСТВО танков (int)"""
     try:
         conn = sqlite3.connect('garage.db')
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM garage WHERE player_id = ?", (player_id,))
-        count = cursor.fetchone()[0]
+        count = cursor.fetchone()[0]  # int!
         conn.close()
         return count
     except:
@@ -601,29 +626,6 @@ def get_player_stats(player_id):
         }
     return None
 
-def get_leaderboard(limit=50):
-    """Реальный лидерборд"""
-    conn = sqlite3.connect('players.db')
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT username, silver, gold, wins, battles FROM players 
-        ORDER BY wins DESC, silver DESC LIMIT ?
-    """, (limit,))
-    
-    players = []
-    for i, row in enumerate(cursor.fetchall(), 1):
-        winrate = (row[3] / max(row[4], 1)) * 100 if row[4] > 0 else 0
-        players.append({
-            'rank': i,
-            'username': row[0],
-            'silver': row[1],
-            'wins': row[3],
-            'winrate': round(winrate, 1),
-            'tank_count': len(get_player_tanks(row[0]))
-        })
-    conn.close()
-    return players
-
 # ========================================
 # ✅ ОСНОВНЫЕ ФУНКЦИИ ИГРОКА
 # ========================================
@@ -730,35 +732,39 @@ def api_live_data():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        password = request.form.get('password', '').strip()
-        
+        username = request.form['username']
+        password = request.form['password']
         print(f"DEBUG LOGIN: username={username}")
         
-        try:
-            conn = sqlite3.connect('players.db')
-            cursor = conn.cursor()
-            cursor.execute("SELECT id, username, password, role FROM players WHERE username=?", (username,))
-            player = cursor.fetchone()
+        conn = sqlite3.connect('players.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, password, role FROM players WHERE username = ?", (username,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        if row:
+            stored_hash = row[1]  # Уже bytes!
             
-            if player and bcrypt.checkpw(password.encode(), player[2].encode()):
-                session['user_id'] = player[0]
-                session['username'] = player[1]
-                session['role'] = player[3] or 'player'
-                session.modified = True
-                
-                print(f"✅ SESSION: {session}")
-                flash('✅ Добро пожаловать в ангар!')
-                return redirect(url_for('index'))
-            else:
-                flash('❌ Неверный логин/пароль!')
-                
-        except Exception as e:
-            print(f"LOGIN ERROR: {e}")
-            flash('❌ Ошибка входа!')
-        finally:
-            if 'conn' in locals():
-                conn.close()
+            # ✅ ПРОВЕРЯЕМ БЕЗ .encode() если уже bytes
+            try:
+                if isinstance(stored_hash, bytes) and bcrypt.checkpw(password.encode(), stored_hash):
+                    session['user_id'] = row[0]
+                    session['role'] = row[2]
+                    print(f"✅ LOGIN OK: {username}")
+                    return redirect(url_for('profile'))
+            except:
+                pass
+            
+            # Fallback для строковых хэшей
+            if isinstance(stored_hash, str):
+                stored_hash = stored_hash.encode()
+                if bcrypt.checkpw(password.encode(), stored_hash):
+                    session['user_id'] = row[0]
+                    session['role'] = row[2]
+                    return redirect(url_for('profile'))
+        
+        print("LOGIN ERROR: неверный пароль")
+        return render_template('login.html', error="Неверный логин/пароль")
     
     return render_template('login.html')
 
@@ -798,26 +804,21 @@ def shop():
 
 @app.route('/garage')
 def garage():
-    if not validate_session(): return redirect(url_for('login'))
+    if not validate_session():
+        return redirect(url_for('login'))
     
     player = get_player(session['user_id'])
-    
-    # ГАРАНТИРУЕМ создание garage.db
     conn = sqlite3.connect('garage.db')
     cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS garage 
-                    (id INTEGER PRIMARY KEY, player_id TEXT, tank_id TEXT, 
-                     bought_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
     
-    # Если нет танков - даём MS-1 бесплатно
+    # ✅ ГАРАНТИРУЕМ MS-1 для новичков
     cursor.execute("SELECT COUNT(*) FROM garage WHERE player_id = ?", (player['id'],))
     if cursor.fetchone()[0] == 0:
         cursor.execute("INSERT INTO garage (player_id, tank_id) VALUES (?, 'ms1')", (player['id'],))
-        cursor.execute("UPDATE players SET silver = 50000 WHERE id = ?", (player['id'],))
+        conn.commit()
     
     cursor.execute("SELECT tank_id FROM garage WHERE player_id = ?", (player['id'],))
     player_tanks = [row[0] for row in cursor.fetchall()]
-    conn.commit()
     conn.close()
     
     return render_template('garage.html', player=player, player_tanks=player_tanks, tanks=TANKS)
@@ -953,6 +954,7 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
 
