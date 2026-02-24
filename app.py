@@ -23,8 +23,88 @@ CURRENCIES = {
     'crystal': {'emoji': '💎', 'name': 'Кристаллы', 'color': 'purple'},
     'bond': {'emoji': '🏅', 'name': 'Бонды', 'color': 'bronze'}  # НОВАЯ!
 }
-
 # 🆕 БОНДЫ - для эксклюзивных предметов/премиум аккаунтов
+
+# 🔥 СИСТЕМА УРОВНЕЙ И ЗВАНИЙ
+RANK_SYSTEM = {
+    0: {'name': 'Рекрут', 'color': 'gray'},
+    10: {'name': 'Лейтенант', 'color': 'green'}, 
+    100: {'name': 'Капитан', 'color': 'blue'},
+    1000: {'name': 'Майор', 'color': 'purple'},
+    10000: {'name': 'Полковник', 'color': 'gold'},
+    100000: {'name': 'Генерал', 'color': 'red'},
+    1000000: {'name': 'Легенда', 'color': 'rainbow'}
+}
+
+def get_player_level(xp):
+    for level, req_xp in sorted(RANK_SYSTEM.items(), reverse=True):
+        if xp >= req_xp:
+            return level, RANK_SYSTEM[level]['name'], RANK_SYSTEM[level]['color']
+    return 0, 'Рекрут', 'gray'
+
+def player_has_tank(player_id, tank_id):
+    try:
+        conn = sqlite3.connect('garage.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1 FROM garage WHERE player_id = ? AND tank_id = ?", (player_id, tank_id))
+        result = cursor.fetchone()
+        conn.close()
+        return result is not None
+    except:
+        return False
+
+@app.route('/profile/<int:user_id>')
+def public_profile(user_id):
+    player = get_player(user_id, public=True)  # public=True = без приватной инфы
+    if not player:
+        flash('Игрок не найден!')
+        return redirect(url_for('index'))
+    
+    # Коллекция
+    collection_count = sum(1 for tank_id in COLLECTION_TANKS if player_has_tank(user_id, tank_id))
+    collection_total = len(COLLECTION_TANKS)
+    
+    # Уровень
+    player['level'], player['rank'], player['rank_color'] = get_player_level(player.get('xp', 0))
+    player['next_level'] = next((k for k in RANK_SYSTEM if k > player['level']), max(RANK_SYSTEM.keys()))
+    player['next_rank_name'] = RANK_SYSTEM[player['next_level']]['name']
+    player['progress'] = min(100, (player.get('xp', 0) / next((k for k in RANK_SYSTEM if k > player['level']), 999)) * 100)
+    
+    player['collection_count'] = collection_count
+    player['collection_total'] = collection_total
+    
+    return render_template('profile.html', player=player, COLLECTION_TANKS=COLLECTION_TANKS)
+
+def get_player(user_id, public=False):
+    try:
+        conn = sqlite3.connect('players.db')
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, username, silver, gold, wins, battles, role, xp, crystal, bond, created, last_activity
+            FROM players WHERE id = ?
+        """, (user_id,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        if row:
+            wins, battles = row[4], row[5]
+            winrate = (wins / max(battles, 1)) * 100
+            created = datetime.fromtimestamp(row[10]).strftime('%d.%m.%Y')
+            
+            player = {
+                'id': row[0], 'username': row[1], 'silver': row[2], 'gold': row[3],
+                'wins': row[4], 'battles': row[5], 'winrate': round(winrate, 1),
+                'role': row[6], 'xp': row[7], 'crystal': row[8], 'bond': row[9],
+                'created': created
+            }
+            
+            if not public:
+                player['email'] = get_user_email(user_id)  # только для себя
+            
+            return player
+        return None
+    except:
+        return None
 
 # 🔥 ТАНКИ С ТИЕРАМИ И ВАЛЮТАМИ
 # 🔥 КОЛЛЕКЦИОННЫЕ ТАНКИ (только витрина, НЕ для боя)
@@ -1285,6 +1365,7 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
 
