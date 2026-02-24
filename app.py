@@ -12,6 +12,197 @@ import logging
 from datetime import datetime
 logging.basicConfig(level=logging.DEBUG)
 
+import time
+import random
+from collections import defaultdict
+
+# 🔥 СИСТЕМА 4 ВАЛЮТ
+CURRENCIES = {
+    'silver': {'emoji': '🪙', 'name': 'Серебро', 'color': 'gray'},
+    'gold': {'emoji': '⭐', 'name': 'Золото', 'color': 'yellow'}, 
+    'crystal': {'emoji': '💎', 'name': 'Кристаллы', 'color': 'purple'},
+    'bond': {'emoji': '🏅', 'name': 'Бонды', 'color': 'bronze'}  # НОВАЯ!
+}
+
+# 🆕 БОНДЫ - для эксклюзивных предметов/премиум аккаунтов
+
+# 🔥 ТАНКИ С ТИЕРАМИ И ВАЛЮТАМИ
+# 🔥 КОЛЛЕКЦИОННЫЕ ТАНКИ (только витрина, НЕ для боя)
+COLLECTION_TANKS = {
+    "tiger_legend": {
+        "name": "Тигр Легенда", 
+        "tier": 10, 
+        "type": "ТТ", 
+        "price": 1000, 
+        "hp": 2800, 
+        "damage": 390, 
+        "pen": 237, 
+        "speed": 45, 
+        "premium": False,
+        "currency": "crystal"
+    },
+    "is7_crystal": {
+        "name": "ИС-7 Кристалл", 
+        "tier": 10, 
+        "type": "ТТ", 
+        "price": 1500, 
+        "hp": 3200, 
+        "damage": 490, 
+        "pen": 297, 
+        "speed": 50, 
+        "premium": False,
+        "currency": "crystal"
+    },
+    "e100_diamond": {
+        "name": "E-100 Бриллиант", 
+        "tier": 10, 
+        "type": "ТТ", 
+        "price": 2500, 
+        "hp": 3600, 
+        "damage": 580, 
+        "pen": 326, 
+        "speed": 35, 
+        "premium": False,
+        "currency": "crystal"
+    },
+    "obj268_legend": {
+        "name": "Об. 268 Легенда", 
+        "tier": 10, 
+        "type": "ИТ", 
+        "price": 1800, 
+        "hp": 2200, 
+        "damage": 720, 
+        "pen": 350, 
+        "speed": 42, 
+        "premium": False,
+        "currency": "crystal"
+    },
+    "t95_diamond": {
+        "name": "T95 Алмаз", 
+        "tier": 10, 
+        "type": "ТТ", 
+        "price": 2200, 
+        "hp": 3400, 
+        "damage": 490, 
+        "pen": 295, 
+        "speed": 32, 
+        "premium": False,
+        "currency": "crystal"
+    }
+}
+
+# 🔥 ОЧЕРЕДЬ БОЁВ (глобальная)
+battle_queue = defaultdict(list)  # {tier: [{'player_id': 1, 'tank_id': 't34'}]}
+
+# 🔥 СТАТИСТИКА ONLINE
+last_activity = {}  # {player_id: timestamp}
+
+# Получить все танки для боя/покупки
+def get_combat_tanks():
+    return {**TANKS, **COLLECTION_TANKS}  # TANKS = обычные+премиум
+
+# Проверить коллекционный ли танк
+def is_collection_tank(tank_id):
+    return tank_id in COLLECTION_TANKS
+
+# Магазин показывает все
+all_tanks = {**TANKS, **COLLECTION_TANKS}
+
+# Гараж боевых танков (исключая коллекционные)
+combat_tanks = {k: v for k, v in all_tanks.items() if not is_collection_tank(k)}
+
+def get_stats():
+    try:
+        conn = sqlite3.connect('players.db')
+        cursor = conn.cursor()
+        
+        # Всего игроков
+        cursor.execute("SELECT COUNT(*) FROM players")
+        total = cursor.fetchone()[0]
+        
+        # Активные (последние 5 мин)
+        now = time.time()
+        online = sum(1 for last_time in last_activity.values() if now - last_time < 300)
+        
+        # АФК
+        afk = len(last_activity) - online
+        
+        # Золото
+        cursor.execute("SELECT SUM(gold) FROM players")
+        gold = cursor.fetchone()[0] or 0
+        
+        conn.close()
+        return {
+            'online': online, 
+            'afk': afk, 
+            'total': total,
+            'gold': int(gold)
+        }
+    except:
+        return {'online': 1, 'afk': 0, 'total': 1, 'gold': 1000000}
+
+@app.route('/api/stats')
+def api_stats():
+    stats = get_stats()
+    stats.update({
+        'silver': 1234567,
+        'gold': 24500, 
+        'crystal': 8901,
+        'bond': 5678  # 🆕 БОНДЫ
+    })
+    return jsonify(stats)
+
+# Обновляем активность
+def update_activity(player_id):
+    last_activity[player_id] = time.time()
+
+@app.route('/battle_queue/<int:tier>')
+def battle_queue_page(tier):
+    if not validate_session():
+        return redirect(url_for('login'))
+    
+    player = get_player(session['user_id'])
+    waiting = battle_queue[tier]
+    
+    return render_template('battle_queue.html', player=player, tier=tier, waiting=waiting)
+
+@app.route('/join_queue/<int:tier>/<tank_id>')
+def join_queue(tier, tank_id):
+    if not validate_session():
+        return jsonify({'error': 'Не авторизован'})
+    
+    player_id = session['user_id']
+    player = get_player(player_id)
+    
+    # Проверяем гараж
+    if not has_tank(player_id, tank_id):
+        return jsonify({'error': 'Танк не в гараже'})
+    
+    # Добавляем в очередь
+    battle_queue[tier].append({'player_id': player_id, 'tank_id': tank_id})
+    update_activity(player_id)
+    
+    return jsonify({'success': True, 'message': f'Ждёшь бой {tier} уровня!'})
+
+def has_tank(player_id, tank_id):
+    try:
+        conn = sqlite3.connect('garage.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1 FROM garage WHERE player_id = ? AND tank_id = ?", (player_id, tank_id))
+        result = cursor.fetchone()
+        conn.close()
+        return result is not None
+    except:
+        return False
+
+def find_opponent(tier):
+    # Ищем в очереди того же тиера
+    if battle_queue[tier]:
+        return battle_queue[tier].pop(0)
+    # Создаём бота
+    bot_tanks = [tid for tid, tank in TANKS.items() if tank['tier'] == tier]
+    return {'player_id': 'bot', 'tank_id': random.choice(bot_tanks)}
+
 # 1️⃣ FLASK APP
 app = Flask(__name__)
 app.secret_key = '3anucku-tankuct-2026-super-secret-key-alexin-kaluga-secure-v9.9'
@@ -1036,5 +1227,6 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 else:
     init_db()
+
 
 
